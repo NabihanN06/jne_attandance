@@ -1,6 +1,6 @@
 {
-    "name": "user_mobile",
-    "short_name": "user_mobile",
+    "name": "jneattendance_mobile",
+    "short_name": "jneattendance_mobile",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

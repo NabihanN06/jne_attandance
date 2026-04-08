@@ -1,0 +1,24 @@
+// android/app/build.gradle
+// Letakkan file ini di: android/app/build.gradle
+
+android {
+    namespace "com.example.jneattendance_mobile"
+    compileSdkVersion flutter.compileSdkVersion
+    ndkVersion flutter.ndkVersion
+
+    defaultConfig {
+        applicationId "com.example.jneattendance_mobile"
+
+        // ✅ WAJIB: camera plugin butuh minimum SDK 21
+        minSdkVersion 21
+        targetSdkVersion flutter.targetSdkVersion
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.debug
+        }
+    }
+}
