@@ -213,7 +213,7 @@ class _BtnState extends State<_Btn> with SingleTickerProviderStateMixin {
       onTapDown: (_) => _c.forward(),
       onTapUp: (_) async { await _c.reverse(); widget.onTap(); },
       onTapCancel: () => _c.reverse(),
-      child: AnimatedBuilder(animation: _s, builder: (_, __) => Transform.scale(
+      child: AnimatedBuilder(animation: _s, builder: (_, _) => Transform.scale(
         scale: _s.value,
         child: Container(
           width: double.infinity, height: 48,
@@ -221,7 +221,7 @@ class _BtnState extends State<_Btn> with SingleTickerProviderStateMixin {
             color: widget.color, borderRadius: BorderRadius.circular(10),
             border: widget.border != null ? Border.all(color: widget.border!) : null,
             boxShadow: widget.color != Colors.transparent
-                ? [BoxShadow(color: widget.color.withOpacity(0.35), blurRadius: 8, offset: const Offset(0, 3))] : null,
+                ? [BoxShadow(color: widget.color.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 3))] : null,
           ),
           alignment: Alignment.center,
           child: Text(widget.label, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),

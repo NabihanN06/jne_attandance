@@ -127,7 +127,7 @@ class _PressableButtonState extends State<_PressableButton>
       onTapCancel: () => _ctrl.reverse(),
       child: AnimatedBuilder(
         animation: _scale,
-        builder: (_, __) => Transform.scale(
+        builder: (_, _) => Transform.scale(
           scale: _scale.value,
           child: Container(
             width: double.infinity,
@@ -137,7 +137,7 @@ class _PressableButtonState extends State<_PressableButton>
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFE31E24).withOpacity(_scale.value == 1.0 ? 0.4 : 0.1),
+                  color: const Color(0xFFE31E24).withValues(alpha: _scale.value == 1.0 ? 0.4 : 0.1),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../attendance/attendance_page.dart';
+import '../leave/leave_page.dart';
 
 class OptionPage extends StatelessWidget {
   const OptionPage({super.key});
@@ -68,7 +69,10 @@ class OptionPage extends StatelessWidget {
                     emoji: '📋',
                     color: const Color(0xFFF57C00),
                     onTap: () {
-                      // TODO: Navigate to izin page
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LeavePage()),
+                      );
                     },
                   ),
                 ],
@@ -98,7 +102,7 @@ class OptionPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.35),
+              color: color.withValues(alpha: 0.35),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

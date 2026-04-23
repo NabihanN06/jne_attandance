@@ -148,7 +148,7 @@ class _AttendancePageState extends State<AttendancePage>
                     if (_isCameraReady)
                       AnimatedBuilder(
                         animation: _pulseAnim,
-                        builder: (_, __) => Transform.scale(
+                        builder: (_, _) => Transform.scale(
                           scale: _pulseAnim.value,
                           child: CustomPaint(
                             size: Size(constraints.maxWidth, constraints.maxHeight),
@@ -163,7 +163,7 @@ class _AttendancePageState extends State<AttendancePage>
                     // Flash
                     AnimatedBuilder(
                       animation: _flashOpacity,
-                      builder: (_, __) => Opacity(
+                      builder: (_, _) => Opacity(
                         opacity: _flashOpacity.value,
                         child: Container(color: Colors.white),
                       ),
@@ -184,7 +184,7 @@ class _AttendancePageState extends State<AttendancePage>
                   onTap: _onShutterTap,
                   child: AnimatedBuilder(
                     animation: _shutterController,
-                    builder: (_, __) => SizedBox(
+                    builder: (_, _) => SizedBox(
                       width: 80, height: 80,
                       child: Stack(
                         alignment: Alignment.center,
@@ -218,7 +218,7 @@ class _AttendancePageState extends State<AttendancePage>
                                   width: 2.5,
                                 ),
                                 boxShadow: _isCameraReady
-                                    ? [BoxShadow(color: Colors.white.withOpacity(0.15), blurRadius: 12, spreadRadius: 2)]
+                                    ? [BoxShadow(color: Colors.white.withValues(alpha: 0.15), blurRadius: 12, spreadRadius: 2)]
                                     : null,
                               ),
                               child: _isCapturing
@@ -273,7 +273,7 @@ class _AttendancePageState extends State<AttendancePage>
             const SizedBox(height: 16),
             Text(_errorMessage ?? 'Kamera tidak tersedia',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xF90A4AE), fontSize: 13, height: 1.6)),
+                style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 13, height: 1.6)),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
@@ -303,7 +303,7 @@ class _OvalPainter extends CustomPainter {
         ..addRect(Rect.fromLTWH(0, 0, w, h))
         ..addOval(rect)
         ..fillType = PathFillType.evenOdd,
-      Paint()..color = Colors.black.withOpacity(0.55),
+      Paint()..color = Colors.black.withValues(alpha: 0.55),
     );
 
     canvas.drawOval(rect,

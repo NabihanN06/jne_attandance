@@ -186,8 +186,8 @@ class _StatisticPageState extends State<StatisticPage> with SingleTickerProvider
       Text(date, style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 12, height: 1.5)),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: color.withOpacity(0.4))),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: color.withValues(alpha: 0.4))),
         child: Text(status, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
       ),
     ]),

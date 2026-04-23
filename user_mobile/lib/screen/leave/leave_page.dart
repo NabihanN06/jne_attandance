@@ -46,7 +46,7 @@ class _LeavePageState extends State<LeavePage> {
     if (picked != null) {
       setState(() {
         if (isFrom) { _fromDate = picked; if (_toDate != null && _toDate!.isBefore(picked)) _toDate = picked; }
-        else _toDate = picked;
+        else { _toDate = picked; }
       });
     }
   }
@@ -193,7 +193,7 @@ class _LeavePageState extends State<LeavePage> {
           // Info
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(color: const Color(0xFF1565C0).withOpacity(0.3),
+            decoration: BoxDecoration(color: const Color(0xFF1565C0).withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFF1565C0))),
             child: Row(children: const [
               Icon(Icons.info_outline, color: Color(0xFF64B5F6), size: 16),
@@ -267,7 +267,7 @@ class _PressBtnState extends State<_PressBtn> with SingleTickerProviderStateMixi
       onTapDown: (_) => _c.forward(),
       onTapUp: (_) async { await _c.reverse(); widget.onTap(); },
       onTapCancel: () => _c.reverse(),
-      child: AnimatedBuilder(animation: _s, builder: (_, __) => Transform.scale(
+      child: AnimatedBuilder(animation: _s, builder: (_, _) => Transform.scale(
         scale: _s.value,
         child: Container(
           width: double.infinity, height: 48,
@@ -275,7 +275,7 @@ class _PressBtnState extends State<_PressBtn> with SingleTickerProviderStateMixi
             color: widget.color, borderRadius: BorderRadius.circular(10),
             border: widget.border != null ? Border.all(color: widget.border!) : null,
             boxShadow: widget.color != Colors.transparent
-                ? [BoxShadow(color: widget.color.withOpacity(0.35), blurRadius: 8, offset: const Offset(0, 3))] : null,
+                ? [BoxShadow(color: widget.color.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 3))] : null,
           ),
           alignment: Alignment.center,
           child: widget.child ?? Text(widget.label,

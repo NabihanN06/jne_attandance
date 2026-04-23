@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/app_provider.dart';
 import '../home/home_screen.dart';
 
 // ─── Dummy credentials (ganti nanti setelah admin dibuat) ───────────────────
@@ -211,7 +209,7 @@ class _LoginPageState extends State<LoginPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFE31E24),
                           disabledBackgroundColor:
-                              const Color(0xFFE31E24).withOpacity(0.6),
+                              const Color(0xFFE31E24).withValues(alpha: 0.6),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),

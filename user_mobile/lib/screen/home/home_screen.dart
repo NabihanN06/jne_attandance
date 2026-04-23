@@ -129,7 +129,7 @@ class HomeScreen extends StatelessWidget {
                     ]),
                   ),
                 ]);
-              }).toList(),
+              }),
           ])),
 
           const SizedBox(height: 12),
@@ -147,8 +147,15 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _box(Color bg, Widget child) => Container(
-    width: double.infinity, padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+    width: double.infinity, padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: bg, 
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1),
+      boxShadow: [
+        BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4)),
+      ],
+    ),
     child: child,
   );
 
@@ -183,8 +190,12 @@ class HomeScreen extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0D1F38), 
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1),
+        ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(emoji, style: const TextStyle(fontSize: 22)),
           const SizedBox(height: 8),
@@ -212,7 +223,7 @@ class HomeScreen extends StatelessWidget {
             : ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: notifs.length,
-                separatorBuilder: (_, __) => const Divider(color: Color(0xFF1E3A5F)),
+                separatorBuilder: (_, _) => const Divider(color: Color(0xFF1E3A5F)),
                 itemBuilder: (_, i) => ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Container(width: 36, height: 36,
@@ -250,14 +261,19 @@ class _PBState extends State<_PressableBanner> with SingleTickerProviderStateMix
       onTapDown: (_) => _c.forward(),
       onTapUp: (_) async { await _c.reverse(); widget.onTap(); },
       onTapCancel: () => _c.reverse(),
-      child: AnimatedBuilder(animation: _c, builder: (_, __) => Transform.scale(
+      child: AnimatedBuilder(animation: _c, builder: (_, _) => Transform.scale(
         scale: _s.value,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFFE31E24), borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: const Color(0xFFE31E24).withOpacity(0.45), blurRadius: _sh.value, offset: const Offset(0, 4))],
+            gradient: const LinearGradient(
+              colors: [Color(0xFFE31E24), Color(0xFFB71C1C)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: const Color(0xFFE31E24).withValues(alpha: 0.45), blurRadius: _sh.value, offset: const Offset(0, 4))],
           ),
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [

@@ -213,10 +213,10 @@ class ProfilePage extends StatelessWidget {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: const Color(0xFFE31E24),
-          activeTrackColor: const Color(0xFFE31E24).withOpacity(0.4),
+          activeThumbColor: const Color(0xFFE31E24),
+          activeTrackColor: const Color(0xFFE31E24).withValues(alpha: 0.4),
           inactiveThumbColor: Colors.grey,
-          inactiveTrackColor: Colors.grey.withOpacity(0.3),
+          inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
         ),
       ]),
     );
@@ -284,13 +284,13 @@ class _PressBtnState extends State<_PressBtn> with SingleTickerProviderStateMixi
       onTapDown: (_) => _c.forward(),
       onTapUp: (_) async { await _c.reverse(); widget.onTap(); },
       onTapCancel: () => _c.reverse(),
-      child: AnimatedBuilder(animation: _s, builder: (_, __) => Transform.scale(
+      child: AnimatedBuilder(animation: _s, builder: (_, _) => Transform.scale(
         scale: _s.value,
         child: Container(
           width: double.infinity, height: 48,
           decoration: BoxDecoration(
             color: widget.color, borderRadius: BorderRadius.circular(10),
-            boxShadow: [BoxShadow(color: widget.color.withOpacity(0.35), blurRadius: 8, offset: const Offset(0, 3))],
+            boxShadow: [BoxShadow(color: widget.color.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 3))],
           ),
           alignment: Alignment.center,
           child: Text(widget.label, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),

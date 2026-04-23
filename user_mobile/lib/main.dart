@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +24,7 @@ import 'screen/profile/profile_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
@@ -81,7 +83,7 @@ class MyApp extends StatelessWidget {
       brightness: dark ? Brightness.dark : Brightness.light,
       scaffoldBackgroundColor: dark ? const Color(0xFF0A1628) : const Color(0xFFF0F4F8),
       colorScheme: dark
-          ? const ColorScheme.dark(primary: Color(0xFFE31E24), secondary: Color(0xFF1565C0), surface: Color(0xFF0D1F38), background: Color(0xFF0A1628))
+          ? const ColorScheme.dark(primary: Color(0xFFE31E24), secondary: Color(0xFF1565C0), surface: Color(0xFF0D1F38))
           : const ColorScheme.light(primary: Color(0xFFE31E24), secondary: Color(0xFF1565C0)),
       appBarTheme: AppBarTheme(
         backgroundColor: dark ? const Color(0xFF0D1F38) : const Color(0xFF1A3A6B),
