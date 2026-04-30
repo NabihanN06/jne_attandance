@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/app_provider.dart';
 import '../home/home_screen.dart';
-
-// ─── Dummy credentials (ganti nanti setelah admin dibuat) ───────────────────
-const _dummyUsers = [
-  {'email': 'admin@jne.com', 'password': 'admin123', 'role': 'admin'},
-  {'email': 'user@jne.com', 'password': 'user123', 'role': 'user'},
-];
-// ────────────────────────────────────────────────────────────────────────────
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -40,33 +35,22 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _isLoading = true);
 
-    // Simulasi network delay
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    // Cek dummy credentials
-    final matched = _dummyUsers.where(
-      (u) => u['email'] == email && u['password'] == password,
-    );
-
-    if (!mounted) return;
-
-    if (matched.isEmpty) {
+    try {
+      await context.read<AppProvider>().login(email, password);
+      
+      if (!mounted) return;
+      _showSnack('Login berhasil! Selamat datang.');
+      
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        (r) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      _showSnack('Email atau password salah', isError: true);
-      return;
+      _showSnack(e.toString().replaceAll('Exception: ', ''), isError: true);
     }
-
-    setState(() => _isLoading = false);
-    _showSnack('Login berhasil! Selamat datang.');
-
-    await Future.delayed(const Duration(milliseconds: 400));
-    if (!mounted) return;
-
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-      (r) => false,
-    );
   }
 
   void _showSnack(String msg, {bool isError = false}) {
@@ -241,47 +225,7 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 24),
 
-              // ── Dummy hint (hapus setelah production) ────────────────────
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0D1F38),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF1E3A5F)),
-                ),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.info_outline,
-                            color: Color(0xFF90A4AE), size: 14),
-                        SizedBox(width: 6),
-                        Text(
-                          'Akun Demo (hapus saat production)',
-                          style: TextStyle(
-                            color: Color(0xFF90A4AE),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Admin  → admin@jne.com / admin123\nUser     → user@jne.com / user123',
-                      style: TextStyle(
-                        color: Color(0xFF64B5F6),
-                        fontSize: 11,
-                        height: 1.6,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // Dummy hint dihapus
             ],
           ),
         ),

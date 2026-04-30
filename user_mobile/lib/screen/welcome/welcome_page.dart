@@ -4,7 +4,7 @@ import '../enroll/enroll_page.dart';
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
 
-  // Ganti dengan nama user dari session/shared prefs
+  // Ganti dengan nama user dari__+ session/shared prefs
   static const String userName = 'Nabihan';
 
   @override
@@ -16,7 +16,11 @@ class WelcomePage extends StatelessWidget {
         elevation: 0,
         title: const Text(
           'Welcome',
-          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       body: Padding(
@@ -71,7 +75,11 @@ class WelcomePage extends StatelessWidget {
                   const SizedBox(height: 10),
                   const Text(
                     'Untuk menggunakan fitur absensi, Anda perlu mendaftarkan wajah terlebih dahulu menggunakan kamera depan smartphone Anda.',
-                    style: TextStyle(color: Color(0xFF90A4AE), fontSize: 13, height: 1.6),
+                    style: TextStyle(
+                      color: Color(0xFF90A4AE),
+                      fontSize: 13,
+                      height: 1.6,
+                    ),
                   ),
                 ],
               ),
@@ -104,7 +112,9 @@ class WelcomePage extends StatelessWidget {
                   SizedBox(height: 6),
                   _BulletItem(text: 'Cari tempat dengan cahaya yang cukup'),
                   SizedBox(height: 6),
-                  _BulletItem(text: 'Posisikan wajah menghadap kamera dengan jelas'),
+                  _BulletItem(
+                    text: 'Posisikan wajah menghadap kamera dengan jelas',
+                  ),
                 ],
               ),
             ),
@@ -125,7 +135,9 @@ class WelcomePage extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFE31E24),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   elevation: 0,
                 ),
                 child: const Text(
@@ -160,7 +172,11 @@ class _BulletItem extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 13, height: 1.5),
+            style: const TextStyle(
+              color: Color(0xFF90A4AE),
+              fontSize: 13,
+              height: 1.5,
+            ),
           ),
         ),
       ],

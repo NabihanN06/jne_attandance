@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/app_models.dart';
 import 'package:intl/intl.dart';
 
 class AppProvider extends ChangeNotifier {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // ── Theme ──
   bool _isDarkMode = true;
@@ -20,7 +22,7 @@ class AppProvider extends ChangeNotifier {
   bool get isLoggedIn => _currentUser != null;
   bool get isAdmin => _currentUser?.role == 'admin';
 
-  List<UserModel> _accounts = [];
+  final List<UserModel> _accounts = [];
   List<UserModel> get allAccounts => List.unmodifiable(_accounts);
   List<UserModel> get allUsers => _accounts.where((a) => a.role == 'user' || a.role == 'employee').toList();
 
@@ -29,18 +31,53 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> _loadUsers() async {
+    // Dipanggil hanya untuk sync lokal jika diperlukan, tapi login via Auth
+    if (_auth.currentUser != null) {
+      await _fetchCurrentUser(_auth.currentUser!.uid);
+    }
+  }
+
+  Future<void> _fetchCurrentUser(String uid) async {
     try {
-      final snap = await _db.collection('employees').get();
-      if (snap.docs.isEmpty) {
-        // Fallback to memory if empty (to avoid blank screen)
-        _accounts = [
-          const UserModel(uid: 'admin_001', name: 'Admin JNE', email: 'admin@jne.co.id', phone: '+62 811-0000-0001', nik: 'ADM001', role: 'admin', department: 'Management', position: 'Administrator', faceRegistered: 'yes', deviceName: 'Admin Device', faceRegisteredDate: '1 Jan 2026'),
-          const UserModel(uid: 'user_001', name: 'Nabihan', email: 'nabihan.testing@jne', phone: '+62 000-0000-0000', nik: '0012345', role: 'employee', department: 'Departemen Logistik', position: 'Staff Operasional', faceRegistered: 'yes', deviceName: 'Samsung Galaxy S24 Ultra', faceRegisteredDate: '1 Jan 2026'),
-        ];
-      } else {
-        _accounts = snap.docs.map((doc) {
-          final d = doc.data();
-          return UserModel(
+      final doc = await _db.collection('users').doc(uid).get();
+      if (doc.exists) {
+        final d = doc.data()!;
+        _currentUser = UserModel(
+          uid: doc.id,
+          name: d['name'] ?? '',
+          email: d['email'] ?? '',
+          phone: d['phone'] ?? '',
+          nik: d['employeeId'] ?? '',
+          role: d['role'] ?? 'employee',
+          department: d['department'] ?? '',
+          position: d['position'] ?? '',
+          faceRegistered: d['faceRegistered'] == true ? 'yes' : 'no',
+          deviceName: d['deviceName'] ?? '',
+          faceRegisteredDate: d['createdAt'] != null ? DateTime.tryParse(d['createdAt'])?.toIso8601String() ?? '' : '',
+        );
+        _listenToMyData();
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error fetching user: $e');
+    }
+  }
+
+  Future<void> login(String email, String password) async {
+    try {
+      // Login resmi ke Firebase Authentication
+      final cred = await _auth.signInWithEmailAndPassword(
+        email: email.trim(), 
+        password: password
+      );
+      
+      if (cred.user != null) {
+        // Ambil data user dari collection 'users'
+        final doc = await _db.collection('users').doc(cred.user!.uid).get();
+        
+        if (doc.exists) {
+          final d = doc.data()!;
+          _currentUser = UserModel(
             uid: doc.id,
             name: d['name'] ?? '',
             email: d['email'] ?? '',
@@ -53,35 +90,54 @@ class AppProvider extends ChangeNotifier {
             deviceName: d['deviceName'] ?? '',
             faceRegisteredDate: d['createdAt'] != null ? DateTime.tryParse(d['createdAt'])?.toIso8601String() ?? '' : '',
           );
-        }).toList();
+          _listenToMyData();
+          notifyListeners();
+        } else {
+          // ── AUTO CREATE FIRESTORE DOC ──
+          // Jika akun sudah dibuat di Firebase Auth oleh HR JNE, tapi belum ada di Firestore,
+          // kita otomatis buatkan profil dasarnya agar pegawai bisa langsung masuk!
+          final defaultData = {
+            'uid': cred.user!.uid,
+            'email': email.trim(),
+            'name': email.split('@')[0], // Pakai nama dari email sementara
+            'role': 'employee',
+            'department': 'Operasional', // Default departemen
+            'employeeId': 'JNE-${cred.user!.uid.substring(0, 5).toUpperCase()}',
+            'createdAt': DateTime.now().toIso8601String(),
+            'faceRegistered': false,
+          };
+          
+          await _db.collection('users').doc(cred.user!.uid).set(defaultData);
+
+          _currentUser = UserModel(
+            uid: cred.user!.uid,
+            name: defaultData['name'] as String,
+            email: defaultData['email'] as String,
+            phone: '',
+            nik: defaultData['employeeId'] as String,
+            role: defaultData['role'] as String,
+            department: defaultData['department'] as String,
+            position: 'Staff',
+            faceRegistered: 'no',
+            deviceName: '',
+            faceRegisteredDate: defaultData['createdAt'] as String,
+          );
+
+          _listenToMyData();
+          notifyListeners();
+        }
       }
-      notifyListeners();
     } catch (e) {
-      debugPrint('Error loading users: $e');
+      if (e is FirebaseAuthException) {
+        if (e.code == 'user-not-found' || e.code == 'invalid-credential') throw Exception('Email atau password salah');
+        throw Exception(e.message ?? 'Gagal login (Auth)');
+      }
+      throw Exception(e.toString());
     }
   }
 
-  Future<void> login(String email, String password) async {
-    try {
-      // Refresh users
-      await _loadUsers();
-      final acc = _accounts.firstWhere(
-        (a) => a.email.toLowerCase() == email.toLowerCase(),
-        orElse: () => const UserModel(uid: '', name: '', email: '', phone: '', nik: '', role: '', department: '', position: ''),
-      );
-      if (acc.uid.isNotEmpty) {
-        _currentUser = acc;
-        _listenToMyData();
-        notifyListeners();
-      } else {
-        throw Exception('Email atau password salah');
-      }
-    } catch (e) {
-      throw Exception('Gagal login: $e');
-    }
-  }
-
-  void logout() {
+  void logout() async {
+    await _auth.signOut();
     _currentUser = null;
     _attendanceRecords.clear();
     _leaveRequests.clear();

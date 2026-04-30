@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "586449872388",
+    "project_id": "admin-absensi-jne-mtp",
+    "storage_bucket": "admin-absensi-jne-mtp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:586449872388:android:2ea9026df946747fce3751",
+        "android_client_info": {
+          "package_name": "com.example.jneattendance_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAi5mrN1l5Nx8qEcjt9HgqwY1TaoZu2XhA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
