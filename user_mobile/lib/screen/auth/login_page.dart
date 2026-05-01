@@ -25,8 +25,12 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _doLogin() async {
-    final email = _emailCtrl.text.trim();
+    String email = _emailCtrl.text.trim();
     final password = _passCtrl.text;
+
+    if (email.isNotEmpty && !email.contains('@')) {
+      email = '$email@jne.mtp.com';
+    }
 
     if (email.isEmpty || password.isEmpty) {
       _showSnack('Mohon isi email dan password', isError: true);
@@ -127,7 +131,7 @@ class _LoginPageState extends State<LoginPage> {
                     _label('EMAIL'),
                     _field(
                       _emailCtrl,
-                      'email@contoh.com',
+                      'username atau email',
                       keyboard: TextInputType.emailAddress,
                     ),
 
