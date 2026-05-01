@@ -29,7 +29,7 @@ class _LoginPageState extends State<LoginPage> {
     final password = _passCtrl.text;
 
     if (email.isNotEmpty && !email.contains('@')) {
-      email = '$email@jne.mtp.com';
+      email = '$email@jnemtp.com';
     }
 
     if (email.isEmpty || password.isEmpty) {
@@ -41,10 +41,10 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       await context.read<AppProvider>().login(email, password);
-      
+
       if (!mounted) return;
       _showSnack('Login berhasil! Selamat datang.');
-      
+
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -58,13 +58,16 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showSnack(String msg, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor:
-          isError ? const Color(0xFFB71C1C) : const Color(0xFF1B5E20),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError
+            ? const Color(0xFFB71C1C)
+            : const Color(0xFF1B5E20),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
   }
 
   @override
@@ -106,10 +109,7 @@ class _LoginPageState extends State<LoginPage> {
                     SizedBox(height: 6),
                     Text(
                       'JNE Martapura Attendance App',
-                      style: TextStyle(
-                        color: Color(0xFF90A4AE),
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Color(0xFF90A4AE), fontSize: 12),
                     ),
                   ],
                 ),
@@ -170,9 +170,12 @@ class _LoginPageState extends State<LoginPage> {
                                 setState(() => _rememberMe = v ?? false),
                             activeColor: const Color(0xFFE31E24),
                             side: const BorderSide(
-                                color: Color(0xFF90A4AE), width: 1.5),
+                              color: Color(0xFF90A4AE),
+                              width: 1.5,
+                            ),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(3)),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -196,8 +199,9 @@ class _LoginPageState extends State<LoginPage> {
                         onPressed: _isLoading ? null : _doLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFE31E24),
-                          disabledBackgroundColor:
-                              const Color(0xFFE31E24).withValues(alpha: 0.6),
+                          disabledBackgroundColor: const Color(
+                            0xFFE31E24,
+                          ).withValues(alpha: 0.6),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -238,17 +242,17 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Color(0xFF90A4AE),
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.0,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: Color(0xFF90A4AE),
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 1.0,
+      ),
+    ),
+  );
 
   Widget _field(
     TextEditingController ctrl,
@@ -267,8 +271,10 @@ class _LoginPageState extends State<LoginPage> {
         hintStyle: const TextStyle(color: Color(0xFF4A6080)),
         filled: true,
         fillColor: const Color(0xFF162440),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 13,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,

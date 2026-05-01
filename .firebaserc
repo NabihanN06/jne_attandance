@@ -1,0 +1,16 @@
+{
+  "projects": {},
+  "targets": {
+    "admin-absensi-jne-mtp": {
+      "hosting": {
+        "public": [
+          "jne-martapura-kalsel"
+        ],
+        "admin": [
+          "admin-absensi-jne-mtp"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

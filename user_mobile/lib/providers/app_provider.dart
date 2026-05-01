@@ -145,7 +145,7 @@ class AppProvider extends ChangeNotifier {
   }
 
   void register(UserModel user) async {
-    final docRef = _db.collection('employees').doc();
+    final docRef = _db.collection('users').doc();
     await docRef.set({
       'uid': docRef.id,
       'name': user.name,
@@ -177,7 +177,7 @@ class AppProvider extends ChangeNotifier {
   }
 
   void updateCurrentUser(UserModel updated) async {
-    await _db.collection('employees').doc(updated.uid).update({
+    await _db.collection('users').doc(updated.uid).update({
       'name': updated.name,
       'phone': updated.phone,
     });
