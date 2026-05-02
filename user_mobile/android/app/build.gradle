@@ -11,6 +11,7 @@ android {
     ndkVersion flutter.ndkVersion
 
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
@@ -25,6 +26,7 @@ android {
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutter.versionCode
         versionName flutter.versionName
+        multiDexEnabled true
     }
 
     buildTypes {
@@ -40,4 +42,5 @@ flutter {
 
 dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.7.0')
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
 }

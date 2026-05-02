@@ -70,6 +70,9 @@ class AttendanceRecord {
   final double latitude;
   final double longitude;
   final String shift;
+  final String? photoUrl;
+  final bool isOffline;
+  final DateTime? createdAt;
 
   const AttendanceRecord({
     required this.id,
@@ -84,6 +87,47 @@ class AttendanceRecord {
     this.latitude = 0,
     this.longitude = 0,
     this.shift = 'Shift Pagi (08.00 - 16.00)',
+    this.photoUrl,
+    this.isOffline = false,
+    this.createdAt,
+  });
+}
+
+class NotificationLog {
+  final String id;
+  final String title;
+  final String body;
+  final DateTime time;
+  final bool isRead;
+  final String type; // 'reminder', 'status', 'meeting'
+
+  const NotificationLog({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.time,
+    this.isRead = false,
+    this.type = 'reminder',
+  });
+}
+
+class EditRequest {
+  final String id;
+  final String attendanceId;
+  final String userId;
+  final String reason;
+  final String status; // 'pending', 'approved', 'rejected'
+  final DateTime requestedAt;
+  final Map<String, dynamic> requestedChanges;
+
+  const EditRequest({
+    required this.id,
+    required this.attendanceId,
+    required this.userId,
+    required this.reason,
+    this.status = 'pending',
+    required this.requestedAt,
+    required this.requestedChanges,
   });
 }
 

@@ -1,290 +1,483 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'dart:async';
 import '../../providers/app_provider.dart';
+import '../../utils/connectivity_service.dart';
+import '../../utils/geofence_service.dart';
+import '../../models/app_models.dart';
 import '../option/option_page.dart';
-import '../statistic/statistic_page.dart';
-import '../history/history_page.dart';
 import '../profile/profile_page.dart';
-import '../leave/leave_page.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
-  static const _months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
-  static const _days = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  Timer? _timer;
+  String _timeUntilWork = '';
+  bool _isNearWork = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startCountdown();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdown() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      final now = DateTime.now();
+      final p = Provider.of<AppProvider>(context, listen: false);
+      
+      if (p.hasClockedInToday) {
+        setState(() {
+          _timeUntilWork = 'Sudah Absen Masuk';
+          _isNearWork = false;
+        });
+        return;
+      }
+
+      final start = DateTime(now.year, now.month, now.day, p.officeStartTime.hour, p.officeStartTime.minute);
+      
+      if (now.isBefore(start)) {
+        final diff = start.difference(now);
+        setState(() {
+          _timeUntilWork = '${diff.inHours}j ${diff.inMinutes % 60}m ${diff.inSeconds % 60}s';
+          _isNearWork = diff.inMinutes <= 15;
+        });
+      } else {
+        setState(() {
+          _timeUntilWork = 'Terlambat!';
+          _isNearWork = true;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final p = context.watch<AppProvider>();
+    final conn = context.watch<ConnectivityService>();
+    final geo = context.watch<GeofenceService>();
     final user = p.currentUser;
-    final now = DateTime.now();
-    final dateStr = '${_days[now.weekday-1]}, ${now.day} ${_months[now.month-1]} ${now.year}';
-    final unread = p.unreadCount;
+    
     final bg = p.isDarkMode ? const Color(0xFF0A1628) : const Color(0xFFF0F4F8);
     final cardBg = p.isDarkMode ? const Color(0xFF0D1F38) : Colors.white;
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: p.isDarkMode ? const Color(0xFF0D1F38) : const Color(0xFF1A3A6B),
-        title: const Text('JNE MTP Attendance App', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: Icon(p.isDarkMode ? Icons.dark_mode : Icons.light_mode, color: Colors.white, size: 22),
-            onPressed: () => p.toggleTheme(),
-            tooltip: 'Toggle Dark Mode',
+      body: CustomScrollView(
+        slivers: [
+          _buildAppBar(context, p, conn),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FadeInDown(duration: const Duration(milliseconds: 500), child: _buildGreeting(user)),
+                  const SizedBox(height: 20),
+                  FadeInUp(duration: const Duration(milliseconds: 600), child: _buildCountdownCard(cardBg)),
+                  const SizedBox(height: 16),
+                  if (p.pendingSyncCount > 0)
+                    FadeInLeft(child: _buildSyncBanner(p)),
+                  const SizedBox(height: 16),
+                  FadeInUp(duration: const Duration(milliseconds: 700), child: _buildAttendanceSummary(cardBg, p)),
+                  const SizedBox(height: 16),
+                  FadeInUp(duration: const Duration(milliseconds: 800), child: _buildHistoryQuickView(cardBg, p)),
+                  const SizedBox(height: 16),
+                  FadeInUp(duration: const Duration(milliseconds: 900), child: _buildOvertimePreview(cardBg, p)),
+                  const SizedBox(height: 16),
+                  FadeInUp(duration: const Duration(milliseconds: 1000), child: _buildGeofenceMap(cardBg, geo)),
+                  const SizedBox(height: 16),
+                  FadeInUp(duration: const Duration(milliseconds: 1100), child: _buildNotificationLog(cardBg, p)),
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
           ),
-          Stack(alignment: Alignment.center, children: [
-            IconButton(icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 22),
-                onPressed: () => _showNotif(context, p)),
-            if (unread > 0) Positioned(right: 8, top: 8,
-                child: Container(width: 14, height: 14,
-                    decoration: const BoxDecoration(color: Color(0xFFE31E24), shape: BoxShape.circle),
-                    child: Center(child: Text('$unread', style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold))))),
-          ]),
-          IconButton(icon: const Icon(Icons.account_circle_outlined, color: Colors.white, size: 22),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()))),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(children: [
-          // Greeting
-          _box(cardBg, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Text('Hallo, ${user?.name ?? "Karyawan"} ', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-              const Text('👋', style: TextStyle(fontSize: 18)),
-            ]),
-            const SizedBox(height: 2),
-            Text(dateStr, style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 12)),
-            const SizedBox(height: 14),
-            const Divider(color: Color(0xFF1E3A5F), height: 1),
-            const SizedBox(height: 14),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
-                Text('Jam Kerja', style: TextStyle(color: Color(0xFF90A4AE), fontSize: 12)),
-                SizedBox(height: 2),
-                Text('08.00 – 15.00', style: TextStyle(color: Colors.white, fontSize: 13)),
-              ]),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: const Color(0xFF1B5E20), borderRadius: BorderRadius.circular(8)),
-                child: const Text('16.00 – 16.15', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-              ),
-            ]),
-            const SizedBox(height: 14),
-            _absenRow(Icons.check_box, const Color(0xFF4CAF50), 'Absen Masuk', 'Hari ini, 08.05', badge: 'Tepat Waktu', bc: const Color(0xFF1B5E20)),
-            const SizedBox(height: 10),
-            InkWell(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OptionPage())),
-              borderRadius: BorderRadius.circular(8),
-              child: _absenRow(Icons.watch_later_outlined, const Color(0xFF90A4AE), 'Absen Pulang', 'Belum absen pulang → Tap untuk absen'),
-            ),
-          ])),
-
-          const SizedBox(height: 12),
-          _PressableBanner(onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OptionPage()))),
-          const SizedBox(height: 12),
-
-          // Statistik
-          _box(cardBg, Column(children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Row(children: [
-                Text('📊 ', style: TextStyle(fontSize: 14)),
-                Text('Statistik Absensi', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
-              ]),
-              GestureDetector(
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StatisticPage())),
-                child: const Text('Lihat Detail →', style: TextStyle(color: Color(0xFF64B5F6), fontSize: 12)),
-              ),
-            ]),
-            const SizedBox(height: 12),
-            Row(children: [Expanded(child: _sb('17','Hari hadir',const Color(0xFF4CAF50))),const SizedBox(width:8),Expanded(child: _sb('3j 30m','Total Jam Telat',const Color(0xFFE65100)))]),
-            const SizedBox(height: 8),
-            Row(children: [Expanded(child: _sb('5j 30m','Total Jam lembur',const Color(0xFF1565C0))),const SizedBox(width:8),Expanded(child: _sb('2','Hari Izin',const Color(0xFFF57C00)))]),
-            const SizedBox(height: 8),
-            Row(children: [Expanded(child: _sb('1','Alpha',const Color(0xFF212121))),const SizedBox(width:8),Expanded(child: _sb('141j','Total Jam Kerja',const Color(0xFF6A1B9A)))]),
-          ])),
-
-          const SizedBox(height: 12),
-
-          // Meetings
-          _box(cardBg, Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Meeting Mendatang', style: TextStyle(color: Color(0xFFE31E24), fontSize: 12, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            if (p.meetings.isEmpty)
-              const Text('Tidak ada meeting', style: TextStyle(color: Color(0xFF90A4AE), fontSize: 12))
-            else
-              ...p.meetings.take(3).toList().asMap().entries.map((e) {
-                final m = e.value; final dt = m.dateTime;
-                return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  if (e.key > 0) const Divider(color: Color(0xFF1E3A5F)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(m.title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 2),
-                      Text('${dt.day} ${_months[dt.month-1]}, ${dt.hour.toString().padLeft(2,'0')}.${dt.minute.toString().padLeft(2,'0')} • ${m.room}',
-                          style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 11)),
-                    ]),
-                  ),
-                ]);
-              }),
-          ])),
-
-          const SizedBox(height: 12),
-
-          Row(children: [
-            Expanded(child: _tapCard('📋','Riwayat Absensi', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryPage())))),
-            const SizedBox(width: 12),
-            Expanded(child: _tapCard('📝','Ajukan Izin', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LeavePage())))),
-          ]),
-
-          const SizedBox(height: 24),
-        ]),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OptionPage())),
+        label: const Text('ABSENSI SEKARANG', style: TextStyle(fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.camera_alt),
+        backgroundColor: const Color(0xFFE31E24),
       ),
     );
   }
 
-  Widget _box(Color bg, Widget child) => Container(
-    width: double.infinity, padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: bg, 
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1),
-      boxShadow: [
-        BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4)),
-      ],
-    ),
-    child: child,
-  );
-
-  Widget _absenRow(IconData icon, Color ic, String title, String sub, {String? badge, Color? bc}) {
-    return Row(children: [
-      Container(width: 40, height: 40,
-          decoration: BoxDecoration(color: const Color(0xFF162440), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, color: ic, size: 22)),
-      const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-        Text(sub, style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 11)),
-      ])),
-      if (badge != null)
-        Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: bc, borderRadius: BorderRadius.circular(6)),
-            child: Text(badge, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600))),
-    ]);
-  }
-
-  Widget _sb(String v, String l, Color c) => Container(
-    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-    decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(10)),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(v, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 2),
-      Text(l, style: const TextStyle(color: Colors.white70, fontSize: 11)),
-    ]),
-  );
-
-  Widget _tapCard(String emoji, String title, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0D1F38), 
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05), width: 1),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(emoji, style: const TextStyle(fontSize: 22)),
-          const SizedBox(height: 8),
-          Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 2),
-          const Text('Lihat Semua →', style: TextStyle(color: Color(0xFF90A4AE), fontSize: 11)),
-        ]),
-      ),
-    );
-  }
-
-  void _showNotif(BuildContext context, AppProvider p) {
-    p.markAllRead();
-    final notifs = p.myNotifications;
-    showModalBottomSheet(
-      context: context,
+  Widget _buildAppBar(BuildContext context, AppProvider p, ConnectivityService conn) {
+    return SliverAppBar(
+      expandedHeight: 120.0,
+      floating: false,
+      pinned: true,
       backgroundColor: const Color(0xFF0D1F38),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (_) => Column(children: [
-        const Padding(padding: EdgeInsets.all(16),
-            child: Text('Notifikasi', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700))),
-        const Divider(color: Color(0xFF1E3A5F)),
-        Expanded(child: notifs.isEmpty
-            ? const Center(child: Text('Tidak ada notifikasi', style: TextStyle(color: Color(0xFF90A4AE))))
-            : ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: notifs.length,
-                separatorBuilder: (_, _) => const Divider(color: Color(0xFF1E3A5F)),
-                itemBuilder: (_, i) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Container(width: 36, height: 36,
-                      decoration: BoxDecoration(color: const Color(0xFF162440), borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.notifications, color: Color(0xFFE31E24), size: 18)),
-                  title: Text(notifs[i]['title'], style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                  subtitle: Text(notifs[i]['body'], style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 11)),
-                ))),
-      ]),
+      flexibleSpace: FlexibleSpaceBar(
+        title: Text('JNE ATTENDANCE', 
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+        background: Stack(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF1A3A6B), Color(0xFF0D1F38)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+            Positioned(
+              right: 16,
+              top: 40,
+              child: _buildConnectionIndicator(conn),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        IconButton(
+          icon: Icon(p.isDarkMode ? Icons.dark_mode : Icons.light_mode, color: Colors.white),
+          onPressed: () => p.toggleTheme(),
+        ),
+        IconButton(
+          icon: const Icon(Icons.person_outline, color: Colors.white),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())),
+        ),
+      ],
     );
   }
-}
 
-class _PressableBanner extends StatefulWidget {
-  final VoidCallback onTap;
-  const _PressableBanner({required this.onTap});
-  @override
-  State<_PressableBanner> createState() => _PBState();
-}
-class _PBState extends State<_PressableBanner> with SingleTickerProviderStateMixin {
-  late AnimationController _c;
-  late Animation<double> _s, _sh;
-  @override
-  void initState() {
-    super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
-    _s = Tween<double>(begin: 1.0, end: 0.96).animate(CurvedAnimation(parent: _c, curve: Curves.easeOut));
-    _sh = Tween<double>(begin: 12.0, end: 2.0).animate(CurvedAnimation(parent: _c, curve: Curves.easeOut));
+  Widget _buildConnectionIndicator(ConnectivityService conn) {
+    IconData icon;
+    Color color;
+    String label;
+
+    switch (conn.status) {
+      case ConnectionStatus.wifi:
+        icon = Icons.wifi; color = Colors.greenAccent; label = 'WiFi ✓';
+        break;
+      case ConnectionStatus.mobile:
+        icon = Icons.signal_cellular_alt; color = Colors.orangeAccent; label = 'Data ⚠️';
+        break;
+      case ConnectionStatus.none:
+        icon = Icons.wifi_off; color = Colors.redAccent; label = 'Offline';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black26,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 6),
+          Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
   }
-  @override
-  void dispose() { _c.dispose(); super.dispose(); }
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _c.forward(),
-      onTapUp: (_) async { await _c.reverse(); widget.onTap(); },
-      onTapCancel: () => _c.reverse(),
-      child: AnimatedBuilder(animation: _c, builder: (_, _) => Transform.scale(
-        scale: _s.value,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFE31E24), Color(0xFFB71C1C)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: const Color(0xFFE31E24).withValues(alpha: 0.45), blurRadius: _sh.value, offset: const Offset(0, 4))],
+
+  Widget _buildGreeting(UserModel? user) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Selamat Datang,', style: GoogleFonts.outfit(color: Colors.grey, fontSize: 14)),
+        Text(user?.name ?? 'Karyawan JNE', 
+          style: GoogleFonts.outfit(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildCountdownCard(Color bg) {
+    final p = context.read<AppProvider>();
+    final isDone = p.hasClockedInToday;
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDone ? Colors.green : (_isNearWork ? const Color(0xFFE31E24) : bg),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(isDone ? '✨ Status Kehadiran' : '⏰ Jam Kantor Countdown', 
+                    style: TextStyle(color: (isDone || _isNearWork) ? Colors.white70 : Colors.grey, fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Text(_timeUntilWork, 
+                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              if (isDone)
+                const Icon(Icons.check_circle_outline, color: Colors.white, size: 40)
+              else if (_isNearWork)
+                const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 40),
+            ],
           ),
-          child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
-              Text('Sudah siap pulang?', style: TextStyle(color: Colors.white70, fontSize: 12)),
-              SizedBox(height: 2),
-              Text('Ayo Isi Absen', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-            ]),
-            const Text('📸', style: TextStyle(fontSize: 32)),
-          ]),
-        ),
-      )),
+          if (_isNearWork && !isDone) ...[
+            const SizedBox(height: 10),
+            const Text('🔴 BELUM ABSEN (Terlambat dalam 5 menit!)', 
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+          ]
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSyncBanner(AppProvider p) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.sync_problem, color: Colors.orange),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text('Ada ${p.pendingSyncCount} data absensi pending (Offline)', 
+              style: const TextStyle(color: Colors.white, fontSize: 13)),
+          ),
+          TextButton(
+            onPressed: () => p.syncPendingAttendance(),
+            child: const Text('SYNC SEKARANG', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceSummary(Color bg, AppProvider p) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('✅ Last Successful Absensi', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          const SizedBox(height: 16),
+          _rowInfo('Absen Masuk', 'Hari ini 08:15', 'Tepat Waktu', Colors.green),
+          const Divider(color: Colors.white10, height: 24),
+          _rowInfo('Absen Pulang', 'Kemarin 17:30', 'Selesai', Colors.blue),
+        ],
+      ),
+    );
+  }
+
+  Widget _rowInfo(String label, String time, String status, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          Text(time, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+        ]),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+          child: Text(status, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+        )
+      ],
+    );
+  }
+
+  Widget _buildHistoryQuickView(Color bg, AppProvider p) {
+    final days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('📅 MINGGU INI', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              GestureDetector(
+                onTap: () => Navigator.pushNamed(context, '/history'),
+                child: const Text('Detail →', style: TextStyle(color: Colors.blue, fontSize: 12)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(7, (i) {
+              final isToday = i == DateTime.now().weekday - 1;
+              Color c = i < 2 ? Colors.green : (i == 2 ? Colors.orange : (i > 3 ? Colors.grey : Colors.blue));
+              return Column(
+                children: [
+                  Text(days[i], style: TextStyle(color: isToday ? Colors.white : Colors.grey, fontSize: 10)),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: c.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                      border: isToday ? Border.all(color: Colors.white) : null,
+                    ),
+                    child: Icon(i < 4 ? Icons.check : Icons.question_mark, color: c, size: 14),
+                  ),
+                ],
+              );
+            }),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOvertimePreview(Color bg, AppProvider p) {
+    final ot = p.calculateOvertime();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [Color(0xFF1565C0), Color(0xFF0D47A1)]),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.timer, color: Colors.white, size: 40),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('⏱️ Lembur Hari Ini', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                Text('${ot['hours']} jam ${ot['minutes']} menit', 
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('Estimasi: Rp ${NumberFormat.decimalPattern('id').format(ot['pay'])}', 
+                  style: const TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: Colors.white),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGeofenceMap(Color bg, GeofenceService geo) {
+    return Container(
+      width: double.infinity,
+      height: 200,
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          GoogleMap(
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(GeofenceService.officeLat, GeofenceService.officeLng),
+              zoom: 15,
+            ),
+            myLocationEnabled: true,
+            circles: {
+              Circle(
+                circleId: const CircleId('office'),
+                center: const LatLng(GeofenceService.officeLat, GeofenceService.officeLng),
+                radius: GeofenceService.radiusInMeters,
+                fillColor: geo.isInRange ? Colors.green.withValues(alpha: 0.2) : Colors.red.withValues(alpha: 0.2),
+                strokeColor: geo.isInRange ? Colors.green : Colors.red,
+                strokeWidth: 2,
+              ),
+            },
+          ),
+          Positioned(
+            top: 12, left: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(8)),
+              child: Text(geo.isInRange ? '📍 AREA KANTOR ✓' : '⭕ AREA LAIN ⚠️', 
+                style: TextStyle(color: geo.isInRange ? Colors.green : Colors.orange, fontSize: 10, fontWeight: FontWeight.bold)),
+            ),
+          ),
+          Positioned(
+            bottom: 12, right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(8)),
+              child: Text('${geo.distanceFromOffice.toInt()}m dari kantor', 
+                style: const TextStyle(color: Colors.white, fontSize: 10)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationLog(Color bg, AppProvider p) {
+    final notifs = p.myNotifications;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('📬 NOTIFIKASI TERAKHIR', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          const SizedBox(height: 16),
+          if (notifs.isEmpty)
+            const Text('Tidak ada notifikasi', style: TextStyle(color: Colors.grey, fontSize: 12))
+          else
+            ...notifs.take(3).map((n) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  const Icon(Icons.circle, size: 8, color: Color(0xFFE31E24)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(n['title'], style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text(n['body'], style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                  Text(DateFormat('HH:mm').format(n['time']), style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                ],
+              ),
+            )),
+          const Divider(color: Colors.white10),
+          Center(
+            child: TextButton(
+              onPressed: () => Navigator.pushNamed(context, '/notifications'),
+              child: const Text('Lihat Semua Notifikasi', style: TextStyle(fontSize: 12)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

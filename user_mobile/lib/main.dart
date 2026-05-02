@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'providers/app_provider.dart';
+import 'utils/connectivity_service.dart';
+import 'utils/geofence_service.dart';
 import 'screen/splash/splash_screen.dart';
 import 'screen/auth/login_page.dart';
 import 'screen/onboarding/onboarding1.dart';
@@ -33,8 +35,12 @@ void main() async {
     systemNavigationBarIconBrightness: Brightness.light,
   ));
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => AppProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ConnectivityService()),
+        ChangeNotifierProvider(create: (_) => GeofenceService()),
+        ChangeNotifierProvider(create: (_) => AppProvider()),
+      ],
       child: const MyApp(),
     ),
   );

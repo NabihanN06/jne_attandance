@@ -3,12 +3,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/app_models.dart';
 import 'package:intl/intl.dart';
+import '../utils/offline_service.dart';
 
 class AppProvider extends ChangeNotifier {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // ── Theme ──
+  // ── Office Config ──
+  final TimeOfDay officeStartTime = const TimeOfDay(hour: 8, minute: 0);
+  final TimeOfDay officeEndTime = const TimeOfDay(hour: 17, minute: 0);
+  
+  // ── Sync Status ──
+  int _pendingSyncCount = 0;
+  int get pendingSyncCount => _pendingSyncCount;
+  bool _isSyncing = false;
+  bool get isSyncing => _isSyncing;
   bool _isDarkMode = true;
   bool get isDarkMode => _isDarkMode;
   void toggleTheme() {
@@ -196,6 +205,18 @@ class AppProvider extends ChangeNotifier {
   // ── Data Real-time Sync ──
   List<AttendanceRecord> _attendanceRecords = [];
   List<AttendanceRecord> get myAttendance => _attendanceRecords;
+  
+  bool get hasClockedInToday {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    return _attendanceRecords.any((r) => DateFormat('yyyy-MM-dd').format(r.date) == today && r.checkIn != null);
+  }
+
+  bool get isLateForClockIn {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day, officeStartTime.hour, officeStartTime.minute);
+    return now.isAfter(start) && !hasClockedInToday;
+  }
+
   List<AttendanceRecord> get allAttendance => List.unmodifiable(_attendanceRecords);
 
   List<LeaveRequest> _leaveRequests = [];
@@ -266,12 +287,17 @@ class AppProvider extends ChangeNotifier {
     return 'present';
   }
 
-  Future<void> addAttendanceCheckIn(String userId, String userName, String status, String location) async {
+  Future<void> addAttendanceCheckIn(String userId, String userName, String status, String location, {
+    bool isOffline = false, 
+    String? localImagePath,
+    double lat = 0,
+    double lng = 0,
+  }) async {
     final now = DateTime.now();
     final dateStr = DateFormat('yyyy-MM-dd').format(now);
     final isoStr = now.toIso8601String();
 
-    await _db.collection('attendance').add({
+    final data = {
       'userId': userId,
       'employeeName': userName,
       'employeeId': _currentUser?.nik ?? '',
@@ -280,14 +306,93 @@ class AppProvider extends ChangeNotifier {
       'status': _mapMobileStatusToAdmin(status),
       'checkIn': {
         'time': isoStr,
-        'latitude': 0,
-        'longitude': 0,
+        'latitude': lat,
+        'longitude': lng,
         'distance': 0,
         'faceScore': 100,
+        'photoUrl': localImagePath ?? '',
       },
       'createdAt': isoStr,
       'updatedAt': isoStr,
+    };
+
+    if (isOffline) {
+      await OfflineService.savePendingAttendance(data);
+      _checkPendingSync();
+      addNotification('Offline Absensi', 'Absensi disimpan di device (PENDING). Akan otomatis upload saat internet kembali.');
+    } else {
+      await _db.collection('attendance').add(data);
+    }
+  }
+
+  Future<void> _checkPendingSync() async {
+    final pending = await OfflineService.getPendingAttendance();
+    _pendingSyncCount = pending.length;
+    notifyListeners();
+  }
+
+  Future<void> syncPendingAttendance() async {
+    if (_isSyncing) return;
+    _isSyncing = true;
+    notifyListeners();
+
+    try {
+      final pending = await OfflineService.getPendingAttendance();
+      for (var item in pending) {
+        await _db.collection('attendance').add(item);
+      }
+      await OfflineService.clearPendingAttendance();
+      await _checkPendingSync();
+      addNotification('Sync Success', 'Semua absensi offline telah berhasil diunggah.');
+    } catch (e) {
+      debugPrint('Sync failed: $e');
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
+    }
+  }
+
+  Map<String, dynamic> calculateOvertime() {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final record = _attendanceRecords.firstWhere(
+      (r) => DateFormat('yyyy-MM-dd').format(r.date) == today,
+      orElse: () => AttendanceRecord(id: '', userId: '', userName: '', date: DateTime(2000)),
+    );
+
+    if (record.id == '' || record.checkOut == null) {
+      return {'hours': 0, 'minutes': 0, 'pay': 0};
+    }
+
+    final checkOutTime = DateTime.parse(record.checkOut!);
+    final standardEndTime = DateTime(
+      checkOutTime.year, checkOutTime.month, checkOutTime.day,
+      officeEndTime.hour, officeEndTime.minute,
+    );
+
+    if (checkOutTime.isAfter(standardEndTime)) {
+      final diff = checkOutTime.difference(standardEndTime);
+      final hours = diff.inHours;
+      final minutes = diff.inMinutes % 60;
+      final pay = (hours + (minutes / 60)) * 75000; // Contoh Rp 75.000 / jam
+      return {'hours': hours, 'minutes': minutes, 'pay': pay};
+    }
+
+    return {'hours': 0, 'minutes': 0, 'pay': 0};
+  }
+
+  Future<void> submitEditRequest(String attendanceId, String reason, Map<String, dynamic> changes) async {
+    final isoStr = DateTime.now().toIso8601String();
+    await _db.collection('edit_requests').add({
+      'attendanceId': attendanceId,
+      'userId': _currentUser?.uid,
+      'userName': _currentUser?.name,
+      'reason': reason,
+      'status': 'pending',
+      'requestedChanges': changes,
+      'createdAt': isoStr,
+      'updatedAt': isoStr,
     });
+    addNotification('Pengajuan Edit', 'Permintaan koreksi data absensi telah dikirim ke Admin.');
   }
 
   Future<void> submitLeave(LeaveRequest req) async {
