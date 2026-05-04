@@ -74,84 +74,117 @@ class _HomeScreenState extends State<HomeScreen> {
     final geo = context.watch<GeofenceService>();
     final user = p.currentUser;
     
-    final bg = p.isDarkMode ? const Color(0xFF0A1628) : const Color(0xFFF0F4F8);
-    final cardBg = p.isDarkMode ? const Color(0xFF0D1F38) : Colors.white;
+    // Zen Premium Dark Mode Colors
+    final bg = const Color(0xFF020617);
+    final cardBg = Colors.white.withValues(alpha: 0.03);
 
     return Scaffold(
       backgroundColor: bg,
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(context, p, conn),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  FadeInDown(duration: const Duration(milliseconds: 500), child: _buildGreeting(user)),
-                  const SizedBox(height: 20),
-                  FadeInUp(duration: const Duration(milliseconds: 600), child: _buildCountdownCard(cardBg)),
-                  const SizedBox(height: 16),
-                  if (p.pendingSyncCount > 0)
-                    FadeInLeft(child: _buildSyncBanner(p)),
-                  const SizedBox(height: 16),
-                  FadeInUp(duration: const Duration(milliseconds: 700), child: _buildAttendanceSummary(cardBg, p)),
-                  const SizedBox(height: 16),
-                  FadeInUp(duration: const Duration(milliseconds: 800), child: _buildHistoryQuickView(cardBg, p)),
-                  const SizedBox(height: 16),
-                  FadeInUp(duration: const Duration(milliseconds: 900), child: _buildOvertimePreview(cardBg, p)),
-                  const SizedBox(height: 16),
-                  FadeInUp(duration: const Duration(milliseconds: 1000), child: _buildGeofenceMap(cardBg, geo)),
-                  const SizedBox(height: 16),
-                  FadeInUp(duration: const Duration(milliseconds: 1100), child: _buildNotificationLog(cardBg, p)),
-                  const SizedBox(height: 32),
-                ],
+      body: Stack(
+        children: [
+          // Background Glow Effect
+          Positioned(
+            top: -100, right: -100,
+            child: Container(
+              width: 300, height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFE31E24).withValues(alpha: 0.25),
+                    Colors.transparent,
+                  ],
+                ),
               ),
             ),
+          ),
+          Positioned(
+            bottom: 100, left: -100,
+            child: Container(
+              width: 250, height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF005596).withValues(alpha: 0.25),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          CustomScrollView(
+            slivers: [
+              _buildAppBar(context, p, conn),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FadeInDown(duration: const Duration(milliseconds: 500), child: _buildGreeting(user)),
+                      const SizedBox(height: 24),
+                      FadeInUp(duration: const Duration(milliseconds: 600), child: _buildCountdownCard(cardBg)),
+                      const SizedBox(height: 16),
+                      if (p.pendingSyncCount > 0)
+                        FadeInLeft(child: _buildSyncBanner(p)),
+                      const SizedBox(height: 16),
+                      FadeInUp(duration: const Duration(milliseconds: 700), child: _buildAttendanceSummary(cardBg, p)),
+                      const SizedBox(height: 16),
+                      FadeInUp(duration: const Duration(milliseconds: 800), child: _buildHistoryQuickView(cardBg, p)),
+                      const SizedBox(height: 16),
+                      FadeInUp(duration: const Duration(milliseconds: 900), child: _buildOvertimePreview(cardBg, p)),
+                      const SizedBox(height: 16),
+                      FadeInUp(duration: const Duration(milliseconds: 1000), child: _buildGeofenceMap(cardBg, geo, p)),
+                      const SizedBox(height: 16),
+                      FadeInUp(duration: const Duration(milliseconds: 1100), child: _buildNotificationLog(cardBg, p)),
+                      const SizedBox(height: 100), // Spasi extra bawah
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OptionPage())),
-        label: const Text('ABSENSI SEKARANG', style: TextStyle(fontWeight: FontWeight.bold)),
-        icon: const Icon(Icons.camera_alt),
+        label: const Text('ABSENSI SEKARANG', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: Colors.white)),
+        icon: const Icon(Icons.document_scanner_outlined, color: Colors.white),
         backgroundColor: const Color(0xFFE31E24),
+        elevation: 8,
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
   Widget _buildAppBar(BuildContext context, AppProvider p, ConnectivityService conn) {
     return SliverAppBar(
-      expandedHeight: 120.0,
+      expandedHeight: 80.0,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFF0D1F38),
+      backgroundColor: const Color(0xFF020617).withValues(alpha: 0.8),
+      elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
-        title: Text('JNE ATTENDANCE', 
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
-        background: Stack(
+        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+        title: Row(
           children: [
             Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF1A3A6B), Color(0xFF0D1F38)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6)),
+              child: const Icon(Icons.local_shipping, color: Color(0xFFE31E24), size: 12),
             ),
-            Positioned(
-              right: 16,
-              top: 40,
-              child: _buildConnectionIndicator(conn),
-            ),
+            const SizedBox(width: 8),
+            Text('JNE ATTENDANCE', 
+              style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.white, letterSpacing: 1)),
           ],
         ),
       ),
       actions: [
-        IconButton(
-          icon: Icon(p.isDarkMode ? Icons.dark_mode : Icons.light_mode, color: Colors.white),
-          onPressed: () => p.toggleTheme(),
+        Padding(
+          padding: const EdgeInsets.only(right: 10),
+          child: Center(child: _buildConnectionIndicator(conn)),
         ),
         IconButton(
           icon: const Icon(Icons.person_outline, color: Colors.white),
@@ -200,9 +233,31 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Selamat Datang,', style: GoogleFonts.outfit(color: Colors.grey, fontSize: 14)),
-        Text(user?.name ?? 'Karyawan JNE', 
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Selamat Datang,', style: GoogleFonts.outfit(color: Colors.grey, fontSize: 14)),
+                Text(user?.name ?? 'Karyawan JNE', 
+                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE31E24).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE31E24), width: 1),
+              ),
+              child: Text(
+                user?.department.toUpperCase() ?? 'UNIT KERJA',
+                style: const TextStyle(color: Color(0xFFE31E24), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -388,11 +443,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildGeofenceMap(Color bg, GeofenceService geo) {
+  Widget _buildGeofenceMap(Color bg, GeofenceService geo, AppProvider p) {
+    final isCourier = p.currentUser?.department.toLowerCase().contains('kurir') ?? false;
+
     return Container(
       width: double.infinity,
       height: 200,
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: bg, 
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
@@ -417,20 +478,35 @@ class _HomeScreenState extends State<HomeScreen> {
             top: 12, left: 12,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(8)),
-              child: Text(geo.isInRange ? '📍 AREA KANTOR ✓' : '⭕ AREA LAIN ⚠️', 
-                style: TextStyle(color: geo.isInRange ? Colors.green : Colors.orange, fontSize: 10, fontWeight: FontWeight.bold)),
+              decoration: BoxDecoration(
+                color: const Color(0xFF020617).withValues(alpha: 0.8), 
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              ),
+              child: Text(
+                isCourier ? '🚀 BEBAS AREA (KURIR)' : (geo.isInRange ? '📍 AREA KANTOR ✓' : '⭕ AREA LAIN ⚠️'), 
+                style: TextStyle(
+                  color: isCourier ? Colors.blue : (geo.isInRange ? Colors.green : Colors.orange), 
+                  fontSize: 10, 
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1
+                )
+              ),
             ),
           ),
-          Positioned(
-            bottom: 12, right: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(8)),
-              child: Text('${geo.distanceFromOffice.toInt()}m dari kantor', 
-                style: const TextStyle(color: Colors.white, fontSize: 10)),
+          if (!isCourier)
+            Positioned(
+              bottom: 12, right: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF020617).withValues(alpha: 0.8), 
+                  borderRadius: BorderRadius.circular(8)
+                ),
+                child: Text('${geo.distanceFromOffice.toInt()}m dari kantor', 
+                  style: const TextStyle(color: Colors.white, fontSize: 10)),
+              ),
             ),
-          ),
         ],
       ),
     );

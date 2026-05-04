@@ -50,75 +50,92 @@ class _SucceedPageState extends State<SucceedPage> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1628),
-      appBar: AppBar(title: const Text('Attendance Succed'), automaticallyImplyLeading: false),
+      backgroundColor: const Color(0xFF020617),
+      appBar: AppBar(
+        title: const Text('BERHASIL', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 2)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(children: [
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(16)),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A), 
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            ),
             child: Column(children: [
               FadeTransition(opacity: _fade,
                 child: ScaleTransition(scale: _scale,
                   child: Container(width: 90, height: 90,
-                    decoration: const BoxDecoration(color: Color(0xFF1B5E20), shape: BoxShape.circle),
-                    child: const Icon(Icons.check, color: Colors.white, size: 52)))),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.1), 
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5), width: 2),
+                    ),
+                    child: const Icon(Icons.check_rounded, color: Color(0xFF10B981), size: 52)))),
               const SizedBox(height: 24),
-              Text(widget.isEnroll ? 'Wajah Berhasil\nDidaftarkan!' : 'Absensi Berhasil !',
+              Text(widget.isEnroll ? 'Wajah Terdaftar!' : 'Absensi Berhasil!',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, height: 1.3)),
-              const SizedBox(height: 10),
+                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+              const SizedBox(height: 12),
               Text(widget.isEnroll
-                  ? 'Sekarang Anda bisa menggunakan fitur absensi dengan scan wajah.'
-                  : 'Kamu datang tepat waktu hari ini.\nSemangat kerja! 💪',
+                  ? 'Data biometrik Anda telah diverifikasi.'
+                  : 'Sistem telah mencatat kehadiran Anda.',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 13, height: 1.6)),
+                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13, height: 1.6, fontWeight: FontWeight.w500)),
             ]),
           ),
           if (!widget.isEnroll) ...[
             const SizedBox(height: 16),
             Container(
-              decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A), 
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              ),
               child: Column(children: [
-                _row('Jenis', widget.jenis), _div(),
-                _row('Waktu', _waktu), _div(),
-                _row('Status', widget.status, vc: const Color(0xFF4CAF50)), _div(),
-                _row('Lokasi', widget.lokasi), _div(),
-                _row('Shift', widget.shift),
+                _row('Tipe Log', widget.jenis), _div(),
+                _row('Jam Operasional', _waktu), _div(),
+                _row('Status', widget.status, vc: const Color(0xFF10B981)), _div(),
+                _row('Titik Lokasi', widget.lokasi), _div(),
+                _row('Regu Kerja', widget.shift),
               ]),
             ),
           ],
           const Spacer(),
-          _Btn(label: 'Kembali Ke Beranda', color: const Color(0xFFE31E24),
+          _Btn(label: 'KE BERANDA', color: const Color(0xFFE31E24),
               onTap: () => Navigator.pushAndRemoveUntil(context,
                   MaterialPageRoute(builder: (_) => const HomeScreen()), (r) => false)),
-          if (!widget.isEnroll) ...[
-            const SizedBox(height: 10),
-            _Btn(label: 'Lihat Riwayat Absensi', color: Colors.transparent, border: Colors.white54,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryPage()))),
-          ],
-          const SizedBox(height: 32),
+          const SizedBox(height: 12),
+          _Btn(label: 'LIHAT RIWAYAT', color: Colors.transparent, border: Colors.white24,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryPage()))),
+          const SizedBox(height: 48),
         ]),
       ),
     );
   }
 
   Widget _row(String l, String v, {Color? vc}) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
     child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Text(l, style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 13)),
-      Text(v, style: TextStyle(color: vc ?? Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+      Text(l.toUpperCase(), style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+      Text(v, style: TextStyle(color: vc ?? Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
     ]),
   );
-  Widget _div() => const Divider(color: Color(0xFF1E3A5F), height: 1, indent: 16, endIndent: 16);
+  Widget _div() => Divider(color: Colors.white.withValues(alpha: 0.05), height: 1, indent: 20, endIndent: 20);
 }
 
 class FailedPage extends StatefulWidget {
   final String reason;
-  const FailedPage({super.key, this.reason = 'Wajah tidak sesuai dengan yang didaftarkan / jarak kamu dari kantor diluar radius'});
+  const FailedPage({super.key, this.reason = 'Wajah tidak terverifikasi atau di luar radius.'});
   @override
   State<FailedPage> createState() => _FailedPageState();
 }
@@ -139,57 +156,56 @@ class _FailedPageState extends State<FailedPage> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1628),
-      appBar: AppBar(title: const Text('Attendance Failed'), automaticallyImplyLeading: false),
+      backgroundColor: const Color(0xFF020617),
+      appBar: AppBar(
+        title: const Text('GAGAL', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 2)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(children: [
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(16)),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A), 
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: Colors.red.withValues(alpha: 0.1)),
+            ),
             child: Column(children: [
               ScaleTransition(scale: _scale,
                 child: Container(width: 90, height: 90,
-                  decoration: const BoxDecoration(color: Color(0xFFB71C1C), shape: BoxShape.circle),
-                  child: const Icon(Icons.close, color: Colors.white, size: 52))),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.1), 
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.5), width: 2),
+                  ),
+                  child: const Icon(Icons.close_rounded, color: Color(0xFFEF4444), size: 52))),
               const SizedBox(height: 24),
-              const Text('Absensi Gagal !', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 10),
+              const Text('Absensi Gagal!', textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+              const SizedBox(height: 12),
               Text(widget.reason, textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 13, height: 1.6)),
-            ]),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-            child: Column(children: [
-              _r('Jenis','-'), _d(), _r('Waktu','-'), _d(), _r('Status','-'), _d(), _r('Lokasi','-'), _d(), _r('Shift','-'),
+                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13, height: 1.6, fontWeight: FontWeight.w500)),
             ]),
           ),
           const Spacer(),
-          _Btn(label: 'Kembali Ke Beranda', color: const Color(0xFFE31E24),
+          _Btn(label: 'COBA LAGI', color: const Color(0xFFE31E24),
+              onTap: () => Navigator.pop(context)),
+          const SizedBox(height: 12),
+          _Btn(label: 'KE BERANDA', color: Colors.transparent, border: Colors.white24,
               onTap: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (r) => false)),
-          const SizedBox(height: 10),
-          _Btn(label: 'Lihat Riwayat Absensi', color: Colors.transparent, border: Colors.white54,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryPage()))),
-          const SizedBox(height: 32),
+          const SizedBox(height: 48),
         ]),
       ),
     );
   }
-  Widget _r(String l, String v) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-      Text(l, style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 13)),
-      Text(v, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-    ]),
-  );
-  Widget _d() => const Divider(color: Color(0xFF1E3A5F), height: 1, indent: 16, endIndent: 16);
 }
 
-// ── Shared Pressable Button ───────────────────
 class _Btn extends StatefulWidget {
   final String label; final Color color; final Color? border; final VoidCallback onTap;
   const _Btn({required this.label, required this.color, required this.onTap, this.border});
@@ -216,15 +232,15 @@ class _BtnState extends State<_Btn> with SingleTickerProviderStateMixin {
       child: AnimatedBuilder(animation: _s, builder: (_, _) => Transform.scale(
         scale: _s.value,
         child: Container(
-          width: double.infinity, height: 48,
+          width: double.infinity, height: 56,
           decoration: BoxDecoration(
-            color: widget.color, borderRadius: BorderRadius.circular(10),
+            color: widget.color, borderRadius: BorderRadius.circular(16),
             border: widget.border != null ? Border.all(color: widget.border!) : null,
             boxShadow: widget.color != Colors.transparent
-                ? [BoxShadow(color: widget.color.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 3))] : null,
+                ? [BoxShadow(color: widget.color.withValues(alpha: 0.2), blurRadius: 12, offset: const Offset(0, 6))] : null,
           ),
           alignment: Alignment.center,
-          child: Text(widget.label, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+          child: Text(widget.label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
         ),
       )),
     );

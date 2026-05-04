@@ -20,12 +20,17 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   bool _isCameraReady = false;
   String? _errorMessage;
   final FaceDetector _faceDetector = FaceDetector(options: FaceDetectorOptions(enableContours: true, enableClassification: true));
-
+  
+  late AnimationController _scanAnimController;
   bool _isCapturing = false;
 
   @override
   void initState() {
     super.initState();
+    _scanAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
     _initCamera();
   }
 
@@ -44,7 +49,6 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       await ctrl.initialize();
       if (!mounted) return;
       setState(() { _cameraController = ctrl; _isCameraReady = true; });
-      _startFaceDetectionStream();
     } on CameraException catch (e) {
       _handleCameraError(e);
     } catch (e) {
@@ -54,29 +58,32 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
 
   void _handleCameraError(CameraException e) {
     if (e.code == 'CameraAccessDenied') {
-      setState(() => _errorMessage = 'AKSES KAMERA DITOLAK\n\nSolusi:\n1. Buka Settings > Aplikasi > JNE Attendance\n2. Izinkan akses ke "Kamera"\n3. Kembali ke app ini');
+      setState(() => _errorMessage = 'AKSES KAMERA DITOLAK\n\nSilakan aktifkan izin kamera di pengaturan sistem.');
     } else {
       setState(() => _errorMessage = 'Gagal membuka kamera: ${e.description}');
     }
-  }
-
-  void _startFaceDetectionStream() {
-    // Basic implementation: we'll detect face when user taps shutter for better performance
   }
 
   Future<void> _onShutterTap() async {
     if (!_isCameraReady || _isCapturing) return;
     
     final geo = Provider.of<GeofenceService>(context, listen: false);
-    if (!geo.isInRange) {
+    final app = Provider.of<AppProvider>(context, listen: false);
+    final isCourier = app.currentUser?.department.toLowerCase().contains('kurir') ?? false;
+
+    if (!geo.isInRange && !isCourier) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Anda berada di luar area kantor. Tidak bisa absen.'), backgroundColor: Colors.red),
+        SnackBar(
+          content: const Text('Anda berada di luar jangkauan kantor.'),
+          backgroundColor: Colors.red.withValues(alpha: 0.8),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
 
     setState(() => _isCapturing = true);
-    HapticFeedback.mediumImpact();
+    HapticFeedback.heavyImpact();
 
     try {
       final XFile photo = await _cameraController!.takePicture();
@@ -97,8 +104,8 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
         await p.addAttendanceCheckIn(
           p.currentUser!.uid,
           p.currentUser!.name,
-          'Tepat Waktu',
-          'JNE Martapura',
+          p.isLateForClockIn ? 'Terlambat' : 'Tepat Waktu',
+          isCourier ? 'Lokasi Kurir (Bypass)' : 'JNE Martapura',
           isOffline: !conn.isOnline,
           localImagePath: photo.path,
           lat: geo.currentPosition?.latitude ?? 0,
@@ -122,6 +129,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
 
   @override
   void dispose() {
+    _scanAnimController.dispose();
     _cameraController?.dispose();
     _faceDetector.close();
     super.dispose();
@@ -130,9 +138,11 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   @override
   Widget build(BuildContext context) {
     final geo = context.watch<GeofenceService>();
+    final app = context.watch<AppProvider>();
     
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1628),
+      backgroundColor: const Color(0xFF020617),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -140,109 +150,168 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Konfirmasi Kehadiran'),
+        title: const Text('Verifikasi Wajah', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+        centerTitle: true,
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                if (_isCameraReady && _cameraController != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: AspectRatio(
-                      aspectRatio: 1 / _cameraController!.value.aspectRatio,
-                      child: CameraPreview(_cameraController!),
-                    ),
-                  )
-                else if (_errorMessage != null)
-                  _buildError()
-                else
-                  const CircularProgressIndicator(),
-                
-                _buildOverlay(),
-                
-                Positioned(
-                  top: 20,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
-                    child: Row(
-                      children: [
-                        Icon(geo.isInRange ? Icons.location_on : Icons.location_off, 
-                          color: geo.isInRange ? Colors.green : Colors.red, size: 16),
-                        const SizedBox(width: 8),
-                        Text(geo.isInRange ? 'Dalam Jangkauan' : 'Luar Jangkauan', 
-                          style: const TextStyle(color: Colors.white, fontSize: 12)),
-                      ],
-                    ),
-                  ),
+          if (_isCameraReady && _cameraController != null)
+            SizedBox.expand(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _cameraController!.value.previewSize!.height,
+                  height: _cameraController!.value.previewSize!.width,
+                  child: CameraPreview(_cameraController!),
                 ),
-              ],
-            ),
-          ),
-          _buildBottomControl(),
+              ),
+            )
+          else if (_errorMessage != null)
+            _buildError()
+          else
+            const Center(child: CircularProgressIndicator(color: Color(0xFFE31E24))),
+          
+          _buildScannerOverlay(),
+          
+          _buildStatusInfo(geo, app),
+          
+          _buildBottomAction(),
         ],
       ),
     );
   }
 
-  Widget _buildOverlay() {
-    return Container(
-      width: 250,
-      height: 350,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.white70, width: 2),
-        borderRadius: BorderRadius.circular(150),
+  Widget _buildStatusInfo(GeofenceService geo, AppProvider app) {
+    final isCourier = app.currentUser?.department.toLowerCase().contains('kurir') ?? false;
+    final isAllowed = geo.isInRange || isCourier;
+    final statusText = isCourier ? 'MODE KURIR AKTIF' : (geo.isInRange ? 'LOKASI TERVERIFIKASI' : 'DI LUAR JANGKAUAN');
+    final color = isAllowed ? Colors.green : Colors.red;
+
+    return Positioned(
+      top: 120,
+      left: 0, right: 0,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8, height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color,
+                  boxShadow: [
+                    BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 2),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                statusText, 
+                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildBottomControl() {
-    return Container(
-      padding: const EdgeInsets.all(32),
+  Widget _buildScannerOverlay() {
+    return AnimatedBuilder(
+      animation: _scanAnimController,
+      builder: (context, child) {
+        return CustomPaint(
+          painter: ScannerPainter(_scanAnimController.value),
+          child: Container(),
+        );
+      },
+    );
+  }
+
+  Widget _buildBottomAction() {
+    return Positioned(
+      bottom: 60,
+      left: 0, right: 0,
       child: Column(
         children: [
           GestureDetector(
             onTap: _onShutterTap,
             child: Container(
-              width: 80, height: 80,
+              width: 90, height: 90,
+              padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white,
-                border: Border.all(color: const Color(0xFFE31E24), width: 4),
+                border: Border.all(color: Colors.white24, width: 2),
               ),
-              child: _isCapturing 
-                ? const CircularProgressIndicator(color: Color(0xFFE31E24))
-                : const Icon(Icons.camera_alt, color: Color(0xFFE31E24), size: 32),
+              child: Container(
+                decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                child: _isCapturing 
+                  ? const Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator(color: Color(0xFFE31E24), strokeWidth: 4))
+                  : const Icon(Icons.face, color: Color(0xFFE31E24), size: 40),
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          const Text('Ketuk untuk Ambil Foto', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          const Text('Pastikan wajah terlihat jelas dalam bingkai', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          const SizedBox(height: 20),
+          const Text('AMBIL ABSENSI', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 12)),
         ],
       ),
     );
   }
 
   Widget _buildError() {
-    return Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 64),
-          const SizedBox(height: 16),
-          Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white)),
-          const SizedBox(height: 24),
-          if (_errorMessage!.contains('AKSES'))
-            ElevatedButton(
-              onPressed: () => Provider.of<GeofenceService>(context, listen: false).openAppSettings(),
-              child: const Text('BUKA SETTINGS'),
-            ),
-        ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 80),
+            const SizedBox(height: 20),
+            Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
       ),
     );
   }
+}
+
+class ScannerPainter extends CustomPainter {
+  final double scanValue;
+  ScannerPainter(this.scanValue);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFE31E24).withValues(alpha: 0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0;
+
+    final center = Offset(size.width / 2, size.height / 2 - 50);
+    final radius = size.width * 0.35;
+    
+    // Draw Face Frame
+    canvas.drawCircle(center, radius, paint);
+    
+    // Draw Scanning Line
+    final scanPaint = Paint()
+      ..color = const Color(0xFFE31E24)
+      ..strokeWidth = 2.0;
+      
+    final lineY = center.dy - radius + (radius * 2 * scanValue);
+    canvas.drawLine(
+      Offset(center.dx - radius + 20, lineY),
+      Offset(center.dx + radius - 20, lineY),
+      scanPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(ScannerPainter oldDelegate) => true;
 }

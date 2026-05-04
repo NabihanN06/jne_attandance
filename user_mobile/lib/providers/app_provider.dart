@@ -74,72 +74,63 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> login(String email, String password) async {
     try {
-      // Login resmi ke Firebase Authentication
-      final cred = await _auth.signInWithEmailAndPassword(
-        email: email.trim(), 
-        password: password
-      );
+      // ── STEP 1: PROSES SIGN IN ──
+      // Kita hanya melakukan Login (SignIn), bukan mendaftar (Register)
+      try {
+        await _auth.signInWithEmailAndPassword(email: email, password: password);
+      } catch (e) {
+        if (!e.toString().contains('PigeonUserDetails')) rethrow;
+      }
+
+      // ── STEP 2: TUNGGU & VERIFIKASI ──
+      await Future.delayed(const Duration(milliseconds: 1000));
+      final user = _auth.currentUser;
       
-      if (cred.user != null) {
-        // Ambil data user dari collection 'users'
-        final doc = await _db.collection('users').doc(cred.user!.uid).get();
+      if (user != null) {
+        // ── STEP 3: AMBIL DATA DARI ADMIN (FIRESTORE) ──
+        final doc = await _db.collection('users').doc(user.uid).get();
         
         if (doc.exists) {
           final d = doc.data()!;
           _currentUser = UserModel(
             uid: doc.id,
-            name: d['name'] ?? '',
-            email: d['email'] ?? '',
+            name: d['name'] ?? 'User',
+            email: d['email'] ?? email,
             phone: d['phone'] ?? '',
-            nik: d['employeeId'] ?? '',
+            nik: d['employeeId'] ?? d['nik'] ?? '',
             role: d['role'] ?? 'employee',
-            department: d['department'] ?? '',
-            position: d['position'] ?? '',
+            department: d['department'] ?? 'Umum',
+            position: d['position'] ?? 'Staff',
             faceRegistered: d['faceRegistered'] == true ? 'yes' : 'no',
             deviceName: d['deviceName'] ?? '',
             faceRegisteredDate: d['createdAt'] != null ? DateTime.tryParse(d['createdAt'])?.toIso8601String() ?? '' : '',
           );
+          
           _listenToMyData();
           notifyListeners();
         } else {
-          // ── AUTO CREATE FIRESTORE DOC ──
-          // Jika akun sudah dibuat di Firebase Auth oleh HR JNE, tapi belum ada di Firestore,
-          // kita otomatis buatkan profil dasarnya agar pegawai bisa langsung masuk!
-          final defaultData = {
-            'uid': cred.user!.uid,
-            'email': email.trim(),
-            'name': email.split('@')[0], // Pakai nama dari email sementara
-            'role': 'employee',
-            'department': 'Operasional', // Default departemen
-            'employeeId': 'JNE-${cred.user!.uid.substring(0, 5).toUpperCase()}',
-            'createdAt': DateTime.now().toIso8601String(),
-            'faceRegistered': false,
-          };
-          
-          await _db.collection('users').doc(cred.user!.uid).set(defaultData);
-
-          _currentUser = UserModel(
-            uid: cred.user!.uid,
-            name: defaultData['name'] as String,
-            email: defaultData['email'] as String,
-            phone: '',
-            nik: defaultData['employeeId'] as String,
-            role: defaultData['role'] as String,
-            department: defaultData['department'] as String,
-            position: 'Staff',
-            faceRegistered: 'no',
-            deviceName: '',
-            faceRegisteredDate: defaultData['createdAt'] as String,
-          );
-
-          _listenToMyData();
-          notifyListeners();
+          // Jika di Auth ada tapi di Firestore (Admin) belum buat, kita batalkan
+          await _auth.signOut();
+          throw Exception('Data profil Anda belum dibuat oleh Admin. Hubungi pihak JNE.');
         }
+      } else {
+        throw Exception('Email atau password salah.');
       }
     } catch (e) {
       if (e is FirebaseAuthException) {
-        if (e.code == 'user-not-found' || e.code == 'invalid-credential') throw Exception('Email atau password salah');
-        throw Exception(e.message ?? 'Gagal login (Auth)');
+        String msg = 'Gagal masuk';
+        if (e.code == 'wrong-password' || e.code == 'invalid-credential' || e.code == 'user-not-found') {
+          msg = 'Email atau password salah';
+        } else if (e.code == 'user-disabled') {
+          msg = 'Akun Anda telah dinonaktifkan';
+        }
+        throw Exception(msg);
+      }
+      
+      // Jika error Pigeon muncul tapi login sukses, biarkan lanjut
+      if (e.toString().contains('PigeonUserDetails') && _auth.currentUser != null) {
+        // Cek ulang data Firestore setelah delay singkat
+        return login(email, password); 
       }
       throw Exception(e.toString());
     }

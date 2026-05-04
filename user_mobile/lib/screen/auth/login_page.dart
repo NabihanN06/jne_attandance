@@ -29,7 +29,10 @@ class _LoginPageState extends State<LoginPage> {
     final password = _passCtrl.text;
 
     if (email.isNotEmpty && !email.contains('@')) {
-      email = '$email@jnemtp.com';
+      email = '$email@jne.mtp.com';
+    } else if (email.isNotEmpty && !email.endsWith('@jne.mtp.com')) {
+      _showSnack('Email harus menggunakan domain @jne.mtp.com', isError: true);
+      return;
     }
 
     if (email.isEmpty || password.isEmpty) {
@@ -131,7 +134,7 @@ class _LoginPageState extends State<LoginPage> {
                     _label('EMAIL'),
                     _field(
                       _emailCtrl,
-                      'username atau email',
+                      'username atau email @jne.mtp.com',
                       keyboard: TextInputType.emailAddress,
                     ),
 
