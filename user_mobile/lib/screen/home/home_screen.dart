@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'dart:ui';
 import 'dart:async';
 import '../../providers/app_provider.dart';
 import '../../utils/connectivity_service.dart';
@@ -21,7 +22,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   Timer? _timer;
-  String _timeUntilWork = '';
+  String _timeUntilWork = '00:00:00';
   bool _isNearWork = false;
 
   @override
@@ -44,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
       
       if (p.hasClockedInToday) {
         setState(() {
-          _timeUntilWork = 'Sudah Absen Masuk';
+          _timeUntilWork = 'COMPLETED';
           _isNearWork = false;
         });
         return;
@@ -55,12 +56,12 @@ class _HomeScreenState extends State<HomeScreen> {
       if (now.isBefore(start)) {
         final diff = start.difference(now);
         setState(() {
-          _timeUntilWork = '${diff.inHours}j ${diff.inMinutes % 60}m ${diff.inSeconds % 60}s';
+          _timeUntilWork = '${diff.inHours.toString().padLeft(2, '0')}:${(diff.inMinutes % 60).toString().padLeft(2, '0')}:${(diff.inSeconds % 60).toString().padLeft(2, '0')}';
           _isNearWork = diff.inMinutes <= 15;
         });
       } else {
         setState(() {
-          _timeUntilWork = 'Terlambat!';
+          _timeUntilWork = 'LATE';
           _isNearWork = true;
         });
       }
@@ -74,72 +75,74 @@ class _HomeScreenState extends State<HomeScreen> {
     final geo = context.watch<GeofenceService>();
     final user = p.currentUser;
     
-    // Zen Premium Dark Mode Colors
-    final bg = const Color(0xFF020617);
-    final cardBg = Colors.white.withValues(alpha: 0.03);
+    const Color jneRed = Color(0xFFE31E24);
+    const Color bgDark = Color(0xFF020617);
+    const Color surfaceCard = Color(0xFF0F172A);
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: bgDark,
       body: Stack(
         children: [
-          // Background Glow Effect
+          // ── Background Blobs (Premium Depth) ──
           Positioned(
-            top: -100, right: -100,
-            child: Container(
-              width: 300, height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFFE31E24).withValues(alpha: 0.25),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
+            top: -50, right: -100,
+            child: _BlurredBlob(color: jneRed.withValues(alpha: 0.15), size: 300),
           ),
           Positioned(
-            bottom: 100, left: -100,
-            child: Container(
-              width: 250, height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF005596).withValues(alpha: 0.25),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
+            bottom: 100, left: -50,
+            child: _BlurredBlob(color: const Color(0xFF005596).withValues(alpha: 0.15), size: 250),
           ),
 
           CustomScrollView(
+            physics: const BouncingScrollPhysics(),
             slivers: [
-              _buildAppBar(context, p, conn),
+              _buildModernAppBar(context, conn),
+              
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                  padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      FadeInDown(duration: const Duration(milliseconds: 500), child: _buildGreeting(user)),
+                      FadeInDown(
+                        duration: const Duration(milliseconds: 600),
+                        child: _buildWelcomeHeader(user),
+                      ),
+                      const SizedBox(height: 32),
+                      
+                      FadeInUp(
+                        duration: const Duration(milliseconds: 700),
+                        child: _buildMainStatusCard(p, jneRed),
+                      ),
                       const SizedBox(height: 24),
-                      FadeInUp(duration: const Duration(milliseconds: 600), child: _buildCountdownCard(cardBg)),
-                      const SizedBox(height: 16),
+
                       if (p.pendingSyncCount > 0)
                         FadeInLeft(child: _buildSyncBanner(p)),
+                      
+                      _buildSectionTitle('METRIK PERFORMA'),
                       const SizedBox(height: 16),
-                      FadeInUp(duration: const Duration(milliseconds: 700), child: _buildAttendanceSummary(cardBg, p)),
+                      FadeInUp(
+                        duration: const Duration(milliseconds: 800),
+                        child: _buildBentoGrid(p, surfaceCard),
+                      ),
+                      
+                      const SizedBox(height: 32),
+                      _buildSectionTitle('GEOLOKASI HUB'),
                       const SizedBox(height: 16),
-                      FadeInUp(duration: const Duration(milliseconds: 800), child: _buildHistoryQuickView(cardBg, p)),
+                      FadeInUp(
+                        duration: const Duration(milliseconds: 900),
+                        child: _buildMapSection(geo, p, surfaceCard),
+                      ),
+                      
+                      const SizedBox(height: 32),
+                      _buildSectionTitle('LOG AKTIVITAS'),
                       const SizedBox(height: 16),
-                      FadeInUp(duration: const Duration(milliseconds: 900), child: _buildOvertimePreview(cardBg, p)),
-                      const SizedBox(height: 16),
-                      FadeInUp(duration: const Duration(milliseconds: 1000), child: _buildGeofenceMap(cardBg, geo, p)),
-                      const SizedBox(height: 16),
-                      FadeInUp(duration: const Duration(milliseconds: 1100), child: _buildNotificationLog(cardBg, p)),
-                      const SizedBox(height: 100), // Spasi extra bawah
+                      FadeInUp(
+                        duration: const Duration(milliseconds: 1000),
+                        child: _buildActivityTimeline(p, surfaceCard),
+                      ),
+                      
+                      const SizedBox(height: 120),
                     ],
                   ),
                 ),
@@ -148,131 +151,156 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OptionPage())),
-        label: const Text('ABSENSI SEKARANG', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: Colors.white)),
-        icon: const Icon(Icons.document_scanner_outlined, color: Colors.white),
-        backgroundColor: const Color(0xFFE31E24),
-        elevation: 8,
-      ),
+      floatingActionButton: _buildActionButton(context, p, jneRed),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
-  Widget _buildAppBar(BuildContext context, AppProvider p, ConnectivityService conn) {
+  Widget _buildModernAppBar(BuildContext context, ConnectivityService conn) {
     return SliverAppBar(
-      expandedHeight: 80.0,
-      floating: false,
+      expandedHeight: 0,
+      toolbarHeight: 70,
       pinned: true,
-      backgroundColor: const Color(0xFF020617).withValues(alpha: 0.8),
+      backgroundColor: Colors.transparent,
       elevation: 0,
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6)),
-              child: const Icon(Icons.local_shipping, color: Color(0xFFE31E24), size: 12),
-            ),
-            const SizedBox(width: 8),
-            Text('JNE ATTENDANCE', 
-              style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.white, letterSpacing: 1)),
-          ],
+      flexibleSpace: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            color: const Color(0xFF020617).withValues(alpha: 0.7),
+          ),
         ),
       ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 10),
-          child: Center(child: _buildConnectionIndicator(conn)),
-        ),
-        IconButton(
-          icon: const Icon(Icons.person_outline, color: Colors.white),
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildConnectionIndicator(ConnectivityService conn) {
-    IconData icon;
-    Color color;
-    String label;
-
-    switch (conn.status) {
-      case ConnectionStatus.wifi:
-        icon = Icons.wifi; color = Colors.greenAccent; label = 'WiFi ✓';
-        break;
-      case ConnectionStatus.mobile:
-        icon = Icons.signal_cellular_alt; color = Colors.orangeAccent; label = 'Data ⚠️';
-        break;
-      case ConnectionStatus.none:
-        icon = Icons.wifi_off; color = Colors.redAccent; label = 'Offline';
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.black26,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      title: Row(
         children: [
-          Icon(icon, color: color, size: 14),
-          const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)],
+            ),
+            child: const Icon(Icons.local_shipping, color: Color(0xFFE31E24), size: 18),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'JNE HUB',
+            style: GoogleFonts.outfit(
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+              letterSpacing: 1.5,
+              color: Colors.white,
+            ),
+          ),
         ],
       ),
+      actions: [
+        _buildConnBadge(conn),
+        const SizedBox(width: 8),
+        IconButton(
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage())),
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.05),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: const Icon(Icons.person_rounded, color: Colors.white, size: 20),
+          ),
+        ),
+        const SizedBox(width: 16),
+      ],
     );
   }
 
-  Widget _buildGreeting(UserModel? user) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildConnBadge(ConnectivityService conn) {
+    Color color = Colors.greenAccent;
+    IconData icon = Icons.wifi_rounded;
+    if (conn.status == ConnectionStatus.none) {
+      color = Colors.redAccent;
+      icon = Icons.wifi_off_rounded;
+    } else if (conn.status == ConnectionStatus.mobile) {
+      color = Colors.amberAccent;
+      icon = Icons.signal_cellular_alt_rounded;
+    }
+
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Selamat Datang,', style: GoogleFonts.outfit(color: Colors.grey, fontSize: 14)),
-                Text(user?.name ?? 'Karyawan JNE', 
-                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE31E24).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE31E24), width: 1),
-              ),
-              child: Text(
-                user?.department.toUpperCase() ?? 'UNIT KERJA',
-                style: const TextStyle(color: Color(0xFFE31E24), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
-              ),
+            Icon(icon, color: color, size: 12),
+            const SizedBox(width: 6),
+            Text(
+              conn.status.name.toUpperCase(),
+              style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWelcomeHeader(UserModel? user) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Selamat Bekerja,',
+              style: GoogleFonts.outfit(color: Colors.white.withValues(alpha: 0.5), fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+            Text(
+              user?.name ?? 'Karyawan JNE',
+              style: GoogleFonts.outfit(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+            ),
+          ],
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE31E24).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE31E24).withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            children: [
+              const Text('UNIT', style: TextStyle(color: Color(0xFFE31E24), fontSize: 8, fontWeight: FontWeight.w900)),
+              Text(
+                user?.department.toUpperCase() ?? '-',
+                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildCountdownCard(Color bg) {
-    final p = context.read<AppProvider>();
-    final isDone = p.hasClockedInToday;
+  Widget _buildMainStatusCard(AppProvider p, Color accent) {
+    bool isDone = p.hasClockedInToday;
     
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDone ? Colors.green : (_isNearWork ? const Color(0xFFE31E24) : bg),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: const Offset(0, 4))],
+        color: isDone ? Colors.green.withValues(alpha: 0.1) : (accent.withValues(alpha: 0.1)),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: isDone ? Colors.green.withValues(alpha: 0.3) : accent.withValues(alpha: 0.3)),
+        image: DecorationImage(
+          image: const AssetImage('assets/images/noise.png'),
+          opacity: 0.05,
+          fit: BoxFit.cover,
+        ),
       ),
       child: Column(
         children: [
@@ -282,176 +310,107 @@ class _HomeScreenState extends State<HomeScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(isDone ? '✨ Status Kehadiran' : '⏰ Jam Kantor Countdown', 
-                    style: TextStyle(color: (isDone || _isNearWork) ? Colors.white70 : Colors.grey, fontSize: 12)),
-                  const SizedBox(height: 4),
-                  Text(_timeUntilWork, 
-                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text(
+                    isDone ? 'Sesi Selesai' : 'Waktu Menuju Shift',
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _timeUntilWork,
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 42,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -1,
+                    ),
+                  ),
                 ],
               ),
-              if (isDone)
-                const Icon(Icons.check_circle_outline, color: Colors.white, size: 40)
-              else if (_isNearWork)
-                const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 40),
+              _GlowingIcon(
+                icon: isDone ? Icons.check_circle_rounded : Icons.timer_outlined,
+                color: isDone ? Colors.green : accent,
+              ),
             ],
           ),
-          if (_isNearWork && !isDone) ...[
-            const SizedBox(height: 10),
-            const Text('🔴 BELUM ABSEN (Terlambat dalam 5 menit!)', 
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-          ]
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSyncBanner(AppProvider p) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.sync_problem, color: Colors.orange),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text('Ada ${p.pendingSyncCount} data absensi pending (Offline)', 
-              style: const TextStyle(color: Colors.white, fontSize: 13)),
-          ),
-          TextButton(
-            onPressed: () => p.syncPendingAttendance(),
-            child: const Text('SYNC SEKARANG', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, size: 14, color: Colors.white.withValues(alpha: 0.5)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    isDone 
+                      ? 'Absensi Anda telah tercatat hari ini. Terima kasih!'
+                      : (_isNearWork ? 'Segera lakukan absensi di area kantor.' : 'Pastikan GPS aktif sebelum melakukan absensi.'),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAttendanceSummary(Color bg, AppProvider p) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('✅ Last Successful Absensi', style: TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(height: 16),
-          _rowInfo('Absen Masuk', 'Hari ini 08:15', 'Tepat Waktu', Colors.green),
-          const Divider(color: Colors.white10, height: 24),
-          _rowInfo('Absen Pulang', 'Kemarin 17:30', 'Selesai', Colors.blue),
-        ],
-      ),
-    );
-  }
-
-  Widget _rowInfo(String label, String time, String status, Color color) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildBentoGrid(AppProvider p, Color cardBg) {
+    final ot = p.calculateOvertime();
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 1.1,
       children: [
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-          Text(time, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-        ]),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-          child: Text(status, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
-        )
+        _BentoItem(
+          label: 'KEPATUHAN',
+          value: '98%',
+          sub: 'Bulan ini',
+          icon: Icons.verified_user_rounded,
+          color: const Color(0xFF10B981),
+          bg: cardBg,
+        ),
+        _BentoItem(
+          label: 'TOTAL LEMBUR',
+          value: '${ot['hours']}j',
+          sub: '${ot['minutes']}m',
+          icon: Icons.history_toggle_off_rounded,
+          color: Colors.blueAccent,
+          bg: cardBg,
+        ),
+        _BentoItem(
+          label: 'SHIFT AKTIF',
+          value: '08:00',
+          sub: 'WIB',
+          icon: Icons.wb_sunny_rounded,
+          color: Colors.orangeAccent,
+          bg: cardBg,
+        ),
+        _BentoItem(
+          label: 'ESTIMASI',
+          value: 'Rp ${NumberFormat.compact().format(ot['pay'])}',
+          sub: 'Bonus lembur',
+          icon: Icons.payments_rounded,
+          color: Colors.purpleAccent,
+          bg: cardBg,
+        ),
       ],
     );
   }
 
-  Widget _buildHistoryQuickView(Color bg, AppProvider p) {
-    final days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+  Widget _buildMapSection(GeofenceService geo, AppProvider p, Color cardBg) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('📅 MINGGU INI', style: TextStyle(color: Colors.grey, fontSize: 12)),
-              GestureDetector(
-                onTap: () => Navigator.pushNamed(context, '/history'),
-                child: const Text('Detail →', style: TextStyle(color: Colors.blue, fontSize: 12)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(7, (i) {
-              final isToday = i == DateTime.now().weekday - 1;
-              Color c = i < 2 ? Colors.green : (i == 2 ? Colors.orange : (i > 3 ? Colors.grey : Colors.blue));
-              return Column(
-                children: [
-                  Text(days[i], style: TextStyle(color: isToday ? Colors.white : Colors.grey, fontSize: 10)),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: 32, height: 32,
-                    decoration: BoxDecoration(
-                      color: c.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                      border: isToday ? Border.all(color: Colors.white) : null,
-                    ),
-                    child: Icon(i < 4 ? Icons.check : Icons.question_mark, color: c, size: 14),
-                  ),
-                ],
-              );
-            }),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOvertimePreview(Color bg, AppProvider p) {
-    final ot = p.calculateOvertime();
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      height: 220,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFF1565C0), Color(0xFF0D47A1)]),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.timer, color: Colors.white, size: 40),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('⏱️ Lembur Hari Ini', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                Text('${ot['hours']} jam ${ot['minutes']} menit', 
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                Text('Estimasi: Rp ${NumberFormat.decimalPattern('id').format(ot['pay'])}', 
-                  style: const TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
-          const Icon(Icons.chevron_right, color: Colors.white),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGeofenceMap(Color bg, GeofenceService geo, AppProvider p) {
-    final isCourier = p.currentUser?.department.toLowerCase().contains('kurir') ?? false;
-
-    return Container(
-      width: double.infinity,
-      height: 200,
-      decoration: BoxDecoration(
-        color: bg, 
-        borderRadius: BorderRadius.circular(24),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(32),
         border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       clipBehavior: Clip.antiAlias,
@@ -463,95 +422,239 @@ class _HomeScreenState extends State<HomeScreen> {
               zoom: 15,
             ),
             myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            mapType: MapType.normal,
             circles: {
               Circle(
                 circleId: const CircleId('office'),
                 center: const LatLng(GeofenceService.officeLat, GeofenceService.officeLng),
                 radius: GeofenceService.radiusInMeters,
-                fillColor: geo.isInRange ? Colors.green.withValues(alpha: 0.2) : Colors.red.withValues(alpha: 0.2),
+                fillColor: (geo.isInRange ? Colors.green : Colors.red).withValues(alpha: 0.15),
                 strokeColor: geo.isInRange ? Colors.green : Colors.red,
                 strokeWidth: 2,
               ),
             },
           ),
           Positioned(
-            top: 12, left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF020617).withValues(alpha: 0.8), 
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-              ),
-              child: Text(
-                isCourier ? '🚀 BEBAS AREA (KURIR)' : (geo.isInRange ? '📍 AREA KANTOR ✓' : '⭕ AREA LAIN ⚠️'), 
-                style: TextStyle(
-                  color: isCourier ? Colors.blue : (geo.isInRange ? Colors.green : Colors.orange), 
-                  fontSize: 10, 
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1
-                )
+            top: 16, left: 16,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  color: Colors.black.withValues(alpha: 0.5),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8, height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: geo.isInRange ? Colors.green : Colors.red,
+                          boxShadow: [BoxShadow(color: (geo.isInRange ? Colors.green : Colors.red).withValues(alpha: 0.5), blurRadius: 4)],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        geo.isInRange ? 'LOKASI SESUAI' : 'DI LUAR AREA',
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-          if (!isCourier)
-            Positioned(
-              bottom: 12, right: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF020617).withValues(alpha: 0.8), 
-                  borderRadius: BorderRadius.circular(8)
-                ),
-                child: Text('${geo.distanceFromOffice.toInt()}m dari kantor', 
-                  style: const TextStyle(color: Colors.white, fontSize: 10)),
-              ),
-            ),
         ],
       ),
     );
   }
 
-  Widget _buildNotificationLog(Color bg, AppProvider p) {
+  Widget _buildActivityTimeline(AppProvider p, Color cardBg) {
     final notifs = p.myNotifications;
     return Container(
-      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: notifs.isEmpty
+          ? const Center(child: Text('Belum ada aktivitas', style: TextStyle(color: Colors.grey, fontSize: 12)))
+          : Column(
+              children: [
+                ...notifs.take(3).map((n) => Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(top: 4),
+                        width: 10, height: 10,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFFE31E24),
+                          boxShadow: [BoxShadow(color: const Color(0xFFE31E24).withValues(alpha: 0.3), blurRadius: 6)],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(n['title'], style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+                            const SizedBox(height: 2),
+                            Text(n['body'], style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 11)),
+                          ],
+                        ),
+                      ),
+                      Text(DateFormat('HH:mm').format(n['time']), style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 10, fontWeight: FontWeight.w900)),
+                    ],
+                  ),
+                )),
+                const Divider(color: Colors.white10, height: 32),
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/notifications'),
+                  child: const Text('LIHAT SEMUA LOG', style: TextStyle(color: Color(0xFFE31E24), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildActionButton(BuildContext context, AppProvider p, Color accent) {
+    return ZoomIn(
+      child: Container(
+        height: 64,
+        margin: const EdgeInsets.symmetric(horizontal: 48),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(color: accent.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8)),
+          ],
+        ),
+        child: ElevatedButton(
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OptionPage())),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: accent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.qr_code_scanner_rounded, color: Colors.white, size: 24),
+              const SizedBox(width: 12),
+              Text(
+                'ABSENSI SEKARANG',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.white, letterSpacing: 1),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
+    );
+  }
+
+  Widget _buildSyncBanner(AppProvider p) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.sync_problem_rounded, color: Colors.orange, size: 20),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text('${p.pendingSyncCount} data pending', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+          ),
+          TextButton(
+            onPressed: () => p.syncPendingAttendance(),
+            child: const Text('SYNC', style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w900)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BlurredBlob extends StatelessWidget {
+  final Color color;
+  final double size;
+  const _BlurredBlob({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size, height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [BoxShadow(color: color, blurRadius: size / 2, spreadRadius: size / 4)],
+      ),
+    );
+  }
+}
+
+class _GlowingIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  const _GlowingIcon({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withValues(alpha: 0.15),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.1), blurRadius: 20)],
+      ),
+      child: Icon(icon, color: color, size: 28),
+    );
+  }
+}
+
+class _BentoItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final String sub;
+  final IconData icon;
+  final Color color;
+  final Color bg;
+  const _BentoItem({required this.label, required this.value, required this.sub, required this.icon, required this.color, required this.bg});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('📬 NOTIFIKASI TERAKHIR', style: TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(height: 16),
-          if (notifs.isEmpty)
-            const Text('Tidak ada notifikasi', style: TextStyle(color: Colors.grey, fontSize: 12))
-          else
-            ...notifs.take(3).map((n) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                children: [
-                  const Icon(Icons.circle, size: 8, color: Color(0xFFE31E24)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(n['title'], style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                        Text(n['body'], style: const TextStyle(color: Colors.grey, fontSize: 11)),
-                      ],
-                    ),
-                  ),
-                  Text(DateFormat('HH:mm').format(n['time']), style: const TextStyle(color: Colors.grey, fontSize: 10)),
-                ],
-              ),
-            )),
-          const Divider(color: Colors.white10),
-          Center(
-            child: TextButton(
-              onPressed: () => Navigator.pushNamed(context, '/notifications'),
-              child: const Text('Lihat Semua Notifikasi', style: TextStyle(fontSize: 12)),
-            ),
-          ),
+          Icon(icon, color: color, size: 20),
+          const Spacer(),
+          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+          const SizedBox(height: 4),
+          Text(value, style: GoogleFonts.outfit(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+          Text(sub, style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 9, fontWeight: FontWeight.w500)),
         ],
       ),
     );
