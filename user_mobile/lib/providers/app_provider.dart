@@ -1,23 +1,27 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/app_models.dart';
 import 'package:intl/intl.dart';
+import 'package:geolocator/geolocator.dart';
 import '../utils/offline_service.dart';
 
 class AppProvider extends ChangeNotifier {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // ── Office Config ──
+  // ── Office Hours ──
   final TimeOfDay officeStartTime = const TimeOfDay(hour: 8, minute: 0);
   final TimeOfDay officeEndTime = const TimeOfDay(hour: 17, minute: 0);
-  
+
   // ── Sync Status ──
   int _pendingSyncCount = 0;
   int get pendingSyncCount => _pendingSyncCount;
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;
+
+  // ── Theme ──
   bool _isDarkMode = true;
   bool get isDarkMode => _isDarkMode;
   void toggleTheme() {
@@ -25,18 +29,42 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Office Config ──
+  double _officeLat = -3.4150;
+  double _officeLng = 114.8465;
+  double _officeRadius = 500.0;
+  // Office rules from DepartmentRules (simplified)
+  double get officeLat => _officeLat;
+  double get officeLng => _officeLng;
+  double get officeRadius => _officeRadius;
+
+  void Function(double lat, double lng, double radius)? onSettingsChanged;
+
   // ── Auth ──
   UserModel? _currentUser;
   UserModel? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
   bool get isAdmin => _currentUser?.role == 'admin';
+  
+  // Subscriptions for cleanup
+  StreamSubscription? _adminNotifSub;
 
   final List<UserModel> _accounts = [];
   List<UserModel> get allAccounts => List.unmodifiable(_accounts);
   List<UserModel> get allUsers => _accounts.where((a) => a.role == 'user' || a.role == 'employee').toList();
 
+  // ── Notification Streams (Firestore) ──
+  List<AdminNotification> _adminNotifications = [];
+  List<AdminNotification> _userNotifications = [];
+  List<AdminNotification> get notifications => isAdmin ? _adminNotifications : _userNotifications;
+  int get unreadNotificationCount => notifications.where((n) => !n.isRead).length;
+
+  StreamSubscription? _userNotifSub;
+
   AppProvider() {
     _loadUsers();
+    _listenToSettings();
+    _listenToSharedData();
   }
 
   Future<void> _loadUsers() async {
@@ -62,7 +90,7 @@ class AppProvider extends ChangeNotifier {
           position: d['position'] ?? '',
           faceRegistered: d['faceRegistered'] == true ? 'yes' : 'no',
           deviceName: d['deviceName'] ?? '',
-          faceRegisteredDate: d['createdAt'] != null ? DateTime.tryParse(d['createdAt'])?.toIso8601String() ?? '' : '',
+          faceRegisteredDate: _parseDateTime(d['createdAt'])?.toIso8601String() ?? '',
         );
         _listenToMyData();
         notifyListeners();
@@ -74,20 +102,36 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> login(String email, String password) async {
     try {
-      // ── STEP 1: PROSES SIGN IN ──
-      // Kita hanya melakukan Login (SignIn), bukan mendaftar (Register)
       try {
         await _auth.signInWithEmailAndPassword(email: email, password: password);
       } catch (e) {
-        if (!e.toString().contains('PigeonUserDetails')) rethrow;
+        if (kDebugMode && e is FirebaseAuthException && (e.code == 'user-not-found' || e.code == 'invalid-credential')) {
+          // Auto-signup for development in emulator
+          try {
+            await _auth.createUserWithEmailAndPassword(email: email, password: password);
+            final user = _auth.currentUser;
+            if (user != null) {
+              await _db.collection('users').doc(user.uid).set({
+                'name': email.split('@')[0].replaceAll('.', ' ').toUpperCase(),
+                'email': email,
+                'role': 'employee',
+                'employeeId': 'JNE-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
+                'createdAt': FieldValue.serverTimestamp(),
+                'faceRegistered': false,
+              });
+            }
+          } catch (signUpError) {
+            rethrow;
+          }
+        } else if (!e.toString().contains('PigeonUserDetails')) {
+          rethrow;
+        }
       }
 
-      // ── STEP 2: TUNGGU & VERIFIKASI ──
       await Future.delayed(const Duration(milliseconds: 1000));
       final user = _auth.currentUser;
       
       if (user != null) {
-        // ── STEP 3: AMBIL DATA DARI ADMIN (FIRESTORE) ──
         final doc = await _db.collection('users').doc(user.uid).get();
         
         if (doc.exists) {
@@ -103,13 +147,12 @@ class AppProvider extends ChangeNotifier {
             position: d['position'] ?? 'Staff',
             faceRegistered: d['faceRegistered'] == true ? 'yes' : 'no',
             deviceName: d['deviceName'] ?? '',
-            faceRegisteredDate: d['createdAt'] != null ? DateTime.tryParse(d['createdAt'])?.toIso8601String() ?? '' : '',
+            faceRegisteredDate: _parseDateTime(d['createdAt'])?.toIso8601String() ?? '',
           );
           
           _listenToMyData();
           notifyListeners();
         } else {
-          // Jika di Auth ada tapi di Firestore (Admin) belum buat, kita batalkan
           await _auth.signOut();
           throw Exception('Data profil Anda belum dibuat oleh Admin. Hubungi pihak JNE.');
         }
@@ -120,16 +163,14 @@ class AppProvider extends ChangeNotifier {
       if (e is FirebaseAuthException) {
         String msg = 'Gagal masuk';
         if (e.code == 'wrong-password' || e.code == 'invalid-credential' || e.code == 'user-not-found') {
-          msg = 'Email atau password salah';
+          msg = 'Email atau password salah. Coba periksa koneksi emulator Anda.';
         } else if (e.code == 'user-disabled') {
           msg = 'Akun Anda telah dinonaktifkan';
         }
         throw Exception(msg);
       }
       
-      // Jika error Pigeon muncul tapi login sukses, biarkan lanjut
       if (e.toString().contains('PigeonUserDetails') && _auth.currentUser != null) {
-        // Cek ulang data Firestore setelah delay singkat
         return login(email, password); 
       }
       throw Exception(e.toString());
@@ -141,6 +182,10 @@ class AppProvider extends ChangeNotifier {
     _currentUser = null;
     _attendanceRecords.clear();
     _leaveRequests.clear();
+    _adminNotifSub?.cancel();
+    _adminNotifSub = null;
+    _userNotifSub?.cancel();
+    _userNotifSub = null;
     notifyListeners();
   }
 
@@ -157,7 +202,7 @@ class AppProvider extends ChangeNotifier {
       'position': user.position,
       'faceRegistered': user.faceRegistered == 'yes',
       'deviceName': user.deviceName,
-      'createdAt': DateTime.now().toIso8601String(),
+      'createdAt': FieldValue.serverTimestamp(),
     });
     _currentUser = UserModel(
       uid: docRef.id,
@@ -180,6 +225,7 @@ class AppProvider extends ChangeNotifier {
     await _db.collection('users').doc(updated.uid).update({
       'name': updated.name,
       'phone': updated.phone,
+      'updatedAt': FieldValue.serverTimestamp(),
     });
     _currentUser = updated;
     notifyListeners();
@@ -214,8 +260,200 @@ class AppProvider extends ChangeNotifier {
   List<LeaveRequest> get myLeaveRequests => _leaveRequests;
   List<LeaveRequest> get allLeaveRequests => List.unmodifiable(_leaveRequests);
 
+  List<OvertimeRecord> _overtimeRequests = [];
+  List<OvertimeRecord> get myOvertimeRequests => _overtimeRequests;
+  int get totalOvertimeHours => _overtimeRequests.where((o) => o.status == 'approved').fold(0, (acc, item) => acc + item.durationHours);
+
+  // ── Additional Shared Collections ──
+  List<JamKerja> _shiftList = [];
+  List<JamKerja> get shiftList => List.unmodifiable(_shiftList);
+
+  List<DepartmentItem> _departments = [];
+  List<DepartmentItem> get departments => List.unmodifiable(_departments);
+
+  List<CalendarEvent> _events = [];
+  List<CalendarEvent> get events => List.unmodifiable(_events);
+
+
+
+  SystemSettings? _systemSettings;
+  SystemSettings? get systemSettings => _systemSettings;
+
+  DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
+
+  // ── Mappers ──
+  JamKerja _mapJamKerja(String id, Map<String, dynamic> d) {
+    return JamKerja(
+      id: id,
+      name: d['name'] ?? '',
+      checkInTime: d['checkInTime'] ?? '08:00',
+      checkOutTime: d['checkOutTime'] ?? '17:00',
+      toleranceMinutes: d['toleranceMinutes'] ?? 15,
+      workingDays: List<String>.from(d['workingDays'] ?? ['monday','tuesday','wednesday','thursday','friday']),
+      color: d['color'] ?? '#3B82F6',
+      isActive: d['isActive'] ?? true,
+      createdAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
+      updatedAt: _parseDateTime(d['updatedAt']) ?? DateTime.now(),
+    );
+  }
+
+  DepartmentItem _mapDepartment(String id, Map<String, dynamic> d) {
+    return DepartmentItem(
+      id: id,
+      name: d['name'] ?? '',
+      description: d['description'] ?? '',
+      color: d['color'] ?? '#E31E24',
+      isActive: d['isActive'] ?? true,
+      createdAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
+      updatedAt: _parseDateTime(d['updatedAt']) ?? DateTime.now(),
+    );
+  }
+
+  CalendarEvent _mapEvent(String id, Map<String, dynamic> d) {
+    return CalendarEvent(
+      id: id,
+      title: d['title'] ?? '',
+      description: d['description'] ?? '',
+      startDate: _parseDateTime(d['startDate']) ?? DateTime.now(),
+      endDate: _parseDateTime(d['endDate']) ?? DateTime.now(),
+      location: d['location'],
+      category: d['category'] ?? 'other',
+      attendees: List<String>.from(d['attendees'] ?? []),
+      departments: d['departments'] != null ? List<String>.from(d['departments']) : null,
+      organizerId: d['organizerId'] ?? '',
+      color: d['color'],
+      imageUrl: d['imageUrl'],
+      price: d['price']?.toInt(),
+      ticketsLeft: d['ticketsLeft']?.toInt(),
+      notificationSentDayBefore: d['notificationSentDayBefore'] ?? false,
+      notificationSent30Min: d['notificationSent30Min'] ?? false,
+      createdAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
+      updatedAt: _parseDateTime(d['updatedAt']) ?? DateTime.now(),
+    );
+  }
+
+  AdminNotification _mapAdminNotification(String id, Map<String, dynamic> d) {
+    return AdminNotification(
+      id: id,
+      type: d['type'] ?? 'system',
+      title: d['title'] ?? '',
+      message: d['message'] ?? '',
+      employeeId: d['employeeId'],
+      employeeName: d['employeeName'],
+      relatedId: d['relatedId'],
+      isRead: d['isRead'] ?? false,
+      createdAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
+    );
+  }
+
+  SystemSettings? _mapSystemSettings(Map<String, dynamic>? data) {
+    if (data == null) return null;
+    try {
+      final office = data['office'] ?? {};
+      final attendance = data['attendance'] ?? {};
+      final notifications = data['notifications'] ?? {};
+      final company = data['company'] ?? {};
+      return SystemSettings(
+        office: OfficeSettings(
+          name: office['name'] ?? 'Office',
+          address: office['address'] ?? '',
+          latitude: (office['latitude'] ?? -3.4150).toDouble(),
+          longitude: (office['longitude'] ?? 114.8465).toDouble(),
+          radiusMeters: (office['radiusMeters'] ?? 500).toInt(),
+        ),
+        attendance: AttendanceSettings(
+          maxFaceAttempts: (attendance['maxFaceAttempts'] ?? 3).toInt(),
+          faceSimilarityThreshold: (attendance['faceSimilarityThreshold'] ?? 80).toInt(),
+          allowOfflineAttendance: attendance['allowOfflineAttendance'] ?? false,
+          overtimeCalculation: attendance['overtimeCalculation'] ?? false,
+        ),
+        notifications: AdminNotificationSettings(
+          notifyOnLeaveRequest: notifications['notifyOnLeaveRequest'] ?? true,
+          notifyOnFaceEnrollment: notifications['notifyOnFaceEnrollment'] ?? true,
+          notifyOnFaceFailure: notifications['notifyOnFaceFailure'] ?? true,
+          notifyOnNewEmployee: notifications['notifyOnNewEmployee'] ?? true,
+          emailNotifications: notifications['emailNotifications'] ?? false,
+          adminEmail: notifications['adminEmail'] ?? '',
+        ),
+        company: CompanySettings(
+          companyName: company['companyName'] ?? 'JNE MTP',
+          logoUrl: company['logoUrl'],
+          hrEmail: company['hrEmail'] ?? '',
+          hrPhone: company['hrPhone'] ?? '',
+          appDownloadUrl: company['appDownloadUrl'] ?? '',
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error mapping system settings: $e');
+      return null;
+    }
+  }
+
+  void _listenToSettings() {
+    _db.collection('settings').doc('system').snapshots().listen((snap) {
+      if (snap.exists) {
+        final data = snap.data();
+        if (data != null && data['office'] != null) {
+          final office = data['office'];
+          _officeLat = (office['latitude'] ?? -3.4150).toDouble();
+          _officeLng = (office['longitude'] ?? 114.8465).toDouble();
+          _officeRadius = (office['radiusMeters'] ?? 500).toDouble();
+          
+          debugPrint('Settings updated: $_officeLat, $_officeLng, $_officeRadius');
+          onSettingsChanged?.call(_officeLat, _officeLng, _officeRadius);
+        }
+        // Map full settings
+        _systemSettings = _mapSystemSettings(data);
+        notifyListeners();
+      }
+    });
+  }
+
+  void _listenToSharedData() {
+    // ── Shifts (Jam Kerja) ──
+    _db.collection('shifts').snapshots().listen((snap) {
+      _shiftList = snap.docs.map((d) => _mapJamKerja(d.id, d.data())).toList();
+      notifyListeners();
+    });
+
+    // ── Departments ──
+    _db.collection('departments').snapshots().listen((snap) {
+      _departments = snap.docs.map((d) => _mapDepartment(d.id, d.data())).toList();
+      notifyListeners();
+    });
+
+    // ── Events ──
+    _db.collection('events').orderBy('startDate').snapshots().listen((snap) {
+      _events = snap.docs.map((d) => _mapEvent(d.id, d.data())).toList();
+      notifyListeners();
+    });
+
+    // ── Admin Notifications (only for admin users) ──
+    if (_currentUser != null && (isAdmin)) {
+      _db.collection('adminNotifications')
+          .orderBy('createdAt', descending: true)
+          .limit(30)
+          .snapshots()
+          .listen((snap) {
+        _adminNotifications = snap.docs.map((d) => _mapAdminNotification(d.id, d.data())).toList();
+        notifyListeners();
+      });
+    }
+  }
+
   void _listenToMyData() {
     if (_currentUser == null) return;
+
+    // Cancel any existing notification subscriptions
+    _adminNotifSub?.cancel();
+    _adminNotifSub = null;
+    _userNotifSub?.cancel();
+    _userNotifSub = null;
 
     // Listen Attendance
     _db.collection('attendance').where('userId', isEqualTo: _currentUser!.uid).snapshots().listen((snap) {
@@ -223,15 +461,15 @@ class AppProvider extends ChangeNotifier {
         final d = doc.data();
         final checkInTime = d['checkIn']?['time'];
         final checkOutTime = d['checkOut']?['time'];
-        final dateParsed = d['date'] != null ? DateTime.tryParse(d['date']) : DateTime.now();
+        final dateParsed = _parseDateTime(d['date']);
         
         return AttendanceRecord(
           id: doc.id,
           userId: d['userId'] ?? '',
           userName: d['employeeName'] ?? '',
           date: dateParsed ?? DateTime.now(),
-          checkIn: checkInTime != null ? DateFormat('HH:mm').format(DateTime.parse(checkInTime)) : null,
-          checkOut: checkOutTime != null ? DateFormat('HH:mm').format(DateTime.parse(checkOutTime)) : null,
+          checkIn: checkInTime != null ? DateFormat('HH:mm').format(_parseDateTime(checkInTime) ?? DateTime.now()) : null,
+          checkOut: checkOutTime != null ? DateFormat('HH:mm').format(_parseDateTime(checkOutTime) ?? DateTime.now()) : null,
           checkInStatus: _mapAdminStatusToMobile(d['status']),
           checkOutStatus: checkOutTime != null ? 'Selesai' : 'Menunggu',
           location: 'JNE Martapura',
@@ -248,15 +486,57 @@ class AppProvider extends ChangeNotifier {
           id: doc.id,
           userId: d['userId'] ?? '',
           userName: d['employeeName'] ?? '',
-          fromDate: d['startDate'] != null ? DateTime.tryParse(d['startDate']) ?? DateTime.now() : DateTime.now(),
-          toDate: d['endDate'] != null ? DateTime.tryParse(d['endDate']) ?? DateTime.now() : DateTime.now(),
+          fromDate: _parseDateTime(d['startDate']) ?? DateTime.now(),
+          toDate: _parseDateTime(d['endDate']) ?? DateTime.now(),
           reason: d['reason'] ?? '',
           status: d['status'] ?? 'pending',
-          submittedAt: d['createdAt'] != null ? DateTime.tryParse(d['createdAt']) ?? DateTime.now() : DateTime.now(),
+          submittedAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
         );
       }).toList();
       notifyListeners();
     });
+
+    // Listen Overtime
+    _db.collection('overtime').where('userId', isEqualTo: _currentUser!.uid).snapshots().listen((snap) {
+      _overtimeRequests = snap.docs.map((doc) {
+        final d = doc.data();
+        return OvertimeRecord(
+          id: doc.id,
+          userId: d['userId'] ?? '',
+          userName: d['employeeName'] ?? '',
+          date: _parseDateTime(d['date']) ?? DateTime.now(),
+          durationHours: d['durationHours'] ?? 0,
+          reason: d['reason'] ?? '',
+          status: d['status'] ?? 'pending',
+          createdAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
+        );
+      }).toList();
+      notifyListeners();
+    });
+
+    // ── Notifications ──
+    if (isAdmin) {
+      // Admin sees all notifications
+      _adminNotifSub = _db.collection('adminNotifications')
+          .orderBy('createdAt', descending: true)
+          .limit(50)
+          .snapshots()
+          .listen((snap) {
+        _adminNotifications = snap.docs.map((d) => _mapAdminNotification(d.id, d.data())).toList();
+        notifyListeners();
+      });
+    } else {
+      // Employee sees only their own notifications (by employeeId)
+      _userNotifSub = _db.collection('adminNotifications')
+          .where('employeeId', isEqualTo: _currentUser!.uid)
+          .orderBy('createdAt', descending: true)
+          .limit(50)
+          .snapshots()
+          .listen((snap) {
+        _userNotifications = snap.docs.map((d) => _mapAdminNotification(d.id, d.data())).toList();
+        notifyListeners();
+      });
+    }
   }
 
   String _mapAdminStatusToMobile(String? status) {
@@ -286,8 +566,6 @@ class AppProvider extends ChangeNotifier {
   }) async {
     final now = DateTime.now();
     final dateStr = DateFormat('yyyy-MM-dd').format(now);
-    final isoStr = now.toIso8601String();
-
     final data = {
       'userId': userId,
       'employeeName': userName,
@@ -296,15 +574,20 @@ class AppProvider extends ChangeNotifier {
       'date': dateStr,
       'status': _mapMobileStatusToAdmin(status),
       'checkIn': {
-        'time': isoStr,
+        'time': FieldValue.serverTimestamp(),
         'latitude': lat,
         'longitude': lng,
-        'distance': 0,
+        'distance': Geolocator.distanceBetween(
+          lat, 
+          lng, 
+          _officeLat, 
+          _officeLng
+        ).round(),
         'faceScore': 100,
         'photoUrl': localImagePath ?? '',
       },
-      'createdAt': isoStr,
-      'updatedAt': isoStr,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     };
 
     if (isOffline) {
@@ -344,35 +627,15 @@ class AppProvider extends ChangeNotifier {
   }
 
   Map<String, dynamic> calculateOvertime() {
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final record = _attendanceRecords.firstWhere(
-      (r) => DateFormat('yyyy-MM-dd').format(r.date) == today,
-      orElse: () => AttendanceRecord(id: '', userId: '', userName: '', date: DateTime(2000)),
-    );
-
-    if (record.id == '' || record.checkOut == null) {
-      return {'hours': 0, 'minutes': 0, 'pay': 0};
-    }
-
-    final checkOutTime = DateTime.parse(record.checkOut!);
-    final standardEndTime = DateTime(
-      checkOutTime.year, checkOutTime.month, checkOutTime.day,
-      officeEndTime.hour, officeEndTime.minute,
-    );
-
-    if (checkOutTime.isAfter(standardEndTime)) {
-      final diff = checkOutTime.difference(standardEndTime);
-      final hours = diff.inHours;
-      final minutes = diff.inMinutes % 60;
-      final pay = (hours + (minutes / 60)) * 75000; // Contoh Rp 75.000 / jam
-      return {'hours': hours, 'minutes': minutes, 'pay': pay};
-    }
-
-    return {'hours': 0, 'minutes': 0, 'pay': 0};
+    int totalHours = totalOvertimeHours;
+    int estimatedPay = totalHours * 25000; // Mock rate per hour
+    return {
+      'hours': totalHours,
+      'pay': estimatedPay,
+    };
   }
 
   Future<void> submitEditRequest(String attendanceId, String reason, Map<String, dynamic> changes) async {
-    final isoStr = DateTime.now().toIso8601String();
     await _db.collection('edit_requests').add({
       'attendanceId': attendanceId,
       'userId': _currentUser?.uid,
@@ -380,14 +643,13 @@ class AppProvider extends ChangeNotifier {
       'reason': reason,
       'status': 'pending',
       'requestedChanges': changes,
-      'createdAt': isoStr,
-      'updatedAt': isoStr,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     });
     addNotification('Pengajuan Edit', 'Permintaan koreksi data absensi telah dikirim ke Admin.');
   }
 
   Future<void> submitLeave(LeaveRequest req) async {
-    final isoStr = DateTime.now().toIso8601String();
     await _db.collection('leaves').add({
       'userId': req.userId,
       'employeeName': req.userName,
@@ -399,15 +661,15 @@ class AppProvider extends ChangeNotifier {
       'endDate': req.toDate.toIso8601String(),
       'totalDays': req.toDate.difference(req.fromDate).inDays + 1,
       'reason': req.reason,
-      'createdAt': isoStr,
-      'updatedAt': isoStr,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
   void updateLeaveStatus(String id, String status) {
     _db.collection('leaves').doc(id).update({
       'status': status,
-      'updatedAt': DateTime.now().toIso8601String(),
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -421,6 +683,7 @@ class AppProvider extends ChangeNotifier {
   final List<Map<String, dynamic>> _notifications = [];
   List<Map<String, dynamic>> get myNotifications => _notifications;
   int get unreadCount => _notifications.where((n) => n['read'] == false).length;
+  
   void markAllRead() {
     for (var n in _notifications) {
       n['read'] = true;
@@ -438,5 +701,39 @@ class AppProvider extends ChangeNotifier {
       'time': DateTime.now(),
     });
     notifyListeners();
+  }
+
+  // ── Overtime Feature ──
+  Future<void> submitOvertime(DateTime date, int durationHours, String reason) async {
+    await _db.collection('overtime').add({
+      'userId': _currentUser?.uid,
+      'employeeName': _currentUser?.name,
+      'employeeId': _currentUser?.nik ?? '',
+      'department': _currentUser?.department ?? '',
+      'date': DateFormat('yyyy-MM-dd').format(date),
+      'durationHours': durationHours,
+      'reason': reason,
+      'status': 'pending',
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    addNotification('Pengajuan Lembur', 'Permintaan lembur untuk tanggal ${DateFormat('dd MMM').format(date)} telah dikirim.');
+  }
+
+  // ── Emergency SOS Feature ──
+  Future<void> sendSOS(double lat, double lng, String locationName) async {
+    await _db.collection('sos_alerts').add({
+      'userId': _currentUser?.uid,
+      'employeeName': _currentUser?.name,
+      'employeeId': _currentUser?.nik ?? '',
+      'department': _currentUser?.department ?? '',
+      'latitude': lat,
+      'longitude': lng,
+      'locationName': locationName,
+      'status': 'active',
+      'timestamp': FieldValue.serverTimestamp(),
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    addNotification('SOS TERKIRIM', 'Pesan darurat dan lokasi Anda telah dikirim ke pusat kendali Admin.');
   }
 }

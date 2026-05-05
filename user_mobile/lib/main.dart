@@ -1,7 +1,10 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:cloud_firestore/cloud_firestore.dart' as fb_firestore;
 import 'providers/app_provider.dart';
 import 'utils/connectivity_service.dart';
 import 'utils/geofence_service.dart';
@@ -23,23 +26,46 @@ import 'screen/leave/leave_page.dart';
 import 'screen/statistic/statistic_page.dart';
 import 'screen/history/history_page.dart';
 import 'screen/profile/profile_page.dart';
+import 'screen/notification/notification_page.dart';
+import 'screen/settings/settings_page.dart';
+import 'screen/overtime/overtime_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  // Connect to local emulators in debug mode
+  if (kDebugMode) {
+    // Choose appropriate host: Android emulator uses 10.0.2.2, iOS simulator uses localhost
+    const host = String.fromEnvironment('EMULATOR_HOST', defaultValue: '10.0.2.2');
+    try {
+      fb_firestore.FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
+      fb_auth.FirebaseAuth.instance.useAuthEmulator(host, 9099);
+      debugPrint('✅ Connected to Firebase Emulators at $host');
+    } catch (e) {
+      debugPrint('⚠️ Failed to connect to emulators: $e');
+    }
+  }
+
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: Color(0xFF0A1628),
-    systemNavigationBarIconBrightness: Brightness.light,
+    statusBarIconBrightness: Brightness.dark,
+    systemNavigationBarColor: Colors.white,
+    systemNavigationBarIconBrightness: Brightness.dark,
   ));
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ConnectivityService()),
-        ChangeNotifierProvider(create: (_) => GeofenceService()),
         ChangeNotifierProvider(create: (_) => AppProvider()),
+        ChangeNotifierProxyProvider<AppProvider, GeofenceService>(
+          create: (_) => GeofenceService(),
+          update: (ctx, app, geofence) {
+            geofence!.updateOfficeConfig(app.officeLat, app.officeLng, app.officeRadius);
+            return geofence;
+          },
+        ),
       ],
       child: const MyApp(),
     ),
@@ -55,9 +81,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'JNE Attendance App',
       debugShowCheckedModeBanner: false,
-      themeMode: provider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       theme: _buildTheme(false),
       darkTheme: _buildTheme(true),
+      themeMode: provider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      builder: (context, child) {
+        return ScrollConfiguration(
+          behavior: const ScrollBehavior().copyWith(overscroll: false),
+          child: child!,
+        );
+      },
       initialRoute: '/splash',
       routes: {
         '/splash':              (_) => const SplashScreen(),
@@ -78,6 +110,9 @@ class MyApp extends StatelessWidget {
         '/statistic':           (_) => const StatisticPage(),
         '/history':             (_) => const HistoryPage(),
         '/profile':             (_) => const ProfilePage(),
+        '/notification':        (_) => const NotificationPage(),
+        '/settings':            (_) => const SettingsPage(),
+        '/overtime':            (_) => const OvertimePage(),
       },
       onUnknownRoute: (_) => MaterialPageRoute(builder: (_) => const SplashScreen()),
     );
@@ -92,9 +127,15 @@ class MyApp extends StatelessWidget {
           ? const ColorScheme.dark(primary: Color(0xFFE31E24), secondary: Color(0xFF1565C0), surface: Color(0xFF0D1F38))
           : const ColorScheme.light(primary: Color(0xFFE31E24), secondary: Color(0xFF1565C0)),
       appBarTheme: AppBarTheme(
-        backgroundColor: dark ? const Color(0xFF0D1F38) : const Color(0xFF1A3A6B),
+        backgroundColor: dark ? const Color(0xFF0D1F38) : const Color(0xFF005596),
         foregroundColor: Colors.white, elevation: 0, centerTitle: false,
         titleTextStyle: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

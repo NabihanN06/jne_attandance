@@ -1,75 +1,70 @@
 import 'package:flutter/material.dart';
-import '../../widgets/onboarding_widget.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:animate_do/animate_do.dart';
 import 'onboarding3.dart';
-import '../auth/login_page.dart';
 
 class Onboarding2 extends StatelessWidget {
   const Onboarding2({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return OnboardingWidget(
-      icon: _buildChartIcon(),
-      title: 'Lacak Kehadiran',
-      subtitle: 'dan Lembur Anda',
-      description:
-          'Pantau statistik absensi, jam kerja efektif, dan\nlembur dalam satu dashboard.',
-      onNext: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const Onboarding3()),
-        );
-      },
-      onSkip: () {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginPage()),
-          (route) => false,
-        );
-      },
-    );
-  }
+    const Color jneBlue = Color(0xFF005596);
+    const Color jneRed = Color(0xFFE31E24);
 
-  Widget _buildChartIcon() {
-    return SizedBox(
-      width: 90,
-      height: 90,
-      child: CustomPaint(
-        painter: _BarChartPainter(),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Column(
+            children: [
+              const SizedBox(height: 80),
+              FadeInDown(
+                child: Container(
+                  width: 280, height: 280,
+                  decoration: BoxDecoration(color: jneRed.withValues(alpha: 0.05), shape: BoxShape.circle),
+                  child: const Icon(Icons.face_retouching_natural_rounded, color: jneRed, size: 100),
+                ),
+              ),
+              const SizedBox(height: 60),
+              FadeInUp(
+                child: Text(
+                  'Biometrik Wajah',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 28, fontWeight: FontWeight.w900),
+                ),
+              ),
+              const SizedBox(height: 20),
+              FadeInUp(
+                delay: const Duration(milliseconds: 200),
+                child: Text(
+                  'Keamanan ekstra dengan verifikasi wajah untuk memastikan kehadiran yang valid.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 16, height: 1.6, fontWeight: FontWeight.w500),
+                ),
+              ),
+              const Spacer(),
+              FadeInUp(
+                delay: const Duration(milliseconds: 400),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 60,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Onboarding3())),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: jneBlue,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    child: Text('LANJUTKAN', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 60),
+            ],
+          ),
+        ),
       ),
     );
   }
-}
-
-class _BarChartPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bars = [
-      {'color': const Color(0xFF2196F3), 'height': 0.5},
-      {'color': const Color(0xFF4CAF50), 'height': 1.0},
-      {'color': const Color(0xFFE31E24), 'height': 0.7},
-    ];
-
-    final barWidth = size.width / (bars.length * 2 - 1);
-    final gap = barWidth;
-
-    for (int i = 0; i < bars.length; i++) {
-      final paint = Paint()
-        ..color = bars[i]['color'] as Color
-        ..style = PaintingStyle.fill;
-
-      final barHeight = size.height * (bars[i]['height'] as double);
-      final left = i * (barWidth + gap);
-      final top = size.height - barHeight;
-
-      final rrect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(left, top, barWidth, barHeight),
-        const Radius.circular(4),
-      );
-      canvas.drawRRect(rrect, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

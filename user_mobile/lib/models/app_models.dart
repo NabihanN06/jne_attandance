@@ -214,3 +214,222 @@ class NotificationSettings {
     );
   }
 }
+
+class OvertimeRecord {
+  final String id;
+  final String userId;
+  final String userName;
+  final DateTime date;
+  final int durationHours;
+  final String reason;
+  final String status; // 'pending' | 'approved' | 'rejected'
+  final DateTime createdAt;
+
+  const OvertimeRecord({
+    required this.id,
+    required this.userId,
+    required this.userName,
+    required this.date,
+    required this.durationHours,
+    required this.reason,
+    this.status = 'pending',
+    required this.createdAt,
+  });
+}
+
+// ── Shift / Jam Kerja (from admin 'shifts' collection) ──
+class JamKerja {
+  final String id;
+  final String name;
+  final String checkInTime;   // "HH:mm"
+  final String checkOutTime;  // "HH:mm"
+  final int toleranceMinutes;
+  final List<String> workingDays;  // ['monday', ...]
+  final String color;
+  final bool isActive;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const JamKerja({
+    required this.id,
+    required this.name,
+    required this.checkInTime,
+    required this.checkOutTime,
+    this.toleranceMinutes = 15,
+    this.workingDays = const ['monday','tuesday','wednesday','thursday','friday'],
+    this.color = '#3B82F6',
+    this.isActive = true,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+}
+
+// ── Department (from admin 'departments' collection) ──
+class DepartmentItem {
+  final String id;
+  final String name;
+  final String description;
+  final String color;
+  final bool isActive;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const DepartmentItem({
+    required this.id,
+    required this.name,
+    this.description = '',
+    this.color = '#E31E24',
+    this.isActive = true,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+}
+
+// ── Calendar Event (from admin 'events' collection) ──
+class CalendarEvent {
+  final String id;
+  final String title;
+  final String description;
+  final DateTime startDate;
+  final DateTime endDate;
+  final String? location;
+  final String category;  // 'meeting' | 'training' | 'social' | 'deadline' | 'other'
+  final List<String> attendees;    // Employee IDs
+  final List<String>? departments; // Department IDs
+  final String organizerId;
+  final String? color;
+  final String? imageUrl;
+  final int? price;
+  final int? ticketsLeft;
+  final bool notificationSentDayBefore;
+  final bool notificationSent30Min;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const CalendarEvent({
+    required this.id,
+    required this.title,
+    this.description = '',
+    required this.startDate,
+    required this.endDate,
+    this.location,
+    this.category = 'other',
+    this.attendees = const [],
+    this.departments,
+    required this.organizerId,
+    this.color,
+    this.imageUrl,
+    this.price,
+    this.ticketsLeft,
+    this.notificationSentDayBefore = false,
+    this.notificationSent30Min = false,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+}
+
+// ── Admin Notification (from admin 'adminNotifications' collection) ──
+class AdminNotification {
+  final String id;
+  final String type;  // 'leave_request' | 'face_enrolled' | 'face_failed' | 'new_employee' | 'attendance_alert' | 'meeting_reminder' | 'system'
+  final String title;
+  final String message;
+  final String? employeeId;
+  final String? employeeName;
+  final String? relatedId;
+  final bool isRead;
+  final DateTime createdAt;
+
+  const AdminNotification({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.message,
+    this.employeeId,
+    this.employeeName,
+    this.relatedId,
+    this.isRead = false,
+    required this.createdAt,
+  });
+}
+
+// ── System Settings (full config from admin 'settings/system') ──
+class SystemSettings {
+  final OfficeSettings office;
+  final AttendanceSettings attendance;
+  final AdminNotificationSettings notifications;
+  final CompanySettings company;
+
+  const SystemSettings({
+    required this.office,
+    required this.attendance,
+    required this.notifications,
+    required this.company,
+  });
+}
+
+class OfficeSettings {
+  final String name;
+  final String address;
+  final double latitude;
+  final double longitude;
+  final int radiusMeters;
+
+  const OfficeSettings({
+    required this.name,
+    required this.address,
+    required this.latitude,
+    required this.longitude,
+    required this.radiusMeters,
+  });
+}
+
+class AttendanceSettings {
+  final int maxFaceAttempts;
+  final int faceSimilarityThreshold;
+  final bool allowOfflineAttendance;
+  final bool overtimeCalculation;
+
+  const AttendanceSettings({
+    required this.maxFaceAttempts,
+    required this.faceSimilarityThreshold,
+    required this.allowOfflineAttendance,
+    required this.overtimeCalculation,
+  });
+}
+
+class AdminNotificationSettings {
+  final bool notifyOnLeaveRequest;
+  final bool notifyOnFaceEnrollment;
+  final bool notifyOnFaceFailure;
+  final bool notifyOnNewEmployee;
+  final bool emailNotifications;
+  final String adminEmail;
+
+  const AdminNotificationSettings({
+    required this.notifyOnLeaveRequest,
+    required this.notifyOnFaceEnrollment,
+    required this.notifyOnFaceFailure,
+    required this.notifyOnNewEmployee,
+    required this.emailNotifications,
+    required this.adminEmail,
+  });
+}
+
+class CompanySettings {
+  final String companyName;
+  final String? logoUrl;
+  final String hrEmail;
+  final String hrPhone;
+  final String appDownloadUrl;
+
+  const CompanySettings({
+    required this.companyName,
+    this.logoUrl,
+    required this.hrEmail,
+    required this.hrPhone,
+    required this.appDownloadUrl,
+  });
+}
+
+

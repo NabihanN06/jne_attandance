@@ -1,92 +1,68 @@
 import 'package:flutter/material.dart';
-import 'package:jneattendance_mobile/screen/auth/login_page.dart';
-import '../../widgets/onboarding_widget.dart';
-import 'onboarding4.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:animate_do/animate_do.dart';
+import '../auth/login_page.dart';
 
 class Onboarding3 extends StatelessWidget {
   const Onboarding3({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return OnboardingWidget(
-      icon: _buildClipboardIcon(),
-      title: 'Ajukan Izin',
-      subtitle: 'Kapan Saja',
-      description:
-          'Izin sakit, cuti, atau izin pribadi bisa diajukan\nlangsung dari aplikasi.',
-      onNext: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const Onboarding4()),
-        );
-      },
-      onSkip: () {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginPage()),
-          (route) => false,
-        );
-      },
-    );
-  }
+    const Color jneBlue = Color(0xFF005596);
 
-  Widget _buildClipboardIcon() {
-    return SizedBox(
-      width: 80,
-      height: 90,
-      child: Stack(
-        alignment: Alignment.topCenter,
-        children: [
-          // Clipboard body
-          Positioned(
-            top: 10,
-            child: Container(
-              width: 70,
-              height: 80,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(6),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Column(
+            children: [
+              const SizedBox(height: 80),
+              FadeInDown(
+                child: Container(
+                  width: 280, height: 280,
+                  decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.05), shape: BoxShape.circle),
+                  child: const Icon(Icons.bolt_rounded, color: Colors.green, size: 100),
+                ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 20, 10, 10),
-                child: Column(
-                  children: List.generate(
-                    4,
-                    (i) => Container(
-                      margin: const EdgeInsets.only(bottom: 6),
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFBDBDBD),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+              const SizedBox(height: 60),
+              FadeInUp(
+                child: Text(
+                  'Mulai Sekarang',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 28, fontWeight: FontWeight.w900),
+                ),
+              ),
+              const SizedBox(height: 20),
+              FadeInUp(
+                delay: const Duration(milliseconds: 200),
+                child: Text(
+                  'Nikmati kemudahan absensi digital di genggaman Anda. Ayo mulai bekerja!',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 16, height: 1.6, fontWeight: FontWeight.w500),
+                ),
+              ),
+              const Spacer(),
+              FadeInUp(
+                delay: const Duration(milliseconds: 400),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 60,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginPage()), (r) => false),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: jneBlue,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
                     ),
+                    child: Text('MULAI KERJA', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 1)),
                   ),
                 ),
               ),
-            ),
+              const SizedBox(height: 60),
+            ],
           ),
-          // Clip
-          Positioned(
-            top: 0,
-            child: Container(
-              width: 30,
-              height: 16,
-              decoration: BoxDecoration(
-                color: const Color(0xFF78909C),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(4),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

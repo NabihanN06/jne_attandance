@@ -2,10 +2,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 
 class GeofenceService extends ChangeNotifier {
-  // Office location (Example: JNE Martapura)
-  static const double officeLat = -3.4150; 
-  static const double officeLng = 114.8465;
-  static const double radiusInMeters = 500.0;
+  // Office location (Default: JNE Martapura)
+  double _officeLat = -3.4150; 
+  double _officeLng = 114.8465;
+  double _radiusInMeters = 500.0;
 
   Position? _currentPosition;
   double _distanceFromOffice = 0.0;
@@ -16,6 +16,17 @@ class GeofenceService extends ChangeNotifier {
   double get distanceFromOffice => _distanceFromOffice;
   bool get isInRange => _isInRange;
   String get errorMessage => _errorMessage;
+
+  double get officeLat => _officeLat;
+  double get officeLng => _officeLng;
+  double get radiusInMeters => _radiusInMeters;
+
+  void updateOfficeConfig(double lat, double lng, double radius) {
+    _officeLat = lat;
+    _officeLng = lng;
+    _radiusInMeters = radius;
+    _calculateDistance();
+  }
 
   GeofenceService() {
     _init();
@@ -59,15 +70,21 @@ class GeofenceService extends ChangeNotifier {
       ),
     ).listen((Position position) {
       _currentPosition = position;
-      _distanceFromOffice = Geolocator.distanceBetween(
-        position.latitude,
-        position.longitude,
-        officeLat,
-        officeLng,
-      );
-      _isInRange = _distanceFromOffice <= radiusInMeters;
-      notifyListeners();
+      _calculateDistance();
     });
+  }
+
+  void _calculateDistance() {
+    if (_currentPosition == null) return;
+    
+    _distanceFromOffice = Geolocator.distanceBetween(
+      _currentPosition!.latitude,
+      _currentPosition!.longitude,
+      _officeLat,
+      _officeLng,
+    );
+    _isInRange = _distanceFromOffice <= _radiusInMeters;
+    notifyListeners();
   }
 
   Future<void> openAppSettings() async {
