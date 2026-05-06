@@ -460,6 +460,64 @@ class AppProvider extends ChangeNotifier {
       _attendanceRecords = snap.docs.map((doc) => _mapAttendanceFromDoc(doc)).toList();
       notifyListeners();
     });
+
+    // Listen Leaves
+    _db.collection('leaves').where('userId', isEqualTo: _currentUser!.uid).snapshots().listen((snap) {
+      _leaveRequests = snap.docs.map((doc) {
+        final d = doc.data();
+        return LeaveRequest(
+          id: doc.id,
+          userId: d['userId'] ?? '',
+          userName: d['employeeName'] ?? '',
+          fromDate: _parseDateTime(d['startDate']) ?? DateTime.now(),
+          toDate: _parseDateTime(d['endDate']) ?? DateTime.now(),
+          reason: d['reason'] ?? '',
+          status: d['status'] ?? 'pending',
+          submittedAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
+        );
+      }).toList();
+      notifyListeners();
+    });
+
+    // Listen Overtime
+    _db.collection('overtime').where('userId', isEqualTo: _currentUser!.uid).snapshots().listen((snap) {
+      _overtimeRequests = snap.docs.map((doc) {
+        final d = doc.data();
+        return OvertimeRecord(
+          id: doc.id,
+          userId: d['userId'] ?? '',
+          userName: d['employeeName'] ?? '',
+          date: _parseDateTime(d['date']) ?? DateTime.now(),
+          durationHours: d['durationHours'] ?? 0,
+          reason: d['reason'] ?? '',
+          status: d['status'] ?? 'pending',
+          createdAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
+        );
+      }).toList();
+      notifyListeners();
+    });
+
+    // ── Notifications ──
+    if (isAdmin) {
+      _adminNotifSub = _db.collection('adminNotifications')
+          .orderBy('createdAt', descending: true)
+          .limit(50)
+          .snapshots()
+          .listen((snap) {
+        _adminNotifications = snap.docs.map((d) => _mapAdminNotification(d.id, d.data())).toList();
+        notifyListeners();
+      });
+    } else {
+      _userNotifSub = _db.collection('adminNotifications')
+          .where('employeeId', isEqualTo: _currentUser!.uid)
+          .orderBy('createdAt', descending: true)
+          .limit(50)
+          .snapshots()
+          .listen((snap) {
+        _userNotifications = snap.docs.map((d) => _mapAdminNotification(d.id, d.data())).toList();
+        notifyListeners();
+      });
+    }
     notifyListeners();
   }
 
@@ -510,67 +568,6 @@ class AppProvider extends ChangeNotifier {
     } finally {
       _isLoadingHistory = false;
       notifyListeners();
-    }
-  }
-
-    // Listen Leaves
-    _db.collection('leaves').where('userId', isEqualTo: _currentUser!.uid).snapshots().listen((snap) {
-      _leaveRequests = snap.docs.map((doc) {
-        final d = doc.data();
-        return LeaveRequest(
-          id: doc.id,
-          userId: d['userId'] ?? '',
-          userName: d['employeeName'] ?? '',
-          fromDate: _parseDateTime(d['startDate']) ?? DateTime.now(),
-          toDate: _parseDateTime(d['endDate']) ?? DateTime.now(),
-          reason: d['reason'] ?? '',
-          status: d['status'] ?? 'pending',
-          submittedAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
-        );
-      }).toList();
-      notifyListeners();
-    });
-
-    // Listen Overtime
-    _db.collection('overtime').where('userId', isEqualTo: _currentUser!.uid).snapshots().listen((snap) {
-      _overtimeRequests = snap.docs.map((doc) {
-        final d = doc.data();
-        return OvertimeRecord(
-          id: doc.id,
-          userId: d['userId'] ?? '',
-          userName: d['employeeName'] ?? '',
-          date: _parseDateTime(d['date']) ?? DateTime.now(),
-          durationHours: d['durationHours'] ?? 0,
-          reason: d['reason'] ?? '',
-          status: d['status'] ?? 'pending',
-          createdAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
-        );
-      }).toList();
-      notifyListeners();
-    });
-
-    // ── Notifications ──
-    if (isAdmin) {
-      // Admin sees all notifications
-      _adminNotifSub = _db.collection('adminNotifications')
-          .orderBy('createdAt', descending: true)
-          .limit(50)
-          .snapshots()
-          .listen((snap) {
-        _adminNotifications = snap.docs.map((d) => _mapAdminNotification(d.id, d.data())).toList();
-        notifyListeners();
-      });
-    } else {
-      // Employee sees only their own notifications (by employeeId)
-      _userNotifSub = _db.collection('adminNotifications')
-          .where('employeeId', isEqualTo: _currentUser!.uid)
-          .orderBy('createdAt', descending: true)
-          .limit(50)
-          .snapshots()
-          .listen((snap) {
-        _userNotifications = snap.docs.map((d) => _mapAdminNotification(d.id, d.data())).toList();
-        notifyListeners();
-      });
     }
   }
 
