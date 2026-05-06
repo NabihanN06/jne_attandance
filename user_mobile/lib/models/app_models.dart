@@ -14,6 +14,7 @@ class UserModel {
   final String faceRegistered;
   final String deviceName;
   final String faceRegisteredDate;
+  final String photoUrl;
 
   const UserModel({
     required this.uid,
@@ -27,6 +28,7 @@ class UserModel {
     this.faceRegistered = '',
     this.deviceName = '',
     this.faceRegisteredDate = '',
+    this.photoUrl = '',
   });
 
   UserModel copyWith({
@@ -40,6 +42,7 @@ class UserModel {
     String? faceRegistered,
     String? deviceName,
     String? faceRegisteredDate,
+    String? photoUrl,
   }) {
     return UserModel(
       uid: uid,
@@ -53,6 +56,7 @@ class UserModel {
       faceRegistered: faceRegistered ?? this.faceRegistered,
       deviceName: deviceName ?? this.deviceName,
       faceRegisteredDate: faceRegisteredDate ?? this.faceRegisteredDate,
+      photoUrl: photoUrl ?? this.photoUrl,
     );
   }
 }
