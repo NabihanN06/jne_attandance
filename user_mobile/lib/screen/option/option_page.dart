@@ -63,6 +63,15 @@ class OptionPage extends StatelessWidget {
             const SizedBox(height: 16),
             _buildFeatureCard(
               context,
+              'Smart Calendar',
+              'Jadwal meeting dan acara departemen.',
+              Icons.calendar_month_rounded,
+              const Color(0xFF8B5CF6),
+              () => Navigator.pushNamed(context, '/calendar'),
+            ),
+            const SizedBox(height: 16),
+            _buildFeatureCard(
+              context,
               'Hub Support (Chat)',
               'Hubungi Admin untuk kendala operasional.',
               Icons.chat_bubble_rounded,

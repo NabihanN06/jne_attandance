@@ -455,28 +455,63 @@ class AppProvider extends ChangeNotifier {
     _userNotifSub?.cancel();
     _userNotifSub = null;
 
-    // Listen Attendance
-    _db.collection('attendance').where('userId', isEqualTo: _currentUser!.uid).snapshots().listen((snap) {
-      _attendanceRecords = snap.docs.map((doc) {
-        final d = doc.data();
-        final checkInTime = d['checkIn']?['time'];
-        final checkOutTime = d['checkOut']?['time'];
-        final dateParsed = _parseDateTime(d['date']);
-        
-        return AttendanceRecord(
-          id: doc.id,
-          userId: d['userId'] ?? '',
-          userName: d['employeeName'] ?? '',
-          date: dateParsed ?? DateTime.now(),
-          checkIn: checkInTime != null ? DateFormat('HH:mm').format(_parseDateTime(checkInTime) ?? DateTime.now()) : null,
-          checkOut: checkOutTime != null ? DateFormat('HH:mm').format(_parseDateTime(checkOutTime) ?? DateTime.now()) : null,
-          checkInStatus: _mapAdminStatusToMobile(d['status']),
-          checkOutStatus: checkOutTime != null ? 'Selesai' : 'Menunggu',
-          location: 'JNE Martapura',
-        );
-      }).toList();
+    // Listen Attendance (Legacy - keep for now to avoid breaking other parts, but we'll use by-month for History)
+    _db.collection('attendance').where('userId', isEqualTo: _currentUser!.uid).orderBy('date', descending: true).limit(50).snapshots().listen((snap) {
+      _attendanceRecords = snap.docs.map((doc) => _mapAttendanceFromDoc(doc)).toList();
       notifyListeners();
     });
+    notifyListeners();
+  }
+
+  AttendanceRecord _mapAttendanceFromDoc(DocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>;
+    final checkInTime = d['checkIn']?['time'];
+    final checkOutTime = d['checkOut']?['time'];
+    final dateParsed = _parseDateTime(d['date']);
+    
+    return AttendanceRecord(
+      id: doc.id,
+      userId: d['userId'] ?? '',
+      userName: d['employeeName'] ?? '',
+      date: dateParsed ?? DateTime.now(),
+      checkIn: checkInTime != null ? DateFormat('HH:mm').format(_parseDateTime(checkInTime) ?? DateTime.now()) : null,
+      checkOut: checkOutTime != null ? DateFormat('HH:mm').format(_parseDateTime(checkOutTime) ?? DateTime.now()) : null,
+      checkInStatus: _mapAdminStatusToMobile(d['status']),
+      checkOutStatus: checkOutTime != null ? 'Selesai' : 'Menunggu',
+      location: 'JNE Martapura',
+    );
+  }
+
+  // New: Fetch attendance by month for History Page
+  List<AttendanceRecord> _monthlyAttendance = [];
+  List<AttendanceRecord> get monthlyAttendance => _monthlyAttendance;
+  bool _isLoadingHistory = false;
+  bool get isLoadingHistory => _isLoadingHistory;
+
+  Future<void> fetchAttendanceByMonth(int month, int year) async {
+    if (_currentUser == null) return;
+    _isLoadingHistory = true;
+    notifyListeners();
+
+    try {
+      final start = DateTime(year, month, 1);
+      final end = DateTime(year, month + 1, 0);
+      
+      final q = await _db.collection('attendance')
+          .where('userId', isEqualTo: _currentUser!.uid)
+          .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(start))
+          .where('date', isLessThanOrEqualTo: DateFormat('yyyy-MM-dd').format(end))
+          .orderBy('date', descending: true)
+          .get();
+
+      _monthlyAttendance = q.docs.map((doc) => _mapAttendanceFromDoc(doc)).toList();
+    } catch (e) {
+      debugPrint('Error fetching history: $e');
+    } finally {
+      _isLoadingHistory = false;
+      notifyListeners();
+    }
+  }
 
     // Listen Leaves
     _db.collection('leaves').where('userId', isEqualTo: _currentUser!.uid).snapshots().listen((snap) {

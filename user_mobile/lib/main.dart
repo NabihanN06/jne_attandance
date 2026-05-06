@@ -31,6 +31,7 @@ import 'screen/notification/notification_page.dart';
 import 'screen/settings/settings_page.dart';
 import 'screen/overtime/overtime_page.dart';
 import 'screen/chat/chat_page.dart';
+import 'screen/calendar/calendar_page.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -131,6 +132,7 @@ class MyApp extends StatelessWidget {
         '/settings':            (_) => const SettingsPage(),
         '/overtime':            (_) => const OvertimePage(),
         '/chat':                (_) => const ChatPage(),
+        '/calendar':            (_) => const CalendarPage(),
       },
       onUnknownRoute: (_) => MaterialPageRoute(builder: (_) => const SplashScreen()),
     );
