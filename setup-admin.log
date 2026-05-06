@@ -1,11 +1,4 @@
 Starting Admin Initialization...
 Setting up Auth account for admin@jnemtp.com...
- Auth account created successfully.
-Updating Firestore user document...
-Firestore document initialized with admin role.
-
- Admin Initialization Complete!
-Email: admin@jnemtp.com
-Password: JNE.martapura
-
-You can now log in to the dashboard.
+ Auth account already exists, signing in to update Firestore...
+Error during initialization: Firebase: Error (auth/invalid-credential).

@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
 import '../auth/login_page.dart';
 import '../enroll/enroll_page.dart';
 
 class ProfilePage extends StatelessWidget {
+  static const Color slate950 = Color(0xFF0F172A);
+  static const Color jneRose = Color(0xFFE11D48);
+  static const Color bgLight = Color(0xFFF8FAFC);
+
   const ProfilePage({super.key});
 
   @override
@@ -14,211 +19,185 @@ class ProfilePage extends StatelessWidget {
     if (user == null) return const SizedBox();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1628),
+      backgroundColor: bgLight,
       appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)),
-        title: const Text('Profile Karyawan'),
+        backgroundColor: slate950,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'PROFIL SAYA',
+          style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1),
+        ),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            // ── Top Header Section ──
+            Stack(
+              children: [
+                Container(height: 80, color: slate950),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 20),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 5))],
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundColor: slate950.withValues(alpha: 0.1),
+                          child: const Icon(Icons.person_rounded, color: slate950, size: 40),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(user.name, style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 18, fontWeight: FontWeight.w800)),
+                              const SizedBox(height: 4),
+                              Text('${user.position} · ${user.department}', style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
 
-          // ── Profile header ──
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-            child: Row(children: [
-              Container(
-                width: 64, height: 64,
-                decoration: BoxDecoration(color: const Color(0xFF162440), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.person, color: Color(0xFF90A4AE), size: 36),
+            const SizedBox(height: 24),
+
+            // ── Info Sections ──
+            _buildInfoSection('Data Pribadi', [
+              _buildInfoItem(Icons.email_rounded, 'Alamat Email', user.email),
+              _buildInfoItem(Icons.phone_rounded, 'Nomor Telepon', user.phone.isEmpty ? '+62 000-0000-0000' : user.phone),
+              _buildInfoItem(Icons.badge_rounded, 'ID Karyawan', user.nik),
+            ]),
+
+            const SizedBox(height: 20),
+
+            _buildInfoSection('Akses Karyawan', [
+              _buildActionItem(context, Icons.badge_rounded, 'Digital ID Card', 'Lihat kartu identitas resmi Anda', () => Navigator.pushNamed(context, '/id_card')),
+              _buildActionItem(context, Icons.face_unlock_rounded, 'Registrasi Ulang Wajah', 'Perbarui data biometrik Anda', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EnrollPage()))),
+            ]),
+
+            const SizedBox(height: 20),
+
+            _buildInfoSection('Keamanan & Lainnya', [
+              _buildActionItem(context, Icons.lock_outline_rounded, 'Ganti Kata Sandi', 'Ubah kredensial akses Anda', () {}),
+            ]),
+
+            const SizedBox(height: 32),
+
+            // ── Logout Button ──
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: GestureDetector(
+                onTap: () => _confirmLogout(context, provider),
+                child: Container(
+                  height: 60,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: jneRose.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: jneRose.withValues(alpha: 0.2)),
+                  ),
+                  child: Center(
+                    child: Text('Keluar dari Akun', style: GoogleFonts.outfit(color: jneRose, fontSize: 15, fontWeight: FontWeight.w800)),
+                  ),
+                ),
               ),
-              const SizedBox(width: 14),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(user.name, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text('${user.position} · ${user.department}',
-                    style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 12, height: 1.4)),
-              ])),
-            ]),
-          ),
-
-          const SizedBox(height: 20),
-
-          _sectionLabel('Informasi Pribadi'),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-            child: Column(children: [
-              _infoItem(Icons.email_outlined, user.email, 'Email'),
-              _divider(),
-              _infoItem(Icons.phone_outlined, user.phone.isEmpty ? '+62 000-0000-0000' : user.phone, 'Nomor Telepon'),
-              _divider(),
-              _infoItem(Icons.badge_outlined, 'NIK: ${user.nik}', 'ID Karyawan'),
-            ]),
-          ),
-
-          const SizedBox(height: 20),
-
-          _sectionLabel('Jadwal Kerja'),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-            child: Column(children: [
-              _infoItem(Icons.alarm, '08:00–16:00', 'Jam Masuk - Pulang', iconBg: const Color(0xFFB71C1C)),
-              _divider(),
-              _infoItem(Icons.calendar_month, 'Senin – Jum\'at', 'Hari Kerja', iconBg: const Color(0xFF1565C0)),
-              _divider(),
-              _infoItem(Icons.warning_amber_rounded, '15 Menit', 'Toleransi', iconBg: const Color(0xFFE65100)),
-            ]),
-          ),
-
-          const SizedBox(height: 20),
-
-          _sectionLabel('Keamanan'),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-            child: Column(children: [
-              _actionItem(
-                icon: Icons.face_retouching_natural,
-                title: 'Wajah Terdaftar ✓',
-                subtitle: 'Didaftarkan ${user.faceRegisteredDate.isEmpty ? "1 Jan 2026" : user.faceRegisteredDate} · ${user.deviceName.isEmpty ? "Perangkat ini" : user.deviceName}',
-                iconBg: const Color(0xFF1565C0),
-                onTap: () {},
-              ),
-              _divider(),
-              _actionItem(
-                icon: Icons.phonelink_setup,
-                title: 'Daftar Ulang Wajah',
-                subtitle: 'Ganti data wajah untuk verifikasi',
-                iconBg: const Color(0xFF4A235A),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EnrollPage())),
-              ),
-              _divider(),
-              _actionItem(
-                icon: Icons.key,
-                title: 'Ganti Password',
-                subtitle: 'Verifikasi via WhatsApp OTP',
-                iconBg: const Color(0xFF1B5E20),
-                onTap: () => _showChangePasswordDialog(context),
-              ),
-            ]),
-          ),
-
-          const SizedBox(height: 20),
-
-          _sectionLabel('Pengaturan Notifikasi'),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-            child: Column(children: [
-              _notifToggle(context, 'Reminder Absen Masuk', provider.notifSettings.reminderAbsenMasuk,
-                  (v) => provider.updateNotifSettings(provider.notifSettings.copyWith(reminderAbsenMasuk: v))),
-              _divider(),
-              _notifToggle(context, 'Reminder Absen Pulang', provider.notifSettings.reminderAbsenPulang,
-                  (v) => provider.updateNotifSettings(provider.notifSettings.copyWith(reminderAbsenPulang: v))),
-              _divider(),
-              _notifToggle(context, 'Notifikasi Status Izin', provider.notifSettings.notifikasiStatusIzin,
-                  (v) => provider.updateNotifSettings(provider.notifSettings.copyWith(notifikasiStatusIzin: v))),
-              _divider(),
-              _notifToggle(context, 'Notifikasi Meeting', provider.notifSettings.notifikasiMeeting,
-                  (v) => provider.updateNotifSettings(provider.notifSettings.copyWith(notifikasiMeeting: v))),
-            ]),
-          ),
-
-          const SizedBox(height: 20),
-
-          _sectionLabel('Tentang Aplikasi'),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-            child: Row(children: [
-              Container(width: 40, height: 40,
-                  decoration: BoxDecoration(color: const Color(0xFF162440), borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.info_outline, color: Color(0xFF90A4AE), size: 22)),
-              const SizedBox(width: 12),
-              const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('v0.3.0', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                Text('Versi Aplikasi', style: TextStyle(color: Color(0xFF90A4AE), fontSize: 11)),
-              ]),
-            ]),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Log Out button
-          _PressBtn(
-            label: 'Log Out',
-            color: const Color(0xFFE31E24),
-            onTap: () => _confirmLogout(context, provider),
-          ),
-
-          const SizedBox(height: 32),
-        ]),
+            ),
+            
+            const SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _sectionLabel(String t) => Text(t,
-      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700));
-
-  Widget _divider() => const Divider(color: Color(0xFF1E3A5F), height: 1, indent: 16, endIndent: 16);
-
-  Widget _infoItem(IconData icon, String value, String label, {Color iconBg = const Color(0xFF162440)}) {
+  Widget _buildInfoSection(String title, List<Widget> items) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(children: [
-        Container(width: 38, height: 38,
-            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, color: Colors.white70, size: 20)),
-        const SizedBox(width: 12),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-          Text(label, style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 11)),
-        ]),
-      ]),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title.toUpperCase(), style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+            ),
+            child: Column(children: items),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _actionItem({required IconData icon, required String title, required String subtitle,
-      required Color iconBg, required VoidCallback onTap}) {
+  Widget _buildInfoItem(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, color: slate950, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 2),
+              Text(value, style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w800)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionItem(BuildContext context, IconData icon, String title, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(children: [
-          Container(width: 38, height: 38,
-              decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(8)),
-              child: Icon(icon, color: Colors.white70, size: 20)),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-            Text(subtitle, style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 11)),
-          ])),
-          const Icon(Icons.chevron_right, color: Color(0xFF90A4AE), size: 18),
-        ]),
-      ),
-    );
-  }
-
-  Widget _notifToggle(BuildContext context, String label, bool value, ValueChanged<bool> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(label, style: const TextStyle(color: Colors.white, fontSize: 13)),
-        Switch(
-          value: value,
-          onChanged: onChanged,
-          activeThumbColor: const Color(0xFFE31E24),
-          activeTrackColor: const Color(0xFFE31E24).withValues(alpha: 0.4),
-          inactiveThumbColor: Colors.grey,
-          inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: slate950.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: slate950, size: 20),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w800)),
+                  Text(subtitle, style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFFCBD5E1)),
+          ],
         ),
-      ]),
+      ),
     );
   }
 
@@ -226,76 +205,30 @@ class ProfilePage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF0D1F38),
-        title: const Text('Log Out', style: TextStyle(color: Colors.white)),
-        content: const Text('Yakin ingin keluar? Akun kamu tetap tersimpan.',
-            style: TextStyle(color: Color(0xFF90A4AE))),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        title: Text('KELUAR AKUN?', style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontWeight: FontWeight.w900, fontSize: 18)),
+        content: Text('Anda perlu melakukan login kembali untuk dapat melakukan absensi dan mengakses data kerja Anda.', style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 14, height: 1.5)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context),
-              child: const Text('Batal', style: TextStyle(color: Color(0xFF90A4AE)))),
           TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('BATAL', style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontWeight: FontWeight.w800, fontSize: 13)),
+          ),
+          ElevatedButton(
             onPressed: () {
               provider.logout();
-              Navigator.pushAndRemoveUntil(context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()), (r) => false);
+              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginPage()), (r) => false);
             },
-            child: const Text('Log Out', style: TextStyle(color: Color(0xFFE31E24), fontWeight: FontWeight.w700)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: jneRose,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text('YA, KELUAR', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
           ),
         ],
       ),
-    );
-  }
-
-  void _showChangePasswordDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF0D1F38),
-        title: const Text('Ganti Password', style: TextStyle(color: Colors.white)),
-        content: const Text('Fitur ganti password via WhatsApp OTP akan segera tersedia.',
-            style: TextStyle(color: Color(0xFF90A4AE))),
-        actions: [TextButton(onPressed: () => Navigator.pop(context),
-            child: const Text('OK', style: TextStyle(color: Color(0xFFE31E24))))],
-      ),
-    );
-  }
-}
-
-class _PressBtn extends StatefulWidget {
-  final String label; final Color color; final VoidCallback onTap;
-  const _PressBtn({required this.label, required this.color, required this.onTap});
-  @override
-  State<_PressBtn> createState() => _PressBtnState();
-}
-class _PressBtnState extends State<_PressBtn> with SingleTickerProviderStateMixin {
-  late AnimationController _c;
-  late Animation<double> _s;
-  @override
-  void initState() {
-    super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
-    _s = Tween<double>(begin: 1.0, end: 0.95).animate(CurvedAnimation(parent: _c, curve: Curves.easeOut));
-  }
-  @override
-  void dispose() { _c.dispose(); super.dispose(); }
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _c.forward(),
-      onTapUp: (_) async { await _c.reverse(); widget.onTap(); },
-      onTapCancel: () => _c.reverse(),
-      child: AnimatedBuilder(animation: _s, builder: (_, _) => Transform.scale(
-        scale: _s.value,
-        child: Container(
-          width: double.infinity, height: 48,
-          decoration: BoxDecoration(
-            color: widget.color, borderRadius: BorderRadius.circular(10),
-            boxShadow: [BoxShadow(color: widget.color.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 3))],
-          ),
-          alignment: Alignment.center,
-          child: Text(widget.label, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-        ),
-      )),
     );
   }
 }

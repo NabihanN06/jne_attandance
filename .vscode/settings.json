@@ -1,5 +1,13 @@
 {
     "css.lint.unknownAtRules": "ignore",
     "scss.lint.unknownAtRules": "ignore",
-    "less.lint.unknownAtRules": "ignore"
+    "less.lint.unknownAtRules": "ignore",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-26",
+            "path": "C:\\Users\\USER\\AppData\\Roaming\\Antigravity\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\java\\latest",
+            "default": true
+        }
+    ],
+    "java.jdt.ls.java.home": "C:\\Users\\USER\\AppData\\Roaming\\Antigravity\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\java\\latest"
 }

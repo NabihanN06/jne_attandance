@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import '../onboarding/onboarding1.dart';
 
@@ -9,8 +10,7 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -51,80 +51,98 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    const Color jneRed = Color(0xFFE31E24);
+    const Color jneBlue = Color(0xFF005596);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1B2A),
-      body: Center(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/images/jne.png',
-                  width: 400,
-                  errorBuilder: (context, error, stackTrace) => _buildFallbackLogo(),
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          Center(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/images/logo_jne.png',
+                      width: 180,
+                      errorBuilder: (_, _, _) => _buildFallbackLogo(jneRed),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'E-PRESENCE',
+                      style: GoogleFonts.outfit(
+                        color: jneBlue,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 6.0,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  '⏱️ Loading...',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 3.0,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+          Positioned(
+            bottom: 60,
+            left: 0, right: 0,
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Column(
+                children: [
+                  const SizedBox(
+                    width: 24, height: 24,
+                    child: CircularProgressIndicator(color: jneRed, strokeWidth: 3),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'JNE MARTAPURA',
+                    style: GoogleFonts.outfit(
+                      color: const Color(0xFF94A3B8),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildFallbackLogo() {
+  Widget _buildFallbackLogo(Color color) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            const Text(
+            Text(
               'JNE',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 52,
+              style: GoogleFonts.outfit(
+                color: const Color(0xFF005596),
+                fontSize: 56,
                 fontWeight: FontWeight.w900,
-                letterSpacing: -1,
+                letterSpacing: -2,
               ),
             ),
             const SizedBox(width: 4),
             Container(
-              margin: const EdgeInsets.only(bottom: 8),
+              margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE31E24),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Text(
-                '®',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+              child: const Text('®', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
-        Container(
-          width: 160,
-          height: 2,
-          color: const Color(0xFFE31E24),
-          margin: const EdgeInsets.only(top: 4),
-        ),
+        Container(width: 140, height: 4, color: color, margin: const EdgeInsets.only(top: 4)),
       ],
     );
   }
