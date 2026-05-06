@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../models/app_models.dart';
 import 'dart:math';
 
 class IDCardPage extends StatefulWidget {
@@ -139,7 +140,7 @@ class _IDCardPageState extends State<IDCardPage> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildFront(user) {
+  Widget _buildFront(UserModel user) {
     return Container(
       width: 320,
       height: 480,
@@ -238,7 +239,7 @@ class _IDCardPageState extends State<IDCardPage> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildBack(user) {
+  Widget _buildBack(UserModel user) {
     return Container(
       width: 320,
       height: 480,

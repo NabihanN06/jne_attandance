@@ -311,7 +311,6 @@ class _OvalPainter extends CustomPainter {
     // Focus Indicators
     final p = Paint()..color = color..style = PaintingStyle.stroke
       ..strokeWidth = 4.0..strokeCap = StrokeCap.round;
-    const bracketLen = 30.0;
     
     // Top
     canvas.drawLine(Offset(rect.center.dx - 15, rect.top), Offset(rect.center.dx + 15, rect.top), p);

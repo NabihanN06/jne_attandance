@@ -143,7 +143,6 @@ class MyApp extends StatelessWidget {
     final Color slateBg = dark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
     final Color slateSurface = dark ? const Color(0xFF1E293B) : Colors.white;
     final Color textPrimary = dark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
-    final Color textSecondary = dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return ThemeData(
       useMaterial3: true,

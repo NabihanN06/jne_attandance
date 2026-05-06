@@ -142,7 +142,7 @@ class _CalendarPageState extends State<CalendarPage> {
             decoration: BoxDecoration(
               color: isSelected ? jneRed : isToday ? Colors.white12 : Colors.transparent,
               borderRadius: BorderRadius.circular(16),
-              border: isToday ? Border.all(color: jneRed.withOpacity(0.5), width: 1) : null,
+              border: isToday ? Border.all(color: jneRed.withValues(alpha: 0.5), width: 1) : null,
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -189,7 +189,7 @@ class _CalendarPageState extends State<CalendarPage> {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: jneBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: jneBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                 child: Text(
                   '${dayEvents.length} ACARA',
                   style: GoogleFonts.outfit(color: jneBlue, fontSize: 10, fontWeight: FontWeight.w900),
@@ -224,7 +224,7 @@ class _CalendarPageState extends State<CalendarPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 10))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 10))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,7 +234,7 @@ class _CalendarPageState extends State<CalendarPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _getCategoryColor(e.category).withOpacity(0.1),
+                  color: _getCategoryColor(e.category).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/app_models.dart';
@@ -856,7 +855,7 @@ class AppProvider extends ChangeNotifier {
     final monthLeaves = _leaveRequests.where((r) => r.fromDate.month == month && r.fromDate.year == year && r.status == 'approved').toList();
 
     int present = monthRecords.length;
-    int leaves = monthLeaves.fold(0, (sum, r) => sum + r.toDate.difference(r.fromDate).inDays + 1);
+    int leaves = monthLeaves.fold(0, (acc, r) => acc + r.toDate.difference(r.fromDate).inDays + 1);
     int late = monthRecords.where((r) => r.checkInStatus == 'Terlambat').length;
     
     // Simple work hours estimation: 8 hours per record
