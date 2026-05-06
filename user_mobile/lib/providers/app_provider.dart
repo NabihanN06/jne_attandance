@@ -1,11 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/app_models.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
+import 'dart:io';
 import '../utils/offline_service.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_messaging/firebase_messaging.dart' as fcm;
 
 class AppProvider extends ChangeNotifier {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -93,6 +97,7 @@ class AppProvider extends ChangeNotifier {
           faceRegisteredDate: _parseDateTime(d['createdAt'])?.toIso8601String() ?? '',
         );
         _listenToMyData();
+        _saveFcmToken(uid);
         notifyListeners();
       }
     } catch (e) {
@@ -100,34 +105,25 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> _saveFcmToken(String uid) async {
+    try {
+      String? token = await fcm.FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await _db.collection('users').doc(uid).update({
+          'fcmToken': token,
+          'lastSeen': FieldValue.serverTimestamp(),
+        });
+        debugPrint('FCM Token Saved: $token');
+      }
+    } catch (e) {
+      debugPrint('Error saving FCM token: $e');
+    }
+  }
+
   Future<void> login(String email, String password) async {
     try {
-      try {
-        await _auth.signInWithEmailAndPassword(email: email, password: password);
-      } catch (e) {
-        if (kDebugMode && e is FirebaseAuthException && (e.code == 'user-not-found' || e.code == 'invalid-credential')) {
-          // Auto-signup for development in emulator
-          try {
-            await _auth.createUserWithEmailAndPassword(email: email, password: password);
-            final user = _auth.currentUser;
-            if (user != null) {
-              await _db.collection('users').doc(user.uid).set({
-                'name': email.split('@')[0].replaceAll('.', ' ').toUpperCase(),
-                'email': email,
-                'role': 'employee',
-                'employeeId': 'JNE-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
-                'createdAt': FieldValue.serverTimestamp(),
-                'faceRegistered': false,
-              });
-            }
-          } catch (signUpError) {
-            rethrow;
-          }
-        } else if (!e.toString().contains('PigeonUserDetails')) {
-          rethrow;
-        }
-      }
-
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      
       await Future.delayed(const Duration(milliseconds: 1000));
       final user = _auth.currentUser;
       
@@ -161,11 +157,15 @@ class AppProvider extends ChangeNotifier {
       }
     } catch (e) {
       if (e is FirebaseAuthException) {
-        String msg = 'Gagal masuk';
+        String msg = 'Gagal masuk: ${e.code}';
         if (e.code == 'wrong-password' || e.code == 'invalid-credential' || e.code == 'user-not-found') {
-          msg = 'Email atau password salah. Coba periksa koneksi emulator Anda.';
+          msg = 'Email atau password salah.';
         } else if (e.code == 'user-disabled') {
           msg = 'Akun Anda telah dinonaktifkan';
+        } else if (e.code == 'network-request-failed') {
+          msg = 'Koneksi internet terputus. Pastikan HP ada kuota/WiFi.';
+        } else if (e.message != null) {
+          msg = 'Error Firebase: ${e.message}';
         }
         throw Exception(msg);
       }
@@ -566,6 +566,21 @@ class AppProvider extends ChangeNotifier {
   }) async {
     final now = DateTime.now();
     final dateStr = DateFormat('yyyy-MM-dd').format(now);
+    
+    String finalPhotoUrl = localImagePath ?? '';
+    
+    // If not offline and we have an image, upload it first
+    if (!isOffline && localImagePath != null && localImagePath.isNotEmpty) {
+      try {
+        final ref = FirebaseStorage.instance.ref().child('attendance_photos/${userId}_${now.millisecondsSinceEpoch}.jpg');
+        await ref.putFile(File(localImagePath));
+        finalPhotoUrl = await ref.getDownloadURL();
+      } catch (e) {
+        debugPrint('Failed to upload photo: $e');
+        // fallback to local path or empty string if upload fails
+      }
+    }
+
     final data = {
       'userId': userId,
       'employeeName': userName,
@@ -584,7 +599,7 @@ class AppProvider extends ChangeNotifier {
           _officeLng
         ).round(),
         'faceScore': 100,
-        'photoUrl': localImagePath ?? '',
+        'photoUrl': finalPhotoUrl,
       },
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -613,6 +628,21 @@ class AppProvider extends ChangeNotifier {
     try {
       final pending = await OfflineService.getPendingAttendance();
       for (var item in pending) {
+        // Check if there is a local photo URL that needs uploading
+        if (item['checkIn'] != null && item['checkIn']['photoUrl'] != null) {
+          String photoPath = item['checkIn']['photoUrl'];
+          if (photoPath.isNotEmpty && !photoPath.startsWith('http')) {
+            try {
+              final userId = item['userId'] ?? 'unknown';
+              final now = DateTime.now();
+              final ref = FirebaseStorage.instance.ref().child('attendance_photos/${userId}_${now.millisecondsSinceEpoch}.jpg');
+              await ref.putFile(File(photoPath));
+              item['checkIn']['photoUrl'] = await ref.getDownloadURL();
+            } catch (e) {
+              debugPrint('Failed to upload offline photo during sync: $e');
+            }
+          }
+        }
         await _db.collection('attendance').add(item);
       }
       await OfflineService.clearPendingAttendance();
@@ -635,6 +665,34 @@ class AppProvider extends ChangeNotifier {
     };
   }
 
+  Future<void> sendSOSAlert(dynamic location) async {
+    try {
+      final String locStr = location != null ? "${location.latitude}, ${location.longitude}" : "Lokasi tidak tersedia";
+      
+      await _db.collection('adminNotifications').add({
+        'title': '🚨 SOS DARURAT: ${_currentUser?.name}',
+        'message': 'Karyawan membutuhkan bantuan segera! Lokasi Terakhir: $locStr',
+        'type': 'attendance_alert',
+        'target': 'admin',
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // Also log to a dedicated SOS collection for history
+      await _db.collection('sos_reports').add({
+        'userId': _currentUser?.uid,
+        'userName': _currentUser?.name,
+        'location': locStr,
+        'status': 'active',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      addNotification('SOS Terkirim', 'Pesan darurat telah dikirim ke Admin. Tetap tenang, bantuan akan segera diproses.');
+    } catch (e) {
+      debugPrint('Failed to send SOS: $e');
+    }
+  }
+
   Future<void> submitEditRequest(String attendanceId, String reason, Map<String, dynamic> changes) async {
     await _db.collection('edit_requests').add({
       'attendanceId': attendanceId,
@@ -646,6 +704,17 @@ class AppProvider extends ChangeNotifier {
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    
+    // Notify Admin
+    await _db.collection('adminNotifications').add({
+      'title': 'Koreksi Absen: ${_currentUser?.name}',
+      'message': 'Mengajukan koreksi absensi dengan alasan: $reason',
+      'type': 'attendance_alert',
+      'target': 'admin',
+      'isRead': false,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
     addNotification('Pengajuan Edit', 'Permintaan koreksi data absensi telah dikirim ke Admin.');
   }
 
@@ -664,6 +733,18 @@ class AppProvider extends ChangeNotifier {
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    // Notify Admin
+    await _db.collection('adminNotifications').add({
+      'title': 'Pengajuan Izin: ${_currentUser?.name}',
+      'message': '${req.reason} selama ${req.toDate.difference(req.fromDate).inDays + 1} hari.',
+      'type': 'leave_request',
+      'target': 'admin',
+      'isRead': false,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    addNotification('Pengajuan Izin', 'Surat izin Anda berhasil dikirim dan menunggu persetujuan.');
   }
 
   void updateLeaveStatus(String id, String status) {
@@ -735,5 +816,44 @@ class AppProvider extends ChangeNotifier {
       'createdAt': FieldValue.serverTimestamp(),
     });
     addNotification('SOS TERKIRIM', 'Pesan darurat dan lokasi Anda telah dikirim ke pusat kendali Admin.');
+  }
+
+  // ── Statistics Logic ──
+  Map<String, dynamic> getStatsForMonth(int month, int year) {
+    final monthRecords = _attendanceRecords.where((r) => r.date.month == month && r.date.year == year).toList();
+    final monthLeaves = _leaveRequests.where((r) => r.fromDate.month == month && r.fromDate.year == year && r.status == 'approved').toList();
+
+    int present = monthRecords.length;
+    int leaves = monthLeaves.fold(0, (sum, r) => sum + r.toDate.difference(r.fromDate).inDays + 1);
+    int late = monthRecords.where((r) => r.checkInStatus == 'Terlambat').length;
+    
+    // Simple work hours estimation: 8 hours per record
+    int totalHours = present * 8;
+
+    double punctuality = present > 0 ? ((present - late) / present) : 1.0;
+    
+    return {
+      'present': present.toString().padLeft(2, '0'),
+      'leaves': leaves.toString().padLeft(2, '0'),
+      'late': late.toString().padLeft(2, '0'),
+      'hours': totalHours.toString(),
+      'punctuality': punctuality,
+    };
+  }
+
+  // ── Biometric Enrollment ──
+  Future<void> registerFace(String localPath) async {
+    if (_currentUser == null) return;
+    
+    // In real app, you would upload the photo to Firebase Storage
+    // For now, we update the flag in Firestore
+    await _db.collection('users').doc(_currentUser!.uid).update({
+      'faceRegistered': true,
+      'faceRegisteredAt': FieldValue.serverTimestamp(),
+    });
+    
+    _currentUser = _currentUser!.copyWith(faceRegistered: 'yes');
+    notifyListeners();
+    addNotification('Biometrik Terdaftar', 'Wajah Anda telah berhasil didaftarkan ke sistem.');
   }
 }

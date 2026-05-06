@@ -1,0 +1,17 @@
+node_modules/
+.next/
+.git/
+dist/
+build/
+.dart_tool/
+.pub-cache/
+ios/
+android/
+web/
+linux/
+macos/
+windows/
+public/assets/
+package-lock.json
+*.log
+*.lock

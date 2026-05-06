@@ -6,8 +6,8 @@ import '../auth/login_page.dart';
 import '../enroll/enroll_page.dart';
 
 class ProfilePage extends StatelessWidget {
-  static const Color jneBlue = Color(0xFF005596);
-  static const Color jneRed = Color(0xFFE31E24);
+  static const Color slate950 = Color(0xFF0F172A);
+  static const Color jneRose = Color(0xFFE11D48);
   static const Color bgLight = Color(0xFFF8FAFC);
 
   const ProfilePage({super.key});
@@ -21,7 +21,7 @@ class ProfilePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: bgLight,
       appBar: AppBar(
-        backgroundColor: jneBlue,
+        backgroundColor: slate950,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
@@ -40,7 +40,7 @@ class ProfilePage extends StatelessWidget {
             // ── Top Header Section ──
             Stack(
               children: [
-                Container(height: 80, color: jneBlue),
+                Container(height: 80, color: slate950),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
                   child: Container(
@@ -55,8 +55,8 @@ class ProfilePage extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 36,
-                          backgroundColor: jneBlue.withValues(alpha: 0.1),
-                          child: const Icon(Icons.person_rounded, color: jneBlue, size: 40),
+                          backgroundColor: slate950.withValues(alpha: 0.1),
+                          child: const Icon(Icons.person_rounded, color: slate950, size: 40),
                         ),
                         const SizedBox(width: 20),
                         Expanded(
@@ -87,8 +87,14 @@ class ProfilePage extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            _buildInfoSection('Pengaturan Keamanan', [
+            _buildInfoSection('Akses Karyawan', [
+              _buildActionItem(context, Icons.badge_rounded, 'Digital ID Card', 'Lihat kartu identitas resmi Anda', () => Navigator.pushNamed(context, '/id_card')),
               _buildActionItem(context, Icons.face_unlock_rounded, 'Registrasi Ulang Wajah', 'Perbarui data biometrik Anda', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EnrollPage()))),
+            ]),
+
+            const SizedBox(height: 20),
+
+            _buildInfoSection('Keamanan & Lainnya', [
               _buildActionItem(context, Icons.lock_outline_rounded, 'Ganti Kata Sandi', 'Ubah kredensial akses Anda', () {}),
             ]),
 
@@ -103,12 +109,12 @@ class ProfilePage extends StatelessWidget {
                   height: 60,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: jneRed.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: jneRed.withValues(alpha: 0.2)),
+                    color: jneRose.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: jneRose.withValues(alpha: 0.2)),
                   ),
                   child: Center(
-                    child: Text('Keluar dari Akun', style: GoogleFonts.outfit(color: jneRed, fontSize: 15, fontWeight: FontWeight.w800)),
+                    child: Text('Keluar dari Akun', style: GoogleFonts.outfit(color: jneRose, fontSize: 15, fontWeight: FontWeight.w800)),
                   ),
                 ),
               ),
@@ -150,7 +156,7 @@ class ProfilePage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: jneBlue, size: 20),
+            child: Icon(icon, color: slate950, size: 20),
           ),
           const SizedBox(width: 16),
           Column(
@@ -175,8 +181,8 @@ class ProfilePage extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: jneBlue.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: jneBlue, size: 20),
+              decoration: BoxDecoration(color: slate950.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: slate950, size: 20),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -215,7 +221,7 @@ class ProfilePage extends StatelessWidget {
               Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginPage()), (r) => false);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: jneRed,
+              backgroundColor: jneRose,
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),

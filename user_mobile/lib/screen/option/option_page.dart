@@ -60,6 +60,15 @@ class OptionPage extends StatelessWidget {
               jneBlue,
               () => Navigator.pushNamed(context, '/overtime'),
             ),
+            const SizedBox(height: 16),
+            _buildFeatureCard(
+              context,
+              'Hub Support (Chat)',
+              'Hubungi Admin untuk kendala operasional.',
+              Icons.chat_bubble_rounded,
+              const Color(0xFF10B981),
+              () => Navigator.pushNamed(context, '/chat'),
+            ),
             
             const SizedBox(height: 32),
             _buildSectionTitle('Bantuan Darurat'),

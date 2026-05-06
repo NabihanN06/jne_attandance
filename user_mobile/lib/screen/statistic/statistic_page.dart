@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../providers/app_provider.dart';
 
 class StatisticPage extends StatefulWidget {
   const StatisticPage({super.key});
@@ -92,6 +94,9 @@ class _StatisticPageState extends State<StatisticPage> with SingleTickerProvider
   }
 
   Widget _buildMonthlyStats() {
+    final provider = context.watch<AppProvider>();
+    final stats = provider.getStatsForMonth(_bulan, _tahun);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       physics: const BouncingScrollPhysics(),
@@ -138,17 +143,17 @@ class _StatisticPageState extends State<StatisticPage> with SingleTickerProvider
             crossAxisSpacing: 16,
             childAspectRatio: 1.2,
             children: [
-              _buildStatBox('22', 'Hari Hadir', Icons.check_circle_rounded, Colors.green),
-              _buildStatBox('02', 'Izin/Sakit', Icons.assignment_rounded, Colors.orange),
-              _buildStatBox('04', 'Total Telat', Icons.alarm_rounded, jneRed),
-              _buildStatBox('168', 'Total Jam', Icons.timer_rounded, Colors.blue),
+              _buildStatBox(stats['present'], 'Hari Hadir', Icons.check_circle_rounded, Colors.green),
+              _buildStatBox(stats['leaves'], 'Izin/Sakit', Icons.assignment_rounded, Colors.orange),
+              _buildStatBox(stats['late'], 'Total Telat', Icons.alarm_rounded, jneRed),
+              _buildStatBox(stats['hours'], 'Total Jam', Icons.timer_rounded, Colors.blue),
             ],
           ),
           
           const SizedBox(height: 24),
           
           // Detail Performance Card
-          _buildPerformanceCard(),
+          _buildPerformanceCard(stats['punctuality']),
         ],
       ),
     );
@@ -178,7 +183,7 @@ class _StatisticPageState extends State<StatisticPage> with SingleTickerProvider
     );
   }
 
-  Widget _buildPerformanceCard() {
+  Widget _buildPerformanceCard(double punctuality) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -192,11 +197,11 @@ class _StatisticPageState extends State<StatisticPage> with SingleTickerProvider
         children: [
           Text('Analisis Kehadiran', style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.w800)),
           const SizedBox(height: 16),
-          _buildPerformanceRow('Ketepatan Waktu', 0.85, Colors.green),
+          _buildPerformanceRow('Ketepatan Waktu', punctuality, Colors.green),
           const SizedBox(height: 12),
-          _buildPerformanceRow('Kepatuhan Lokasi', 0.98, Colors.blue),
+          _buildPerformanceRow('Kepatuhan Lokasi', 1.0, Colors.blue),
           const SizedBox(height: 12),
-          _buildPerformanceRow('Efektivitas Jam', 0.72, Colors.orange),
+          _buildPerformanceRow('Efektivitas Jam', 0.9, Colors.orange),
         ],
       ),
     );

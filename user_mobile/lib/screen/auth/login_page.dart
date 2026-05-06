@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter/services.dart';
 import '../../providers/app_provider.dart';
 import '../home/home_screen.dart';
 
@@ -13,8 +14,9 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  static const Color jneBlue = Color(0xFF005596);
-  static const Color jneRed = Color(0xFFE31E24);
+  static const Color slate950 = Color(0xFF0F172A);
+  static const Color slate500 = Color(0xFF64748B);
+  static const Color jneRose = Color(0xFFE11D48);
 
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
@@ -37,11 +39,12 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     if (email.isEmpty || password.isEmpty) {
-      _showSnack('Mohon isi email dan password', isError: true);
+      _showSnack('Mohon masukkan email dan kata sandi', isError: true);
       return;
     }
 
     setState(() => _isLoading = true);
+    HapticFeedback.mediumImpact();
 
     try {
       await context.read<AppProvider>().login(email, password);
@@ -62,10 +65,11 @@ class _LoginPageState extends State<LoginPage> {
   void _showSnack(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
-        backgroundColor: isError ? jneRed : Colors.green,
+        content: Text(msg, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
+        backgroundColor: isError ? jneRose : const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
@@ -84,20 +88,24 @@ class _LoginPageState extends State<LoginPage> {
               FadeInDown(
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: jneRed.withValues(alpha: 0.05),
+                      color: jneRose.withValues(alpha: 0.05),
                       shape: BoxShape.circle,
                     ),
-                    child: Image.asset('assets/images/logo_jne.png', width: 80, height: 80, errorBuilder: (_, _, _) => const Icon(Icons.local_shipping_rounded, color: jneRed, size: 60)),
+                    child: Image.asset(
+                      'assets/images/logo_jne.png', 
+                      width: 80, height: 80, 
+                      errorBuilder: (_, _, _) => const Icon(Icons.local_shipping_rounded, color: jneRose, size: 60)
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 50),
               FadeInUp(
                 child: Text(
-                  'Selamat Datang!',
-                  style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 28, fontWeight: FontWeight.w900),
+                  'Selamat Datang',
+                  style: GoogleFonts.inter(color: slate950, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
                 ),
               ),
               const SizedBox(height: 8),
@@ -105,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                 delay: const Duration(milliseconds: 100),
                 child: Text(
                   'Silakan masuk untuk mengakses sistem absensi JNE Martapura.',
-                  style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 15, fontWeight: FontWeight.w500),
+                  style: GoogleFonts.inter(color: slate500, fontSize: 15, fontWeight: FontWeight.w500, height: 1.5),
                 ),
               ),
               const SizedBox(height: 48),
@@ -113,9 +121,9 @@ class _LoginPageState extends State<LoginPage> {
               _label('ALAMAT EMAIL / NIK'),
               _field(
                 _emailCtrl,
-                'Contoh: budi.santoso / JNE-OPS-001',
+                'budi.santoso / JNE-OPS-001',
                 keyboard: TextInputType.emailAddress,
-                icon: Icons.person_outline_rounded,
+                icon: Icons.person_rounded,
               ),
               
               const SizedBox(height: 24),
@@ -125,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
                 _passCtrl,
                 '••••••••',
                 obscure: _obscurePass,
-                icon: Icons.lock_outline_rounded,
+                icon: Icons.lock_rounded,
                 suffix: IconButton(
                   icon: Icon(_obscurePass ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: const Color(0xFF94A3B8), size: 20),
                   onPressed: () => setState(() => _obscurePass = !_obscurePass),
@@ -142,22 +150,26 @@ class _LoginPageState extends State<LoginPage> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _doLogin,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: jneBlue,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      backgroundColor: slate950,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       elevation: 0,
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : Text('MASUK SEKARANG', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+                        : Text('MASUK SEKARANG', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1)),
                   ),
                 ),
               ),
               
               const SizedBox(height: 32),
               Center(
-                child: Text(
-                  'Lupa kata sandi? Hubungi HR Admin',
-                  style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w600),
+                child: TextButton(
+                  onPressed: () {},
+                  child: Text(
+                    'Lupa kata sandi? Hubungi HR Admin',
+                    style: GoogleFonts.inter(color: slate500, fontSize: 13, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
               const SizedBox(height: 40),
@@ -169,31 +181,32 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _label(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 10, left: 4),
+    padding: const EdgeInsets.only(bottom: 12, left: 4),
     child: Text(
       text,
-      style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5),
+      style: GoogleFonts.inter(color: slate500, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5),
     ),
   );
 
   Widget _field(TextEditingController ctrl, String hint, {bool obscure = false, Widget? suffix, TextInputType keyboard = TextInputType.text, IconData? icon}) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(16),
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: TextField(
         controller: ctrl,
         obscureText: obscure,
         keyboardType: keyboard,
-        style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w700),
+        style: GoogleFonts.inter(color: slate950, fontSize: 15, fontWeight: FontWeight.w700),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w500),
-          prefixIcon: icon != null ? Icon(icon, color: jneBlue, size: 20) : null,
+          hintStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w500),
+          prefixIcon: icon != null ? Icon(icon, color: jneRose, size: 22) : null,
           suffixIcon: suffix,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         ),
       ),
     );

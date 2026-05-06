@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../providers/app_provider.dart';
 import '../succeed/succeed_page.dart';
 
 class EnrollPage extends StatefulWidget {
@@ -52,7 +55,7 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
   Future<void> _initCamera() async {
     try {
       final cameras = await availableCameras();
-      if (cameras.isEmpty) { setState(() => _errorMessage = 'Tidak ada kamera.'); return; }
+      if (cameras.isEmpty) { setState(() => _errorMessage = 'Kamera tidak terdeteksi.'); return; }
       final front = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
@@ -62,16 +65,16 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
       if (!mounted) return;
       setState(() { _cameraController = ctrl; _isCameraReady = true; });
     } on CameraException catch (e) {
-      setState(() => _errorMessage = 'Gagal:\n${e.description}');
+      setState(() => _errorMessage = 'Gagal Membuka Kamera:\n${e.description}');
     } catch (e) {
-      setState(() => _errorMessage = 'Error:\n$e');
+      setState(() => _errorMessage = 'Kesalahan Sistem:\n$e');
     }
   }
 
   Future<void> _onShutterTap() async {
     if (!_isCameraReady || _isCapturing) return;
     setState(() => _isCapturing = true);
-    HapticFeedback.mediumImpact();
+    HapticFeedback.heavyImpact();
 
     await _shutterController.forward();
     await _shutterController.reverse();
@@ -86,16 +89,20 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
         debugPrint('📸 Enroll foto: ${photo.path}');
 
         if (mounted) {
-          // ✅ Langsung ke SucceedPage setelah wajah terdaftar
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const SucceedPage()),
-            (route) => false,
-          );
+          final app = context.read<AppProvider>();
+          await app.registerFace(photo.path);
+
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const SucceedPage()),
+              (route) => false,
+            );
+          }
         }
       }
     } on CameraException catch (e) {
-      debugPrint('Gagal: ${e.description}');
+      debugPrint('Capture Gagal: ${e.description}');
       if (mounted) setState(() => _isCapturing = false);
     }
   }
@@ -111,12 +118,18 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final roseAccent = theme.colorScheme.primary;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1628),
+      backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
-        title: const Text('Daftar Wajah'),
-        automaticallyImplyLeading: false,
+        title: Text('SCAN WAJAH', style: GoogleFonts.inter(letterSpacing: 2, fontWeight: FontWeight.w900, fontSize: 14)),
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
+        automaticallyImplyLeading: true,
       ),
+      extendBodyBehindAppBar: true,
       body: Column(
         children: [
           Expanded(
@@ -129,7 +142,7 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                   else if (_errorMessage != null)
                     _buildError()
                   else
-                    _buildLoading(),
+                    _buildLoading(roseAccent),
 
                   if (_isCameraReady)
                     AnimatedBuilder(
@@ -138,7 +151,11 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                         scale: _pulseAnim.value,
                         child: CustomPaint(
                           size: Size(constraints.maxWidth, constraints.maxHeight),
-                          painter: _OvalPainter(w: constraints.maxWidth, h: constraints.maxHeight),
+                          painter: _OvalPainter(
+                            w: constraints.maxWidth, 
+                            h: constraints.maxHeight,
+                            color: roseAccent,
+                          ),
                         ),
                       ),
                     ),
@@ -156,8 +173,8 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
           ),
 
           Container(
-            color: const Color(0xFF0A1628),
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+            color: const Color(0xFF0F172A),
+            padding: const EdgeInsets.only(top: 30, bottom: 50, left: 24, right: 24),
             child: Column(
               children: [
                 GestureDetector(
@@ -165,7 +182,7 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                   child: AnimatedBuilder(
                     animation: _shutterController,
                     builder: (_, _) => SizedBox(
-                      width: 80, height: 80,
+                      width: 90, height: 90,
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
@@ -174,10 +191,10 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                             child: Opacity(
                               opacity: _rippleOpacity.value,
                               child: Container(
-                                width: 72, height: 72,
+                                width: 80, height: 80,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
+                                  border: Border.all(color: roseAccent, width: 2),
                                 ),
                               ),
                             ),
@@ -185,27 +202,27 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                           Transform.scale(
                             scale: _shutterScale.value,
                             child: Container(
-                              width: 64, height: 64,
+                              width: 72, height: 72,
                               decoration: BoxDecoration(
-                                color: _isCapturing ? const Color(0xFF1A3A5C) : const Color(0xFF0D1F38),
+                                color: _isCapturing ? roseAccent.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: _isCameraReady ? Colors.white70 : const Color(0xFF263E5E),
-                                  width: 2.5,
+                                  color: _isCameraReady ? roseAccent : Colors.white12,
+                                  width: 3,
                                 ),
                                 boxShadow: _isCameraReady
-                                    ? [BoxShadow(color: Colors.white.withValues(alpha: 0.15), blurRadius: 12, spreadRadius: 2)]
+                                    ? [BoxShadow(color: roseAccent.withValues(alpha: 0.3), blurRadius: 20, spreadRadius: 2)]
                                     : null,
                               ),
                               child: _isCapturing
-                                  ? const Padding(
-                                      padding: EdgeInsets.all(18),
-                                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(22),
+                                      child: CircularProgressIndicator(color: roseAccent, strokeWidth: 3),
                                     )
                                   : Icon(
-                                      Icons.camera_alt_outlined,
+                                      Icons.face_retouching_natural_rounded,
                                       color: _isCameraReady ? Colors.white : Colors.white24,
-                                      size: 28,
+                                      size: 32,
                                     ),
                             ),
                           ),
@@ -214,13 +231,13 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                const Text('Posisikan Wajah Anda',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                const Text('Pastikan wajah anda dalam bingkai oval',
-                    style: TextStyle(color: Color(0xFF90A4AE), fontSize: 12)),
+                const SizedBox(height: 20),
+                Text('VERIFIKASI BIOMETRIK',
+                    style: GoogleFonts.inter(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2)),
                 const SizedBox(height: 8),
+                Text('Posisikan wajah Anda tepat di tengah bingkai oval',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(color: Colors.white60, fontSize: 11, letterSpacing: -0.2)),
               ],
             ),
           ),
@@ -229,34 +246,35 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildLoading() => Container(
-        color: const Color(0xFF0D1525),
-        child: const Center(
+  Widget _buildLoading(Color accent) => Container(
+        color: const Color(0xFF0F172A),
+        child: Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            CircularProgressIndicator(color: Color(0xFFE31E24), strokeWidth: 2),
-            SizedBox(height: 16),
-            Text('Membuka kamera...', style: TextStyle(color: Color(0xFF90A4AE), fontSize: 13)),
+            CircularProgressIndicator(color: accent, strokeWidth: 3),
+            const SizedBox(height: 24),
+            Text('MEMPERSIAPKAN MODUL...', 
+              style: GoogleFonts.inter(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
           ]),
         ),
       );
 
   Widget _buildError() => Container(
-        color: const Color(0xFF0D1525),
-        padding: const EdgeInsets.all(32),
+        color: const Color(0xFF0F172A),
+        padding: const EdgeInsets.all(40),
         child: Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.no_photography_outlined, color: Color(0xFF90A4AE), size: 56),
-            const SizedBox(height: 16),
-            Text(_errorMessage ?? 'Kamera tidak tersedia',
+            const Icon(Icons.videocam_off_rounded, color: Colors.white24, size: 64),
+            const SizedBox(height: 24),
+            Text(_errorMessage ?? 'Kamera Bermasalah',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 13, height: 1.6)),
-            const SizedBox(height: 20),
+                style: GoogleFonts.inter(color: Colors.white60, fontSize: 13, height: 1.6)),
+            const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
                 setState(() { _isCameraReady = false; _errorMessage = null; });
                 _initCamera();
               },
-              child: const Text('Coba Lagi'),
+              child: const Text('RE-INITIALIZE'),
             ),
           ]),
         ),
@@ -265,36 +283,46 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
 
 class _OvalPainter extends CustomPainter {
   final double w, h;
-  _OvalPainter({required this.w, required this.h});
+  final Color color;
+  _OvalPainter({required this.w, required this.h, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     final ovalW = w * 0.72;
     final ovalH = h * 0.78;
-    final center = Offset(w / 2, h * 0.47);
+    final center = Offset(w / 2, h * 0.45);
     final rect = Rect.fromCenter(center: center, width: ovalW, height: ovalH);
 
+    // Dark overlay
     canvas.drawPath(
       Path()
         ..addRect(Rect.fromLTWH(0, 0, w, h))
         ..addOval(rect)
         ..fillType = PathFillType.evenOdd,
-      Paint()..color = Colors.black.withValues(alpha: 0.55),
+      Paint()..color = const Color(0xFF0F172A).withValues(alpha: 0.8),
     );
-    canvas.drawOval(rect, Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5);
 
-    final p = Paint()..color = Colors.white..style = PaintingStyle.stroke
-      ..strokeWidth = 3.5..strokeCap = StrokeCap.round;
-    const len = 20.0;
-    canvas.drawLine(Offset(rect.center.dx, rect.top - 1), Offset(rect.center.dx, rect.top + len), p);
-    canvas.drawLine(Offset(rect.center.dx, rect.bottom + 1), Offset(rect.center.dx, rect.bottom - len), p);
-    canvas.drawLine(Offset(rect.left - 1, rect.center.dy), Offset(rect.left + len, rect.center.dy), p);
-    canvas.drawLine(Offset(rect.right + 1, rect.center.dy), Offset(rect.right - len, rect.center.dy), p);
+    // Oval Border
+    canvas.drawOval(rect, Paint()
+      ..color = color.withValues(alpha: 0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0);
+
+    // Focus Indicators
+    final p = Paint()..color = color..style = PaintingStyle.stroke
+      ..strokeWidth = 4.0..strokeCap = StrokeCap.round;
+    const bracketLen = 30.0;
+    
+    // Top
+    canvas.drawLine(Offset(rect.center.dx - 15, rect.top), Offset(rect.center.dx + 15, rect.top), p);
+    // Bottom
+    canvas.drawLine(Offset(rect.center.dx - 15, rect.bottom), Offset(rect.center.dx + 15, rect.bottom), p);
+    // Left
+    canvas.drawLine(Offset(rect.left, rect.center.dy - 15), Offset(rect.left, rect.center.dy + 15), p);
+    // Right
+    canvas.drawLine(Offset(rect.right, rect.center.dy - 15), Offset(rect.right, rect.center.dy + 15), p);
   }
 
   @override
-  bool shouldRepaint(covariant _OvalPainter old) => old.w != w || old.h != h;
+  bool shouldRepaint(covariant _OvalPainter old) => old.w != w || old.h != h || old.color != color;
 }

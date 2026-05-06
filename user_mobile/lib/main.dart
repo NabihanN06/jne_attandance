@@ -1,11 +1,11 @@
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
-import 'package:cloud_firestore/cloud_firestore.dart' as fb_firestore;
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'providers/app_provider.dart';
+import 'providers/chat_provider.dart';
 import 'utils/connectivity_service.dart';
 import 'utils/geofence_service.dart';
 import 'screen/splash/splash_screen.dart';
@@ -26,26 +26,31 @@ import 'screen/leave/leave_page.dart';
 import 'screen/statistic/statistic_page.dart';
 import 'screen/history/history_page.dart';
 import 'screen/profile/profile_page.dart';
+import 'screen/profile/id_card_page.dart';
 import 'screen/notification/notification_page.dart';
 import 'screen/settings/settings_page.dart';
 import 'screen/overtime/overtime_page.dart';
+import 'screen/chat/chat_page.dart';
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  debugPrint("Handling a background message: ${message.messageId}");
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
-  // Connect to local emulators in debug mode
-  if (kDebugMode) {
-    // Choose appropriate host: Android emulator uses 10.0.2.2, iOS simulator uses localhost
-    const host = String.fromEnvironment('EMULATOR_HOST', defaultValue: '10.0.2.2');
-    try {
-      fb_firestore.FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
-      fb_auth.FirebaseAuth.instance.useAuthEmulator(host, 9099);
-      debugPrint('✅ Connected to Firebase Emulators at $host');
-    } catch (e) {
-      debugPrint('⚠️ Failed to connect to emulators: $e');
-    }
-  }
+  // Background message handler
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // Request notification permissions
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -59,6 +64,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ConnectivityService()),
         ChangeNotifierProvider(create: (_) => AppProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProxyProvider<AppProvider, GeofenceService>(
           create: (_) => GeofenceService(),
           update: (ctx, app, geofence) {
@@ -70,6 +76,16 @@ void main() async {
       child: const MyApp(),
     ),
   );
+
+  // Listen for foreground messages
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    debugPrint('Got a message whilst in the foreground!');
+    debugPrint('Message data: ${message.data}');
+
+    if (message.notification != null) {
+      debugPrint('Message also contained a notification: ${message.notification}');
+    }
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -109,40 +125,86 @@ class MyApp extends StatelessWidget {
         '/leave':               (_) => const LeavePage(),
         '/statistic':           (_) => const StatisticPage(),
         '/history':             (_) => const HistoryPage(),
-        '/profile':             (_) => const ProfilePage(),
-        '/notification':        (_) => const NotificationPage(),
+        '/profile': (context) => const ProfilePage(),
+        '/id_card': (context) => const IDCardPage(),
+        '/notification': (context) => const NotificationPage(),
         '/settings':            (_) => const SettingsPage(),
         '/overtime':            (_) => const OvertimePage(),
+        '/chat':                (_) => const ChatPage(),
       },
       onUnknownRoute: (_) => MaterialPageRoute(builder: (_) => const SplashScreen()),
     );
   }
 
   ThemeData _buildTheme(bool dark) {
+    final Color roseAccent = dark ? const Color(0xFFFB7185) : const Color(0xFFE11D48);
+    final Color slateBg = dark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+    final Color slateSurface = dark ? const Color(0xFF1E293B) : Colors.white;
+    final Color textPrimary = dark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+    final Color textSecondary = dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
     return ThemeData(
       useMaterial3: true,
       brightness: dark ? Brightness.dark : Brightness.light,
-      scaffoldBackgroundColor: dark ? const Color(0xFF0A1628) : const Color(0xFFF0F4F8),
-      colorScheme: dark
-          ? const ColorScheme.dark(primary: Color(0xFFE31E24), secondary: Color(0xFF1565C0), surface: Color(0xFF0D1F38))
-          : const ColorScheme.light(primary: Color(0xFFE31E24), secondary: Color(0xFF1565C0)),
-      appBarTheme: AppBarTheme(
-        backgroundColor: dark ? const Color(0xFF0D1F38) : const Color(0xFF005596),
-        foregroundColor: Colors.white, elevation: 0, centerTitle: false,
-        titleTextStyle: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+      scaffoldBackgroundColor: slateBg,
+      fontFamily: 'Inter',
+      textTheme: GoogleFonts.interTextTheme().apply(
+        bodyColor: textPrimary,
+        displayColor: textPrimary,
+      ).copyWith(
+        bodyLarge: GoogleFonts.inter(letterSpacing: -0.5, color: textPrimary),
+        bodyMedium: GoogleFonts.inter(letterSpacing: -0.5, color: textPrimary),
+        titleLarge: GoogleFonts.inter(letterSpacing: -0.8, fontWeight: FontWeight.w900, color: textPrimary),
       ),
-      pageTransitionsTheme: const PageTransitionsTheme(
-        builders: {
-          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-        },
+      colorScheme: dark
+          ? ColorScheme.dark(
+              primary: roseAccent,
+              secondary: const Color(0xFF38BDF8), // Sky Blue accent
+              surface: slateSurface,
+              onSurface: textPrimary,
+            )
+          : ColorScheme.light(
+              primary: roseAccent,
+              secondary: const Color(0xFF0284C7),
+              surface: slateSurface,
+              onSurface: textPrimary,
+            ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: dark ? slateBg.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.8),
+        foregroundColor: textPrimary,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: GoogleFonts.inter(
+          color: textPrimary,
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        ),
+        iconTheme: IconThemeData(color: textPrimary),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFE31E24), foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          elevation: 0, minimumSize: const Size(double.infinity, 50),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          backgroundColor: roseAccent,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 0,
+          minimumSize: const Size(double.infinity, 56),
+          textStyle: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: slateSurface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: dark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+            width: 1,
+          ),
         ),
       ),
     );
