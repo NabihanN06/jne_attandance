@@ -6,8 +6,9 @@ import '../auth/login_page.dart';
 import '../enroll/enroll_page.dart';
 
 class ProfilePage extends StatelessWidget {
+  static const Color jneCyan = Color(0xFF0891B2);
   static const Color slate950 = Color(0xFF0F172A);
-  static const Color jneRose = Color(0xFFE11D48);
+  static const Color jneDanger = Color(0xFFF43F5E);
   static const Color bgLight = Color(0xFFF8FAFC);
 
   const ProfilePage({super.key});
@@ -55,8 +56,8 @@ class ProfilePage extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 36,
-                          backgroundColor: slate950.withValues(alpha: 0.1),
-                          child: const Icon(Icons.person_rounded, color: slate950, size: 40),
+                          backgroundColor: jneCyan.withValues(alpha: 0.1),
+                          child: const Icon(Icons.person_rounded, color: jneCyan, size: 40),
                         ),
                         const SizedBox(width: 20),
                         Expanded(
@@ -82,7 +83,7 @@ class ProfilePage extends StatelessWidget {
             _buildInfoSection('Data Pribadi', [
               _buildInfoItem(Icons.email_rounded, 'Alamat Email', user.email),
               _buildInfoItem(Icons.phone_rounded, 'Nomor Telepon', user.phone.isEmpty ? '+62 000-0000-0000' : user.phone),
-              _buildInfoItem(Icons.badge_rounded, 'ID Karyawan', user.nik),
+              _buildInfoItem(Icons.badge_rounded, 'ID Karyawan', user.employeeId),
             ]),
 
             const SizedBox(height: 20),
@@ -109,12 +110,12 @@ class ProfilePage extends StatelessWidget {
                   height: 60,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: jneRose.withValues(alpha: 0.1),
+                    color: jneDanger.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: jneRose.withValues(alpha: 0.2)),
+                    border: Border.all(color: jneDanger.withValues(alpha: 0.2)),
                   ),
                   child: Center(
-                    child: Text('Keluar dari Akun', style: GoogleFonts.outfit(color: jneRose, fontSize: 15, fontWeight: FontWeight.w800)),
+                    child: Text('Keluar dari Akun', style: GoogleFonts.outfit(color: jneDanger, fontSize: 15, fontWeight: FontWeight.w800)),
                   ),
                 ),
               ),
@@ -155,8 +156,8 @@ class ProfilePage extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: slate950, size: 20),
+            decoration: BoxDecoration(color: jneCyan.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, color: jneCyan, size: 20),
           ),
           const SizedBox(width: 16),
           Column(
@@ -181,8 +182,8 @@ class ProfilePage extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: slate950.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: slate950, size: 20),
+              decoration: BoxDecoration(color: jneCyan.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: jneCyan, size: 20),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -221,7 +222,7 @@ class ProfilePage extends StatelessWidget {
               Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginPage()), (r) => false);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: jneRose,
+              backgroundColor: jneCyan,
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),

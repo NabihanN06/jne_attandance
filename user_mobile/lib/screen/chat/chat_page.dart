@@ -82,7 +82,7 @@ class _ChatPageState extends State<ChatPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF005596),
+        backgroundColor: const Color(0xFF0891B2), // Cyan Modern
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
@@ -116,7 +116,7 @@ class _ChatPageState extends State<ChatPage> {
         children: [
           Expanded(
             child: chat.isLoading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFFE31E24)))
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF0891B2)))
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(20),
@@ -127,7 +127,7 @@ class _ChatPageState extends State<ChatPage> {
                       }
                       final msg = chat.messages[index];
                       bool isMe = msg.senderId == app.currentUser?.uid;
-                      return _buildMessageBubble(msg, isMe);
+                      return _buildMessageBubble(msg, isMe, chat);
                     },
                   ),
           ),
@@ -159,7 +159,7 @@ class _ChatPageState extends State<ChatPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(3, (i) => Container(
                   width: 4, height: 4,
-                  decoration: const BoxDecoration(color: Color(0xFFE31E24), shape: BoxShape.circle),
+                  decoration: const BoxDecoration(color: Color(0xFF0891B2), shape: BoxShape.circle),
                 )),
               ),
             ),
@@ -169,82 +169,113 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage msg, bool isMe) {
+  Widget _buildMessageBubble(ChatMessage msg, bool isMe, ChatProvider chat) {
+    bool isDeleted = (msg as dynamic).id != null && msg.text == '🚫 Pesan telah dihapus'; 
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        decoration: BoxDecoration(
-          color: isMe ? const Color(0xFF005596) : Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
-            bottomLeft: Radius.circular(isMe ? 20 : 0),
-            bottomRight: Radius.circular(isMe ? 0 : 20),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+      child: GestureDetector(
+        onLongPress: isMe && !isDeleted ? () => _showDeleteDialog(msg, chat) : null,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+          decoration: BoxDecoration(
+            color: isMe ? const Color(0xFF0891B2) : Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: const Radius.circular(20),
+              topRight: const Radius.circular(20),
+              bottomLeft: Radius.circular(isMe ? 20 : 0),
+              bottomRight: Radius.circular(isMe ? 0 : 20),
             ),
-          ],
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            if (msg.imageUrl != null) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  msg.imageUrl!,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const SizedBox(
-                      height: 150,
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  },
-                ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              const SizedBox(height: 8),
             ],
-            if (msg.text.isNotEmpty)
-              Text(
-                msg.text,
-                style: GoogleFonts.outfit(
-                  color: isMe ? Colors.white : const Color(0xFF1E293B),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  height: 1.4,
-                ),
-              ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  DateFormat('HH:mm').format(msg.timestamp),
-                  style: GoogleFonts.outfit(
-                    color: isMe ? Colors.white70 : const Color(0xFF94A3B8),
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              if (msg.imageUrl != null) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    msg.imageUrl!,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const SizedBox(
+                        height: 150,
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    },
                   ),
                 ),
-                if (isMe) ...[
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.done_all_rounded,
-                    size: 12,
-                    color: msg.isRead ? Colors.greenAccent : Colors.white38,
-                  ),
-                ],
+                const SizedBox(height: 8),
               ],
-            ),
-          ],
+              if (msg.text.isNotEmpty)
+                Text(
+                  msg.text,
+                  style: GoogleFonts.outfit(
+                    color: isMe ? Colors.white : const Color(0xFF1E293B),
+                    fontSize: 13,
+                    fontWeight: isDeleted ? FontWeight.w400 : FontWeight.w500,
+                    fontStyle: isDeleted ? FontStyle.italic : FontStyle.normal,
+                    height: 1.4,
+                  ),
+                ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    DateFormat('HH:mm').format(msg.timestamp),
+                    style: GoogleFonts.outfit(
+                      color: isMe ? Colors.white70 : const Color(0xFF94A3B8),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (isMe) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      msg.isRead ? Icons.done_all_rounded : Icons.done_rounded,
+                      size: 12,
+                      color: msg.isRead ? Colors.greenAccent : Colors.white38,
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  void _showDeleteDialog(ChatMessage msg, ChatProvider chat) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Hapus Pesan?', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text('Pesan ini akan dihapus untuk semua orang.', style: GoogleFonts.outfit(fontSize: 14)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('BATAL', style: GoogleFonts.outfit(color: Colors.grey, fontWeight: FontWeight.bold))),
+          TextButton(
+            onPressed: () {
+              final app = context.read<AppProvider>();
+              String adminId = 'admin_jne_mtp';
+              String chatId = chat.getChatId(app.currentUser!.uid, adminId);
+              chat.deleteMessage(chatId, msg.id);
+              Navigator.pop(context);
+            }, 
+            child: Text('HAPUS', style: GoogleFonts.outfit(color: Colors.red, fontWeight: FontWeight.bold))
+          ),
+        ],
       ),
     );
   }
@@ -327,7 +358,7 @@ class _ChatPageState extends State<ChatPage> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: const BoxDecoration(
-                      color: Color(0xFFE31E24),
+                      color: Color(0xFF0891B2),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),

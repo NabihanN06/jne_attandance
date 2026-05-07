@@ -9,6 +9,8 @@ import 'dart:io';
 import '../utils/offline_service.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart' as fcm;
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
 
 class AppProvider extends ChangeNotifier {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -63,6 +65,7 @@ class AppProvider extends ChangeNotifier {
   int get unreadNotificationCount => notifications.where((n) => !n.isRead).length;
 
   StreamSubscription? _userNotifSub;
+  StreamSubscription? _settingsSub;
 
   AppProvider() {
     _loadUsers();
@@ -87,13 +90,14 @@ class AppProvider extends ChangeNotifier {
           name: d['name'] ?? '',
           email: d['email'] ?? '',
           phone: d['phone'] ?? '',
-          nik: d['employeeId'] ?? '',
+          employeeId: d['employeeId'] ?? '',
           role: d['role'] ?? 'employee',
           department: d['department'] ?? '',
           position: d['position'] ?? '',
           faceRegistered: d['faceRegistered'] == true ? 'yes' : 'no',
           deviceName: d['deviceName'] ?? '',
           faceRegisteredDate: _parseDateTime(d['createdAt'])?.toIso8601String() ?? '',
+          allowRemoteAttendance: d['allowRemoteAttendance'] ?? (d['role'] == 'kurir' || d['role'] == 'driver'),
         );
         _listenToMyData();
         _saveFcmToken(uid);
@@ -123,7 +127,7 @@ class AppProvider extends ChangeNotifier {
     try {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
       
-      await Future.delayed(const Duration(milliseconds: 1000));
+      // Delay dihapus untuk performa maksimal
       final user = _auth.currentUser;
       
       if (user != null) {
@@ -136,13 +140,14 @@ class AppProvider extends ChangeNotifier {
             name: d['name'] ?? 'User',
             email: d['email'] ?? email,
             phone: d['phone'] ?? '',
-            nik: d['employeeId'] ?? d['nik'] ?? '',
+            employeeId: d['employeeId'] ?? d['nik'] ?? '',
             role: d['role'] ?? 'employee',
             department: d['department'] ?? 'Umum',
             position: d['position'] ?? 'Staff',
             faceRegistered: d['faceRegistered'] == true ? 'yes' : 'no',
             deviceName: d['deviceName'] ?? '',
             faceRegisteredDate: _parseDateTime(d['createdAt'])?.toIso8601String() ?? '',
+            allowRemoteAttendance: d['allowRemoteAttendance'] ?? (d['role'] == 'kurir' || d['role'] == 'driver'),
           );
           
           _listenToMyData();
@@ -185,6 +190,8 @@ class AppProvider extends ChangeNotifier {
     _adminNotifSub = null;
     _userNotifSub?.cancel();
     _userNotifSub = null;
+    _settingsSub?.cancel();
+    _settingsSub = null;
     notifyListeners();
   }
 
@@ -195,7 +202,7 @@ class AppProvider extends ChangeNotifier {
       'name': user.name,
       'email': user.email,
       'phone': user.phone,
-      'employeeId': user.nik,
+      'employeeId': user.employeeId,
       'role': user.role,
       'department': user.department,
       'position': user.position,
@@ -208,7 +215,7 @@ class AppProvider extends ChangeNotifier {
       name: user.name,
       email: user.email,
       phone: user.phone,
-      nik: user.nik,
+      employeeId: user.employeeId,
       role: user.role,
       department: user.department,
       position: user.position,
@@ -394,7 +401,7 @@ class AppProvider extends ChangeNotifier {
   }
 
   void _listenToSettings() {
-    _db.collection('settings').doc('system').snapshots().listen((snap) {
+    _settingsSub = _db.collection('settings').doc('system').snapshots().listen((snap) {
       if (snap.exists) {
         final data = snap.data();
         if (data != null && data['office'] != null) {
@@ -603,19 +610,40 @@ class AppProvider extends ChangeNotifier {
     // If not offline and we have an image, upload it first
     if (!isOffline && localImagePath != null && localImagePath.isNotEmpty) {
       try {
-        final ref = FirebaseStorage.instance.ref().child('attendance_photos/${userId}_${now.millisecondsSinceEpoch}.jpg');
-        await ref.putFile(File(localImagePath));
-        finalPhotoUrl = await ref.getDownloadURL();
+        // --- Image Compression Protocol ---
+        final tempDir = await getTemporaryDirectory();
+        final targetPath = "${tempDir.path}/${userId}_compressed_${now.millisecondsSinceEpoch}.jpg";
+        
+        XFile? compressedFile = await FlutterImageCompress.compressAndGetFile(
+          localImagePath,
+          targetPath,
+          quality: 70, // Optimized quality/size ratio
+          minWidth: 800,
+          minHeight: 800,
+        );
+
+        if (compressedFile != null) {
+          final ref = FirebaseStorage.instance.ref().child('attendance_photos/${userId}_${now.millisecondsSinceEpoch}.jpg');
+          await ref.putFile(File(compressedFile.path));
+          finalPhotoUrl = await ref.getDownloadURL();
+          
+          // Clean up compressed temp file
+          try { File(compressedFile.path).delete(); } catch (_) {}
+        } else {
+          // Fallback to original if compression fails
+          final ref = FirebaseStorage.instance.ref().child('attendance_photos/${userId}_${now.millisecondsSinceEpoch}.jpg');
+          await ref.putFile(File(localImagePath));
+          finalPhotoUrl = await ref.getDownloadURL();
+        }
       } catch (e) {
         debugPrint('Failed to upload photo: $e');
-        // fallback to local path or empty string if upload fails
       }
     }
 
     final data = {
       'userId': userId,
       'employeeName': userName,
-      'employeeId': _currentUser?.nik ?? '',
+      'employeeId': _currentUser?.employeeId ?? '',
       'department': _currentUser?.department ?? 'Logistik',
       'date': dateStr,
       'status': _mapMobileStatusToAdmin(status),
@@ -689,36 +717,46 @@ class AppProvider extends ChangeNotifier {
 
   Map<String, dynamic> calculateOvertime() {
     int totalHours = totalOvertimeHours;
-    int estimatedPay = totalHours * 25000; // Mock rate per hour
+    int estimatedPay = totalHours * 25000; // Mock rate 25k/hr
+    
     return {
-      'hours': totalHours,
-      'pay': estimatedPay,
+      'totalHours': totalHours,
+      'estimatedPay': estimatedPay,
+      'pending': _overtimeRequests.where((r) => r.status == 'pending').length,
     };
   }
 
-  Future<void> sendSOSAlert(dynamic location) async {
+  Future<void> sendSOS(double lat, double lng, String locationName) async {
     try {
-      final String locStr = location != null ? "${location.latitude}, ${location.longitude}" : "Lokasi tidak tersedia";
-      
-      await _db.collection('adminNotifications').add({
-        'title': '🚨 SOS DARURAT: ${_currentUser?.name}',
-        'message': 'Karyawan membutuhkan bantuan segera! Lokasi Terakhir: $locStr',
-        'type': 'attendance_alert',
-        'target': 'admin',
-        'isRead': false,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      final locStr = "$lat, $lng";
+      final now = FieldValue.serverTimestamp();
 
-      // Also log to a dedicated SOS collection for history
-      await _db.collection('sos_reports').add({
+      // 1. Log to Dedicated SOS collection
+      await _db.collection('sos_alerts').add({
         'userId': _currentUser?.uid,
-        'userName': _currentUser?.name,
-        'location': locStr,
+        'employeeName': _currentUser?.name,
+        'employeeId': _currentUser?.employeeId ?? '',
+        'department': _currentUser?.department ?? '',
+        'latitude': lat,
+        'longitude': lng,
+        'locationName': locationName,
         'status': 'active',
-        'createdAt': FieldValue.serverTimestamp(),
+        'createdAt': now,
       });
 
-      addNotification('SOS Terkirim', 'Pesan darurat telah dikirim ke Admin. Tetap tenang, bantuan akan segera diproses.');
+      // 2. Broadcast to Global Admin Notifications
+      await _db.collection('adminNotifications').add({
+        'title': '🚨 DARURAT (SOS): ${_currentUser?.name}',
+        'message': 'Karyawan membutuhkan bantuan! Lokasi: $locationName ($locStr)',
+        'type': 'sos_alert',
+        'employeeId': _currentUser?.uid,
+        'employeeName': _currentUser?.name,
+        'isRead': false,
+        'createdAt': now,
+      });
+
+      addNotification('SOS TERKIRIM', 'Pesan darurat telah dikirim ke Admin. Tetap tenang, bantuan akan segera diproses.');
+      notifyListeners();
     } catch (e) {
       debugPrint('Failed to send SOS: $e');
     }
@@ -753,7 +791,7 @@ class AppProvider extends ChangeNotifier {
     await _db.collection('leaves').add({
       'userId': req.userId,
       'employeeName': req.userName,
-      'employeeId': _currentUser?.nik ?? '',
+      'employeeId': _currentUser?.employeeId ?? '',
       'department': _currentUser?.department ?? '',
       'type': 'other',
       'status': 'pending',
@@ -820,7 +858,7 @@ class AppProvider extends ChangeNotifier {
     await _db.collection('overtime').add({
       'userId': _currentUser?.uid,
       'employeeName': _currentUser?.name,
-      'employeeId': _currentUser?.nik ?? '',
+      'employeeId': _currentUser?.employeeId ?? '',
       'department': _currentUser?.department ?? '',
       'date': DateFormat('yyyy-MM-dd').format(date),
       'durationHours': durationHours,
@@ -832,22 +870,7 @@ class AppProvider extends ChangeNotifier {
     addNotification('Pengajuan Lembur', 'Permintaan lembur untuk tanggal ${DateFormat('dd MMM').format(date)} telah dikirim.');
   }
 
-  // ── Emergency SOS Feature ──
-  Future<void> sendSOS(double lat, double lng, String locationName) async {
-    await _db.collection('sos_alerts').add({
-      'userId': _currentUser?.uid,
-      'employeeName': _currentUser?.name,
-      'employeeId': _currentUser?.nik ?? '',
-      'department': _currentUser?.department ?? '',
-      'latitude': lat,
-      'longitude': lng,
-      'locationName': locationName,
-      'status': 'active',
-      'timestamp': FieldValue.serverTimestamp(),
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-    addNotification('SOS TERKIRIM', 'Pesan darurat dan lokasi Anda telah dikirim ke pusat kendali Admin.');
-  }
+  // sendSOS consolidated above
 
   // ── Statistics Logic ──
   Map<String, dynamic> getStatsForMonth(int month, int year) {

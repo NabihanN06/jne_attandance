@@ -46,7 +46,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
-      final ctrl = CameraController(front, ResolutionPreset.high, enableAudio: false);
+      final ctrl = CameraController(front, ResolutionPreset.medium, enableAudio: false);
       await ctrl.initialize();
       if (!mounted) return;
       setState(() { _cameraController = ctrl; _isCameraReady = true; });
@@ -70,15 +70,18 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     
     final geo = Provider.of<GeofenceService>(context, listen: false);
     final app = Provider.of<AppProvider>(context, listen: false);
-    final isCourier = app.currentUser?.department.toLowerCase().contains('kurir') ?? false;
+    final isRemoteAllowed = app.currentUser?.allowRemoteAttendance ?? false;
+    final double distance = geo.distanceFromOffice;
 
-    if (!geo.isInRange && !isCourier) {
+    if (!geo.isInRange && !isRemoteAllowed) {
+      HapticFeedback.vibrate();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Anda berada di luar jangkauan kantor.'),
-          backgroundColor: const Color(0xFFE31E24),
+          content: Text('Anda berada di luar jangkauan Hub (${(distance/1000).toStringAsFixed(1)} km). Silakan mendekat ke kantor.'),
+          backgroundColor: const Color(0xFFF43F5E),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
       );
       return;
@@ -107,7 +110,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
           p.currentUser!.uid,
           p.currentUser!.name,
           p.isLateForClockIn ? 'Terlambat' : 'Tepat Waktu',
-          isCourier ? 'Lokasi Kurir (Bypass)' : 'JNE Martapura',
+          isRemoteAllowed ? 'Lokasi Luar (Remote Mode)' : 'JNE Martapura',
           isOffline: !conn.isOnline,
           localImagePath: photo.path,
           lat: geo.currentPosition?.latitude ?? 0,
@@ -122,7 +125,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
               jenis: 'Absen Masuk',
               waktu: '${now.hour.toString().padLeft(2,'0')}:${now.minute.toString().padLeft(2,'0')} WITA',
               status: p.isLateForClockIn ? 'Terlambat ⚠' : 'Tepat Waktu ✓',
-              lokasi: isCourier ? 'Lokasi Kurir' : 'JNE Martapura',
+              lokasi: isRemoteAllowed ? 'Lokasi Luar' : 'JNE Martapura',
             )),
             (route) => route.isFirst,
           );
@@ -190,11 +193,15 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
                     icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
+                  const SizedBox(width: 8),
+                  Image.asset('assets/images/jne_logo.png', height: 16),
+                  const SizedBox(width: 12),
+                  Container(width: 1, height: 14, color: Colors.white24),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'VERIFIKASI WAJAH',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 2),
+                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.5),
                     ),
                   ),
                   const SizedBox(width: 48),
@@ -210,37 +217,56 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
           Positioned(
             bottom: 0, left: 0, right: 0,
             child: Container(
-              padding: const EdgeInsets.only(bottom: 60, top: 40),
+              padding: const EdgeInsets.only(bottom: 50, top: 40),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
+                  colors: [Colors.black.withValues(alpha: 0.9), Colors.black.withValues(alpha: 0.4), Colors.transparent],
                 ),
               ),
               child: Column(
                 children: [
+                  if (_isCameraReady)
                   GestureDetector(
                     onTap: _onShutterTap,
                     child: Container(
-                      width: 84, height: 84,
+                      width: 88, height: 88,
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 4),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
                       ),
                       child: Container(
-                        decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0891B2).withValues(alpha: 0.4),
+                              blurRadius: 20,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
                         child: _isCapturing 
-                          ? const Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator(color: Color(0xFF005596), strokeWidth: 4))
-                          : const Icon(Icons.camera_alt_rounded, color: Color(0xFF005596), size: 32),
+                          ? const CircularProgressIndicator(color: Color(0xFF0891B2), strokeWidth: 4)
+                          : Icon(Icons.face_unlock_rounded, color: const Color(0xFF0891B2).withValues(alpha: 0.8), size: 36),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'KETUK UNTUK ABSEN',
-                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 2),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _isCapturing ? 'MEMPROSES VERIFIKASI...' : 'POSISIKAN WAJAH DI DALAM AREA',
+                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                    ),
                   ),
                 ],
               ),
@@ -252,28 +278,51 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   }
 
   Widget _buildStatusInfo(GeofenceService geo, AppProvider app) {
-    final isCourier = app.currentUser?.department.toLowerCase().contains('kurir') ?? false;
-    final isAllowed = geo.isInRange || isCourier;
-    final statusText = isCourier ? 'KURIR AKTIF' : (geo.isInRange ? 'LOKASI SESUAI' : 'DI LUAR RADIUS');
-    final color = isAllowed ? Colors.greenAccent : const Color(0xFFE31E24);
+    final isRemoteAllowed = app.currentUser?.allowRemoteAttendance ?? false;
+    final isAllowed = geo.isInRange || isRemoteAllowed;
+    
+    String statusText = '';
+    IconData icon = Icons.location_on_rounded;
+    Color color = isAllowed ? const Color(0xFF0891B2) : const Color(0xFFF43F5E);
+
+    if (isRemoteAllowed) {
+      statusText = 'MODE TUGAS LUAR AKTIF 🛰️';
+      icon = Icons.satellite_alt_rounded;
+    } else if (geo.isInRange) {
+      statusText = 'AREA HUB MARTAPURA ✓';
+      icon = Icons.check_circle_rounded;
+    } else {
+      statusText = 'LUAR AREA HUB (${(geo.distanceFromOffice/1000).toStringAsFixed(1)} KM) 🔒';
+      icon = Icons.lock_clock_rounded;
+    }
 
     return Positioned(
       top: 110,
       left: 0, right: 0,
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: color.withValues(alpha: 0.3)),
+            color: Colors.black.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 20)],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: color)),
+              Icon(icon, color: color, size: 14),
               const SizedBox(width: 10),
-              Text(statusText, style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
+              Text(
+                statusText, 
+                style: GoogleFonts.outfit(
+                  color: Colors.white, 
+                  fontSize: 10, 
+                  fontWeight: FontWeight.w900, 
+                  letterSpacing: 1,
+                  shadows: [Shadow(color: color, blurRadius: 8)],
+                )
+              ),
             ],
           ),
         ),
@@ -300,7 +349,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline_rounded, color: Color(0xFFE31E24), size: 64),
+            const Icon(Icons.error_outline_rounded, color: Color(0xFFF43F5E), size: 64),
             const SizedBox(height: 20),
             Text(_errorMessage!, textAlign: TextAlign.center, style: GoogleFonts.outfit(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
           ],
@@ -316,34 +365,69 @@ class ScannerPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-
-    final center = Offset(size.width / 2, size.height / 2 - 20);
-    final radius = size.width * 0.35;
+    final center = Offset(size.width / 2, size.height / 2 - 40);
+    final radius = size.width * 0.38;
     
-    // Draw Face Frame
-    canvas.drawCircle(center, radius, paint);
+    // Background Darkening (Overlay)
+    final backgroundPath = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..addOval(Rect.fromCircle(center: center, radius: radius))
+      ..fillType = PathFillType.evenOdd;
+    
+    canvas.drawPath(
+      backgroundPath,
+      Paint()..color = Colors.black.withValues(alpha: 0.6),
+    );
+
+    // Frame Glow
+    final glowPaint = Paint()
+      ..color = const Color(0xFF0891B2).withValues(alpha: 0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 20.0
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
+    canvas.drawCircle(center, radius, glowPaint);
+
+    // Main Circle Border
+    final borderPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.1)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    canvas.drawCircle(center, radius, borderPaint);
     
     // Corner brackets
-    final bracketPaint = Paint()..color = Colors.white.withValues(alpha: 0.8)..style = PaintingStyle.stroke..strokeWidth = 4.0;
-    const bl = 30.0; // bracket length
+    final bracketPaint = Paint()
+      ..color = const Color(0xFF0891B2)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5
+      ..strokeCap = StrokeCap.round;
+    const bl = 40.0; // bracket length
+    const gap = 0.0; // gap from circle
     
     // TL
-    canvas.drawPath(Path()..moveTo(center.dx - radius, center.dy - radius + bl)..lineTo(center.dx - radius, center.dy - radius)..lineTo(center.dx - radius + bl, center.dy - radius), bracketPaint);
+    canvas.drawPath(Path()..moveTo(center.dx - radius - gap, center.dy - radius - gap + bl)..lineTo(center.dx - radius - gap, center.dy - radius - gap)..lineTo(center.dx - radius - gap + bl, center.dy - radius - gap), bracketPaint);
     // TR
-    canvas.drawPath(Path()..moveTo(center.dx + radius - bl, center.dy - radius)..lineTo(center.dx + radius, center.dy - radius)..lineTo(center.dx + radius, center.dy - radius + bl), bracketPaint);
+    canvas.drawPath(Path()..moveTo(center.dx + radius + gap - bl, center.dy - radius - gap)..lineTo(center.dx + radius + gap, center.dy - radius - gap)..lineTo(center.dx + radius + gap, center.dy - radius - gap + bl), bracketPaint);
     // BL
-    canvas.drawPath(Path()..moveTo(center.dx - radius, center.dy + radius - bl)..lineTo(center.dx - radius, center.dy + radius)..lineTo(center.dx - radius + bl, center.dy + radius), bracketPaint);
+    canvas.drawPath(Path()..moveTo(center.dx - radius - gap, center.dy + radius + gap - bl)..lineTo(center.dx - radius - gap, center.dy + radius + gap)..lineTo(center.dx - radius - gap + bl, center.dy + radius + gap), bracketPaint);
     // BR
-    canvas.drawPath(Path()..moveTo(center.dx + radius - bl, center.dy + radius)..lineTo(center.dx + radius, center.dy + radius)..lineTo(center.dx + radius, center.dy + radius - bl), bracketPaint);
+    canvas.drawPath(Path()..moveTo(center.dx + radius + gap - bl, center.dy + radius + gap)..lineTo(center.dx + radius + gap, center.dy + radius + gap)..lineTo(center.dx + radius + gap, center.dy + radius + gap - bl), bracketPaint);
 
-    // Scanning Line
-    final scanLinePaint = Paint()..color = const Color(0xFF005596).withValues(alpha: 0.8)..strokeWidth = 2.0;
+    // Scanning Line with Gradient Glow
     final lineY = center.dy - radius + (radius * 2 * scanValue);
-    canvas.drawLine(Offset(center.dx - radius + 20, lineY), Offset(center.dx + radius - 20, lineY), scanLinePaint);
+    
+    final scanLinePaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFF0891B2).withValues(alpha: 0),
+          const Color(0xFF0891B2).withValues(alpha: 0.8),
+          const Color(0xFF0891B2).withValues(alpha: 0),
+        ],
+      ).createShader(Rect.fromLTRB(center.dx - radius, lineY - 10, center.dx + radius, lineY + 10))
+      ..strokeWidth = 3.0;
+
+    canvas.drawLine(Offset(center.dx - radius + 15, lineY), Offset(center.dx + radius - 15, lineY), scanLinePaint);
+
+    // Dynamic scanning particles / dots could be added here for extra "tech" feel
   }
 
   @override

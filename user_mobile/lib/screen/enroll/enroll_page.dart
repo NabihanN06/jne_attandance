@@ -119,7 +119,7 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final roseAccent = theme.colorScheme.primary;
+    final cyanAccent = theme.colorScheme.primary;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -142,7 +142,7 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                   else if (_errorMessage != null)
                     _buildError()
                   else
-                    _buildLoading(roseAccent),
+                    _buildLoading(cyanAccent),
 
                   if (_isCameraReady)
                     AnimatedBuilder(
@@ -154,7 +154,7 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                           painter: _OvalPainter(
                             w: constraints.maxWidth, 
                             h: constraints.maxHeight,
-                            color: roseAccent,
+                            color: cyanAccent,
                           ),
                         ),
                       ),
@@ -194,7 +194,7 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                                 width: 80, height: 80,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: roseAccent, width: 2),
+                                  border: Border.all(color: cyanAccent, width: 2),
                                 ),
                               ),
                             ),
@@ -204,20 +204,20 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                             child: Container(
                               width: 72, height: 72,
                               decoration: BoxDecoration(
-                                color: _isCapturing ? roseAccent.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.1),
+                                color: _isCapturing ? cyanAccent.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: _isCameraReady ? roseAccent : Colors.white12,
+                                  color: _isCameraReady ? cyanAccent : Colors.white12,
                                   width: 3,
                                 ),
                                 boxShadow: _isCameraReady
-                                    ? [BoxShadow(color: roseAccent.withValues(alpha: 0.3), blurRadius: 20, spreadRadius: 2)]
+                                    ? [BoxShadow(color: cyanAccent.withValues(alpha: 0.3), blurRadius: 20, spreadRadius: 2)]
                                     : null,
                               ),
                               child: _isCapturing
                                   ? Padding(
                                       padding: const EdgeInsets.all(22),
-                                      child: CircularProgressIndicator(color: roseAccent, strokeWidth: 3),
+                                      child: CircularProgressIndicator(color: cyanAccent, strokeWidth: 3),
                                     )
                                   : Icon(
                                       Icons.face_retouching_natural_rounded,

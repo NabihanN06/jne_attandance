@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:animate_do/animate_do.dart';
 import 'package:flutter/services.dart';
 import '../../providers/app_provider.dart';
 import '../home/home_screen.dart';
@@ -14,9 +13,9 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  static const Color jneCyan = Color(0xFF0891B2);
   static const Color slate950 = Color(0xFF0F172A);
   static const Color slate500 = Color(0xFF64748B);
-  static const Color jneRose = Color(0xFFE11D48);
 
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
@@ -66,7 +65,7 @@ class _LoginPageState extends State<LoginPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
-        backgroundColor: isError ? jneRose : const Color(0xFF10B981),
+        backgroundColor: isError ? const Color(0xFFF43F5E) : const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -85,36 +84,29 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 60),
-              FadeInDown(
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: jneRose.withValues(alpha: 0.05),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Image.asset(
-                      'assets/images/logo_jne.png', 
-                      width: 80, height: 80, 
-                      errorBuilder: (_, _, _) => const Icon(Icons.local_shipping_rounded, color: jneRose, size: 60)
-                    ),
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: jneCyan.withValues(alpha: 0.05),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Image.asset(
+                    'assets/images/jne_logo.png', 
+                    width: 140, 
+                    errorBuilder: (_, _, _) => const Icon(Icons.local_shipping_rounded, color: jneCyan, size: 60)
                   ),
                 ),
               ),
               const SizedBox(height: 50),
-              FadeInUp(
-                child: Text(
-                  'Selamat Datang',
-                  style: GoogleFonts.inter(color: slate950, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
-                ),
+              Text(
+                'Selamat Datang',
+                style: GoogleFonts.inter(color: slate950, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
               ),
               const SizedBox(height: 8),
-              FadeInUp(
-                delay: const Duration(milliseconds: 100),
-                child: Text(
-                  'Silakan masuk untuk mengakses sistem absensi JNE Martapura.',
-                  style: GoogleFonts.inter(color: slate500, fontSize: 15, fontWeight: FontWeight.w500, height: 1.5),
-                ),
+              Text(
+                'Silakan masuk untuk mengakses sistem absensi JNE Martapura.',
+                style: GoogleFonts.inter(color: slate500, fontSize: 15, fontWeight: FontWeight.w500, height: 1.5),
               ),
               const SizedBox(height: 48),
               
@@ -142,23 +134,21 @@ class _LoginPageState extends State<LoginPage> {
               
               const SizedBox(height: 40),
               
-              FadeInUp(
-                delay: const Duration(milliseconds: 300),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 60,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _doLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: slate950,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                      elevation: 0,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                        : Text('MASUK SEKARANG', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1)),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _doLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: jneCyan,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    elevation: 0,
+                    shadowColor: jneCyan.withValues(alpha: 0.3),
                   ),
+                  child: _isLoading
+                      ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+                      : Text('MASUK SEKARANG', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1)),
                 ),
               ),
               
@@ -203,7 +193,7 @@ class _LoginPageState extends State<LoginPage> {
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w500),
-          prefixIcon: icon != null ? Icon(icon, color: jneRose, size: 22) : null,
+          prefixIcon: icon != null ? Icon(icon, color: jneCyan, size: 22) : null,
           suffixIcon: suffix,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),

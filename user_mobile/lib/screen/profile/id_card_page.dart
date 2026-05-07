@@ -109,7 +109,7 @@ class _IDCardPageState extends State<IDCardPage> with SingleTickerProviderStateM
               FadeInUp(
                 child: Column(
                   children: [
-                    const Icon(Icons.touch_app_outlined, color: Color(0xFFE11D48), size: 28),
+                    const Icon(Icons.touch_app_outlined, color: Color(0xFF0891B2), size: 28),
                     const SizedBox(height: 12),
                     Text(
                       'TAP UNTUK MEMBALIK KARTU',
@@ -149,7 +149,7 @@ class _IDCardPageState extends State<IDCardPage> with SingleTickerProviderStateM
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE11D48).withValues(alpha: 0.2),
+            color: const Color(0xFF0891B2).withValues(alpha: 0.2),
             blurRadius: 30,
             offset: const Offset(0, 15),
           ),
@@ -173,7 +173,7 @@ class _IDCardPageState extends State<IDCardPage> with SingleTickerProviderStateM
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.local_shipping_rounded, color: Color(0xFFE11D48), size: 28),
+                    const Icon(Icons.local_shipping_rounded, color: Color(0xFF0891B2), size: 28),
                     const Icon(Icons.nfc, color: Colors.white24, size: 24),
                   ],
                 ),
@@ -183,7 +183,7 @@ class _IDCardPageState extends State<IDCardPage> with SingleTickerProviderStateM
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFE11D48), width: 2),
+                    border: Border.all(color: const Color(0xFF0891B2), width: 2),
                   ),
                   child: CircleAvatar(
                     radius: 70,
@@ -208,7 +208,7 @@ class _IDCardPageState extends State<IDCardPage> with SingleTickerProviderStateM
                 Text(
                   user.position.toUpperCase(),
                   style: GoogleFonts.plusJakartaSans(
-                    color: const Color(0xFFE11D48),
+                    color: const Color(0xFF0891B2),
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 2,
@@ -227,7 +227,7 @@ class _IDCardPageState extends State<IDCardPage> with SingleTickerProviderStateM
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _infoItem('UNIT', user.department.toUpperCase()),
-                      _infoItem('ID', user.nik.toUpperCase()),
+                      _infoItem('ID', user.employeeId.toUpperCase()),
                     ],
                   ),
                 ),
@@ -291,7 +291,7 @@ class _IDCardPageState extends State<IDCardPage> with SingleTickerProviderStateM
           ),
           const SizedBox(height: 4),
           Text(
-            user.nik.toUpperCase(),
+            user.employeeId.toUpperCase(),
             style: GoogleFonts.plusJakartaSans(
               color: const Color(0xFF0F172A),
               fontSize: 12,
@@ -300,7 +300,7 @@ class _IDCardPageState extends State<IDCardPage> with SingleTickerProviderStateM
           ),
           
           const SizedBox(height: 40),
-          const Icon(Icons.security_rounded, color: Color(0xFFE11D48), size: 32),
+          const Icon(Icons.security_rounded, color: Color(0xFF0891B2), size: 32),
         ],
       ),
     );

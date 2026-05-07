@@ -10,10 +10,7 @@ import 'utils/connectivity_service.dart';
 import 'utils/geofence_service.dart';
 import 'screen/splash/splash_screen.dart';
 import 'screen/auth/login_page.dart';
-import 'screen/onboarding/onboarding1.dart';
-import 'screen/onboarding/onboarding2.dart';
-import 'screen/onboarding/onboarding3.dart';
-import 'screen/onboarding/onboarding4.dart';
+import 'screen/onboarding/onboarding_screen.dart';
 import 'screen/permission/location_permission_page.dart';
 import 'screen/permission/camera_permission_page.dart';
 import 'screen/welcome/welcome_page.dart';
@@ -110,10 +107,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/splash',
       routes: {
         '/splash':              (_) => const SplashScreen(),
-        '/onboarding1':         (_) => const Onboarding1(),
-        '/onboarding2':         (_) => const Onboarding2(),
-        '/onboarding3':         (_) => const Onboarding3(),
-        '/onboarding4':         (_) => const Onboarding4(),
+        '/onboarding':          (_) => const OnboardingScreen(),
         '/login':               (_) => const LoginPage(),
         '/permission/location': (_) => const LocationPermissionPage(),
         '/permission/camera':   (_) => const CameraPermissionPage(),
@@ -139,7 +133,7 @@ class MyApp extends StatelessWidget {
   }
 
   ThemeData _buildTheme(bool dark) {
-    final Color roseAccent = dark ? const Color(0xFFFB7185) : const Color(0xFFE11D48);
+    final Color cyanAccent = dark ? const Color(0xFF22D3EE) : const Color(0xFF0891B2);
     final Color slateBg = dark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
     final Color slateSurface = dark ? const Color(0xFF1E293B) : Colors.white;
     final Color textPrimary = dark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
@@ -159,13 +153,13 @@ class MyApp extends StatelessWidget {
       ),
       colorScheme: dark
           ? ColorScheme.dark(
-              primary: roseAccent,
+              primary: cyanAccent,
               secondary: const Color(0xFF38BDF8), // Sky Blue accent
               surface: slateSurface,
               onSurface: textPrimary,
             )
           : ColorScheme.light(
-              primary: roseAccent,
+              primary: cyanAccent,
               secondary: const Color(0xFF0284C7),
               surface: slateSurface,
               onSurface: textPrimary,
@@ -185,7 +179,7 @@ class MyApp extends StatelessWidget {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: roseAccent,
+          backgroundColor: cyanAccent,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 0,

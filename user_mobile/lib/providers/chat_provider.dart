@@ -142,6 +142,23 @@ class ChatProvider extends ChangeNotifier {
     }, SetOptions(merge: true));
   }
 
+  Future<void> deleteMessage(String chatId, String messageId) async {
+    try {
+      await _db
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .doc(messageId)
+          .update({
+        'text': '🚫 Pesan telah dihapus',
+        'imageUrl': null,
+        'isDeleted': true,
+      });
+    } catch (e) {
+      debugPrint('Error deleting message: $e');
+    }
+  }
+
   @override
   void dispose() {
     _messageSubscription?.cancel();

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
-import '../onboarding/onboarding1.dart';
+import 'package:provider/provider.dart';
+import '../../providers/app_provider.dart';
+import '../onboarding/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -33,11 +35,19 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _controller.forward();
 
-    Timer(const Duration(seconds: 3), () {
-      if (mounted) {
+    Timer(const Duration(seconds: 3), () async {
+      if (!mounted) return;
+      
+      final provider = Provider.of<AppProvider>(context, listen: false);
+      
+      if (provider.isLoggedIn) {
+        // Jika sudah login, langsung ke Home
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        // Jika belum, ke Onboarding
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const Onboarding1()),
+          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
         );
       }
     });
@@ -67,8 +77,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
-                      'assets/images/logo_jne.png',
-                      width: 180,
+                      'assets/images/jne_logo.png',
+                      width: 220,
                       errorBuilder: (_, _, _) => _buildFallbackLogo(jneRed),
                     ),
                     const SizedBox(height: 24),

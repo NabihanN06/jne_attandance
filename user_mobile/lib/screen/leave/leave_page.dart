@@ -11,8 +11,8 @@ class LeavePage extends StatefulWidget {
 }
 
 class _LeavePageState extends State<LeavePage> {
-  static const Color jneBlue = Color(0xFF005596);
-  static const Color jneRed = Color(0xFFE31E24);
+  static const Color jneCyan = Color(0xFF0891B2);
+  static const Color jneRed = Color(0xFFF43F5E);
   static const Color bgLight = Color(0xFFF8FAFC);
 
   DateTime? _fromDate;
@@ -42,7 +42,7 @@ class _LeavePageState extends State<LeavePage> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: jneBlue, onPrimary: Colors.white, surface: Colors.white, onSurface: Color(0xFF1E293B)),
+          colorScheme: const ColorScheme.light(primary: jneCyan, onPrimary: Colors.white, surface: Colors.white, onSurface: Color(0xFF1E293B)),
         ),
         child: child!,
       ),
@@ -96,7 +96,7 @@ class _LeavePageState extends State<LeavePage> {
     return Scaffold(
       backgroundColor: bgLight,
       appBar: AppBar(
-        backgroundColor: jneBlue,
+        backgroundColor: jneCyan,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
@@ -175,7 +175,7 @@ class _LeavePageState extends State<LeavePage> {
               child: ElevatedButton(
                 onPressed: _loading ? null : _submit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: jneBlue,
+                  backgroundColor: jneCyan,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 0,
                 ),
@@ -212,7 +212,7 @@ class _LeavePageState extends State<LeavePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(val.isEmpty ? 'Pilih Tanggal' : val, style: GoogleFonts.outfit(color: val.isEmpty ? const Color(0xFF94A3B8) : const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w700)),
-                const Icon(Icons.calendar_today_rounded, color: jneBlue, size: 18),
+                const Icon(Icons.calendar_today_rounded, color: jneCyan, size: 18),
               ],
             ),
           ),

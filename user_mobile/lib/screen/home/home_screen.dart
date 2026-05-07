@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:animate_do/animate_do.dart';
 import '../../providers/app_provider.dart';
 import '../../utils/geofence_service.dart';
 import '../../utils/connectivity_service.dart';
@@ -15,20 +14,19 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const Color jneRose = Color(0xFFE11D48);
   int _selectedIndex = 0;
   
   // Weather logic colors
   List<Color> _getHeaderGradient() {
     final hour = DateTime.now().hour;
     if (hour >= 5 && hour < 11) {
-      return [const Color(0xFF0EA5E9), const Color(0xFF38BDF8)]; // Morning Bright
+      return [const Color(0xFF0891B2), const Color(0xFF22D3EE)]; // Cyan Morning
     } else if (hour >= 11 && hour < 15) {
-      return [const Color(0xFF0284C7), const Color(0xFF0EA5E9)]; // Noon
+      return [const Color(0xFF0E7490), const Color(0xFF0891B2)]; // Deep Cyan Noon
     } else if (hour >= 15 && hour < 18) {
-      return [const Color(0xFFF97316), const Color(0xFFFB923C)]; // Evening Sunset
+      return [const Color(0xFF06B6D4), const Color(0xFF67E8F9)]; // Afternoon Cyan
     } else {
-      return [const Color(0xFF0F172A), const Color(0xFF334155)]; // Night / Nexus Slate
+      return [const Color(0xFF0F172A), const Color(0xFF1E293B)]; // Dark Night
     }
   }
 
@@ -44,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final geo = context.watch<GeofenceService>();
     final conn = context.watch<ConnectivityService>();
 
-    const Color jneRose = Color(0xFFE11D48);
+    const Color jneCyan = Color(0xFF0891B2);
     const Color slate950 = Color(0xFF0F172A);
     const Color jneGrey = Color(0xFF94A3B8);
 
@@ -57,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
             top: 0,
             left: 0,
             right: 0,
-            height: 340,
+            height: MediaQuery.of(context).size.height * 0.38,
             child: AnimatedContainer(
               duration: const Duration(seconds: 2),
               decoration: BoxDecoration(
@@ -96,31 +94,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      FadeInLeft(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'SELAMAT ${DateTime.now().hour < 11 ? "PAGI" : DateTime.now().hour < 15 ? "SIANG" : DateTime.now().hour < 18 ? "SORE" : "MALAM"},',
-                              style: GoogleFonts.outfit(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 2,
-                              ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SELAMAT ${DateTime.now().hour < 11 ? "PAGI" : DateTime.now().hour < 15 ? "SIANG" : DateTime.now().hour < 18 ? "SORE" : "MALAM"},',
+                            style: GoogleFonts.outfit(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 2,
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              p.currentUser?.name.toUpperCase() ?? 'COURIER',
-                              style: GoogleFonts.outfit(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -0.5,
-                              ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            p.currentUser?.name.toUpperCase() ?? 'COURIER',
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       Row(
                         children: [
@@ -146,6 +142,30 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+                
+                // --- NEW MINI LOGO BAND ---
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset('assets/images/jne_logo.png', height: 18),
+                      const SizedBox(width: 8),
+                      Container(width: 1, height: 12, color: Colors.white24),
+                      const SizedBox(width: 8),
+                      Text(
+                        'MARTAPURA HUB OPERATIONAL',
+                        style: GoogleFonts.outfit(color: Colors.white70, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                      ),
+                    ],
+                  ),
+                ),
 
                 Expanded(
                   child: SingleChildScrollView(
@@ -156,68 +176,65 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 10),
 
                         // ── BENTO MAIN TILE: WORK HOURS ──
-                        FadeInDown(
-                          duration: const Duration(milliseconds: 800),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(32),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(40),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 40,
-                                  offset: const Offset(0, 20),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'SISA JAM KERJA',
-                                      style: GoogleFonts.outfit(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w800,
-                                        color: jneGrey,
-                                        letterSpacing: 2,
-                                      ),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(32),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(40),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 40,
+                                offset: const Offset(0, 20),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'SISA JAM KERJA',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: jneGrey,
+                                      letterSpacing: 2,
                                     ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      '04:20:15',
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    '04:20:15',
+                                    style: GoogleFonts.outfit(
+                                      fontSize: 44,
+                                      fontWeight: FontWeight.w900,
+                                      color: const Color(0xFF0F172A),
+                                      letterSpacing: -1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: jneCyan.withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(100),
+                                    ),
+                                    child: Text(
+                                      'Target: 08:00 Jam',
                                       style: GoogleFonts.outfit(
-                                        fontSize: 44,
+                                        fontSize: 10,
                                         fontWeight: FontWeight.w900,
-                                        color: const Color(0xFF0F172A),
-                                        letterSpacing: -1.5,
+                                        color: jneCyan,
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: jneRose.withValues(alpha: 0.08),
-                                        borderRadius: BorderRadius.circular(100),
-                                      ),
-                                      child: Text(
-                                        'Target: 08:00 Jam',
-                                        style: GoogleFonts.outfit(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w900,
-                                          color: jneRose,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                _buildProgressCircle(0.6, jneRose),
-                              ],
-                            ),
+                                  ),
+                                ],
+                              ),
+                              _buildProgressCircle(0.6, jneCyan),
+                            ],
                           ),
                         ),
 
@@ -225,61 +242,53 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         // ── BENTO GRID WITH STAGGERED ENTRANCE ──
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
                               flex: 2,
-                              child: FadeInLeft(
-                                delay: const Duration(milliseconds: 200),
-                                child: _buildBigBentoTile(
-                                  context,
-                                  'ABSEN\nMASUK',
-                                  geo.isInRange ? 'Ditemukan: Hub Martapura' : 'Diluar area jangkauan',
-                                  geo.isInRange ? Icons.fingerprint_rounded : Icons.location_disabled_rounded,
-                                  geo.isInRange ? jneRose : jneGrey,
-                                  () {
-                                    HapticFeedback.heavyImpact();
-                                    if (geo.isInRange) {
-                                      Navigator.pushNamed(context, '/attendance');
-                                    } else {
-                                      _showError(context, 'Anda harus berada di area Hub Martapura!');
-                                    }
-                                  },
-                                ),
+                              child: _buildBigBentoTile(
+                                context,
+                                'ABSEN\nMASUK',
+                                geo.isInRange ? 'Ditemukan: Hub Martapura' : 'Diluar area jangkauan',
+                                geo.isInRange ? Icons.fingerprint_rounded : Icons.location_disabled_rounded,
+                                geo.isInRange ? jneCyan : jneGrey,
+                                () {
+                                  HapticFeedback.heavyImpact();
+                                  if (geo.isInRange) {
+                                    Navigator.pushNamed(context, '/attendance');
+                                  } else {
+                                    _showError(context, 'Anda harus berada di area Hub Martapura!');
+                                  }
+                                },
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 12),
                             Expanded(
                               flex: 1,
                               child: Column(
                                 children: [
-                                  FadeInRight(
-                                    delay: const Duration(milliseconds: 300),
-                                    child: _buildSmallBentoTile(
-                                      context,
-                                      'IZIN',
-                                      Icons.event_note_rounded,
-                                      Colors.orange,
-                                      () {
-                                        HapticFeedback.mediumImpact();
-                                        Navigator.pushNamed(context, '/leave');
-                                      },
-                                      isSquare: true,
-                                    ),
+                                  _buildSmallBentoTile(
+                                    context,
+                                    'IZIN',
+                                    Icons.event_note_rounded,
+                                    Colors.orange,
+                                    () {
+                                      HapticFeedback.mediumImpact();
+                                      Navigator.pushNamed(context, '/leave');
+                                    },
+                                    isSquare: true,
                                   ),
-                                  const SizedBox(height: 16),
-                                  FadeInRight(
-                                    delay: const Duration(milliseconds: 400),
-                                    child: _buildSmallBentoTile(
-                                      context,
-                                      'LEMBUR',
-                                      Icons.auto_awesome_rounded,
-                                      const Color(0xFF10B981),
-                                      () {
-                                        HapticFeedback.mediumImpact();
-                                        Navigator.pushNamed(context, '/overtime');
-                                      },
-                                      isSquare: true,
-                                    ),
+                                  const SizedBox(height: 12),
+                                  _buildSmallBentoTile(
+                                    context,
+                                    'LEMBUR',
+                                    Icons.auto_awesome_rounded,
+                                    const Color(0xFF10B981),
+                                    () {
+                                      HapticFeedback.mediumImpact();
+                                      Navigator.pushNamed(context, '/overtime');
+                                    },
+                                    isSquare: true,
                                   ),
                                 ],
                               ),
@@ -292,34 +301,28 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: FadeInUp(
-                                delay: const Duration(milliseconds: 500),
-                                child: _buildSmallBentoTile(
-                                  context,
-                                  'RIWAYAT',
-                                  Icons.history_edu_rounded,
-                                  slate950,
-                                  () {
-                                    HapticFeedback.lightImpact();
-                                    Navigator.pushNamed(context, '/history');
-                                  },
-                                ),
+                              child: _buildSmallBentoTile(
+                                context,
+                                'RIWAYAT',
+                                Icons.history_edu_rounded,
+                                slate950,
+                                () {
+                                  HapticFeedback.lightImpact();
+                                  Navigator.pushNamed(context, '/history');
+                                },
                               ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: FadeInUp(
-                                delay: const Duration(milliseconds: 600),
-                                child: _buildSmallBentoTile(
-                                  context,
-                                  'STATS',
-                                  Icons.analytics_rounded,
-                                  const Color(0xFF8B5CF6),
-                                  () {
-                                    HapticFeedback.lightImpact();
-                                    Navigator.pushNamed(context, '/statistic');
-                                  },
-                                ),
+                              child: _buildSmallBentoTile(
+                                context,
+                                'STATS',
+                                Icons.analytics_rounded,
+                                const Color(0xFF8B5CF6),
+                                () {
+                                  HapticFeedback.lightImpact();
+                                  Navigator.pushNamed(context, '/statistic');
+                                },
                               ),
                             ),
                           ],
@@ -328,60 +331,57 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 20),
 
                         // ── SALARY ESTIMATOR ──
-                        FadeInUp(
-                          delay: const Duration(milliseconds: 700),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0F172A),
-                              borderRadius: BorderRadius.circular(32),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF0F172A).withValues(alpha: 0.1),
-                                  blurRadius: 30,
-                                  offset: const Offset(0, 15),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F172A),
+                            borderRadius: BorderRadius.circular(32),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F172A).withValues(alpha: 0.1),
+                                blurRadius: 30,
+                                offset: const Offset(0, 15),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: const Icon(Icons.payments_rounded, color: Colors.white, size: 24),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'ESTIMASI GAJI BULAN INI',
-                                        style: GoogleFonts.outfit(
-                                          color: Colors.white.withValues(alpha: 0.5),
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 1.5,
-                                        ),
+                                child: const Icon(Icons.payments_rounded, color: Colors.white, size: 24),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'ESTIMASI GAJI BULAN INI',
+                                      style: GoogleFonts.outfit(
+                                        color: Colors.white.withValues(alpha: 0.5),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 1.5,
                                       ),
-                                      Text(
-                                        'Rp 3.450.000',
-                                        style: GoogleFonts.outfit(
-                                          color: Colors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w900,
-                                        ),
+                                    ),
+                                    Text(
+                                      'Rp 3.450.000',
+                                      style: GoogleFonts.outfit(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w900,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white24, size: 16),
-                              ],
-                            ),
+                              ),
+                              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white24, size: 16),
+                            ],
                           ),
                         ),
 
@@ -398,10 +398,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Positioned(
             bottom: 110,
             right: 24,
-            child: FadeInRight(
-              delay: const Duration(milliseconds: 1000),
-              child: _buildSOSFloatingButton(p, geo),
-            ),
+            child: _buildSOSFloatingButton(p, geo),
           ),
         ],
       ),
@@ -450,11 +447,11 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: jneRose,
+          color: const Color(0xFFE31E24), // Official JNE Red for SOS
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: jneRose.withValues(alpha: 0.4),
+              color: const Color(0xFFE31E24).withValues(alpha: 0.4),
               blurRadius: 25,
               spreadRadius: 2,
               offset: const Offset(0, 8),
@@ -620,7 +617,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _showError(context, '🚨 Sinyal SOS Terkirim!');
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE11D48),
+                      backgroundColor: const Color(0xFF0891B2),
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -698,28 +695,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildConnIndicator(ConnectivityService conn) {
     bool isOnline = conn.status != ConnectionStatus.none;
-    return FadeInRight(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: isOnline ? Colors.greenAccent : Colors.redAccent),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              isOnline ? 'ONLINE' : 'OFFLINE',
-              style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: isOnline ? Colors.greenAccent : Colors.redAccent),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            isOnline ? 'ONLINE' : 'OFFLINE',
+            style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+          ),
+        ],
       ),
     );
   }

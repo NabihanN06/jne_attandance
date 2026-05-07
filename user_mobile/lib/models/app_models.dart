@@ -7,35 +7,38 @@ class UserModel {
   final String name;
   final String email;
   final String phone;
-  final String nik;
+  final String employeeId;
   final String role; // 'admin' | 'user'
   final String department;
   final String position;
   final String faceRegistered;
   final String deviceName;
-  final String faceRegisteredDate;
+  final String? faceRegisteredDate;
   final String photoUrl;
+  final bool allowRemoteAttendance;
 
   const UserModel({
     required this.uid,
     required this.name,
     required this.email,
     required this.phone,
-    required this.nik,
+    required this.employeeId,
     required this.role,
     required this.department,
     required this.position,
     this.faceRegistered = '',
     this.deviceName = '',
-    this.faceRegisteredDate = '',
+    this.faceRegisteredDate,
     this.photoUrl = '',
+    this.allowRemoteAttendance = false,
   });
 
   UserModel copyWith({
+    String? uid,
     String? name,
     String? email,
     String? phone,
-    String? nik,
+    String? employeeId,
     String? role,
     String? department,
     String? position,
@@ -43,13 +46,14 @@ class UserModel {
     String? deviceName,
     String? faceRegisteredDate,
     String? photoUrl,
+    bool? allowRemoteAttendance,
   }) {
     return UserModel(
-      uid: uid,
+      uid: uid ?? this.uid,
       name: name ?? this.name,
       email: email ?? this.email,
       phone: phone ?? this.phone,
-      nik: nik ?? this.nik,
+      employeeId: employeeId ?? this.employeeId,
       role: role ?? this.role,
       department: department ?? this.department,
       position: position ?? this.position,
@@ -57,6 +61,7 @@ class UserModel {
       deviceName: deviceName ?? this.deviceName,
       faceRegisteredDate: faceRegisteredDate ?? this.faceRegisteredDate,
       photoUrl: photoUrl ?? this.photoUrl,
+      allowRemoteAttendance: allowRemoteAttendance ?? this.allowRemoteAttendance,
     );
   }
 }
