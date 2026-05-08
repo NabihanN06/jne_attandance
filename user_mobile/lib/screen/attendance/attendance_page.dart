@@ -5,9 +5,9 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
-import '../../utils/connectivity_service.dart';
 import '../../utils/geofence_service.dart';
 import '../succeed/succeed_page.dart';
+import '../../widgets/package_loading.dart';
 
 class AttendancePage extends StatefulWidget {
   const AttendancePage({super.key});
@@ -24,6 +24,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   
   late AnimationController _scanAnimController;
   bool _isCapturing = false;
+  final bool _isLoading = false;
 
   @override
   void initState() {
@@ -72,6 +73,17 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     final app = Provider.of<AppProvider>(context, listen: false);
     final isRemoteAllowed = app.currentUser?.allowRemoteAttendance ?? false;
     final double distance = geo.distanceFromOffice;
+    
+    if (geo.currentPosition == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sinyal GPS belum stabil. Tunggu sebentar ya.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     if (!geo.isInRange && !isRemoteAllowed) {
       HapticFeedback.vibrate();
@@ -103,28 +115,32 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
         }
       } else {
         if (!mounted) return;
-        final p = Provider.of<AppProvider>(context, listen: false);
-        final conn = Provider.of<ConnectivityService>(context, listen: false);
-        
-        await p.addAttendanceCheckIn(
-          p.currentUser!.uid,
-          p.currentUser!.name,
-          p.isLateForClockIn ? 'Terlambat' : 'Tepat Waktu',
-          isRemoteAllowed ? 'Lokasi Luar (Remote Mode)' : 'JNE Martapura',
-          isOffline: !conn.isOnline,
-          localImagePath: photo.path,
-          lat: geo.currentPosition?.latitude ?? 0,
-          lng: geo.currentPosition?.longitude ?? 0,
-        );
+        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final bool isCheckOut = args?['isCheckOut'] ?? false;
+
+        if (isCheckOut) {
+          await app.addAttendanceCheckOut(
+            localImagePath: photo.path,
+            lat: geo.currentPosition?.latitude ?? 0,
+            lng: geo.currentPosition?.longitude ?? 0,
+          );
+        } else {
+          await app.addAttendanceCheckIn(
+            app.isLateForClockIn ? 'Terlambat' : 'Tepat Waktu',
+            localImagePath: photo.path,
+            lat: geo.currentPosition?.latitude ?? 0,
+            lng: geo.currentPosition?.longitude ?? 0,
+          );
+        }
 
         if (mounted) {
           final now = DateTime.now();
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => SucceedPage(
-              jenis: 'Absen Masuk',
+              jenis: isCheckOut ? 'Absen Pulang' : 'Absen Masuk',
               waktu: '${now.hour.toString().padLeft(2,'0')}:${now.minute.toString().padLeft(2,'0')} WITA',
-              status: p.isLateForClockIn ? 'Terlambat ⚠' : 'Tepat Waktu ✓',
+              status: isCheckOut ? 'Selesai Tugas ✓' : (app.isLateForClockIn ? 'Terlambat ⚠' : 'Tepat Waktu ✓'),
               lokasi: isRemoteAllowed ? 'Lokasi Luar' : 'JNE Martapura',
             )),
             (route) => route.isFirst,
@@ -132,7 +148,15 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
         }
       }
     } catch (e) {
-      debugPrint('Attendance Error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: const Color(0xFFF43F5E),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isCapturing = false);
     }
@@ -150,30 +174,59 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   Widget build(BuildContext context) {
     final geo = context.watch<GeofenceService>();
     final app = context.watch<AppProvider>();
-    
+    final isProcessing = app.isProcessing || _isCapturing;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Camera Preview
-          if (_isCameraReady && _cameraController != null)
-            SizedBox.expand(
-              child: FittedBox(
-                fit: BoxFit.cover,
-                child: SizedBox(
-                  width: _cameraController!.value.previewSize!.height,
-                  height: _cameraController!.value.previewSize!.width,
-                  child: CameraPreview(_cameraController!),
-                ),
-              ),
-            )
-          else if (_errorMessage != null)
-            _buildError()
-          else
-            const Center(child: CircularProgressIndicator(color: Colors.white)),
-          
-          // Custom Overlay
-          _buildScannerOverlay(),
+          _buildCameraPreview(),
+          _buildOverlay(geo, app),
+          if (isProcessing) _buildLoadingOverlay(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCameraPreview() {
+    if (!_isCameraReady || _cameraController == null) {
+      return Container(
+        color: Colors.black,
+        child: Center(
+          child: _errorMessage != null
+              ? Text(_errorMessage!, textAlign: TextAlign.center, style: GoogleFonts.outfit(color: Colors.white70))
+              : const PackageLoading(isLight: true),
+        ),
+      );
+    }
+
+    return SizedBox.expand(
+      child: FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: _cameraController!.value.previewSize!.height,
+          height: _cameraController!.value.previewSize!.width,
+          child: CameraPreview(_cameraController!),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingOverlay() {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.7),
+      child: const PackageLoading(
+        message: 'Memproses Absensi...',
+        isLight: true,
+      ),
+    );
+  }
+
+  Widget _buildOverlay(GeofenceService geo, AppProvider app) {
+    return Stack(
+      children: [
+        // Custom Scanner Overlay
+        _buildScannerOverlay(),
           
           // App Bar Area
           Positioned(
@@ -189,18 +242,15 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
               ),
               child: Row(
                 children: [
+                  const SizedBox(width: 20),
                   IconButton(
                     icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
                     onPressed: () => Navigator.pop(context),
                   ),
-                  const SizedBox(width: 8),
-                  Image.asset('assets/images/jne_logo.png', height: 16),
-                  const SizedBox(width: 12),
-                  Container(width: 1, height: 14, color: Colors.white24),
-                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'VERIFIKASI WAJAH',
+                      'VERIFIKASI KEHADIRAN',
+                      textAlign: TextAlign.center,
                       style: GoogleFonts.outfit(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.5),
                     ),
                   ),
@@ -229,51 +279,54 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
                 children: [
                   if (_isCameraReady)
                   GestureDetector(
-                    onTap: _onShutterTap,
-                    child: Container(
-                      width: 88, height: 88,
-                      padding: const EdgeInsets.all(4),
+                    onTap: (_isCapturing || _isLoading) ? null : _onShutterTap,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 300),
+                      opacity: (_isCapturing || _isLoading) ? 0.5 : 1.0,
+                      child: Container(
+                        width: 88, height: 88,
+                        padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 4),
                       ),
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white,
+                          color: const Color(0xFFFF6B00), // JNE Signature Orange
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF0891B2).withValues(alpha: 0.4),
+                              color: const Color(0xFFFF6B00).withValues(alpha: 0.4),
                               blurRadius: 20,
                               spreadRadius: 2,
                             ),
                           ],
                         ),
                         child: _isCapturing 
-                          ? const CircularProgressIndicator(color: Color(0xFF0891B2), strokeWidth: 4)
-                          : Icon(Icons.face_unlock_rounded, color: const Color(0xFF0891B2).withValues(alpha: 0.8), size: 36),
+                          ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 4)
+                          : const Icon(Icons.face_unlock_rounded, color: Colors.white, size: 36),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      _isCapturing ? 'MEMPROSES VERIFIKASI...' : 'POSISIKAN WAJAH DI DALAM AREA',
-                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5),
-                    ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                ],
-              ),
+                  child: Text(
+                    _isCapturing ? 'MEMPROSES VERIFIKASI...' : 'POSISIKAN WAJAH DI DALAM AREA',
+                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -298,7 +351,6 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
 
     return Positioned(
       top: 110,
-      left: 0, right: 0,
       child: Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -342,21 +394,6 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     );
   }
 
-  Widget _buildError() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline_rounded, color: Color(0xFFF43F5E), size: 64),
-            const SizedBox(height: 20),
-            Text(_errorMessage!, textAlign: TextAlign.center, style: GoogleFonts.outfit(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class ScannerPainter extends CustomPainter {

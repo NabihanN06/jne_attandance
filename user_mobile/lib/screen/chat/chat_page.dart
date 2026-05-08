@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../providers/app_provider.dart';
 import '../../providers/chat_provider.dart';
+import '../../models/app_models.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -19,20 +20,29 @@ class _ChatPageState extends State<ChatPage> {
   final ScrollController _scrollController = ScrollController();
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
+  
+  UserModel? _targetAdmin;
+  String? _chatId;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final app = context.read<AppProvider>();
-      final chat = context.read<ChatProvider>();
-      // Admin ID is usually static or found from settings. 
-      // For this ecosystem, let's assume 'admin_jne_mtp' or similar.
-      // Better: find a user with role 'admin'
-      String adminId = 'admin_jne_mtp'; 
-      String chatId = chat.getChatId(app.currentUser!.uid, adminId);
-      chat.listenToMessages(chatId);
-    });
+    _initChat();
+  }
+
+  Future<void> _initChat() async {
+    final app = context.read<AppProvider>();
+    final chat = context.read<ChatProvider>();
+    
+    // Find a real admin instead of hardcoded ID
+    final admin = await app.getFirstAdmin();
+    if (admin != null && mounted) {
+      setState(() {
+        _targetAdmin = admin;
+        _chatId = chat.getChatId(app.currentUser!.uid, admin.uid);
+      });
+      chat.listenToMessages(_chatId!);
+    }
   }
 
   void _scrollToBottom() {
@@ -55,10 +65,9 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _handleSend() async {
-    final app = context.read<AppProvider>();
+    if (_targetAdmin == null || _chatId == null) return;
+    
     final chat = context.read<ChatProvider>();
-    String adminId = 'admin_jne_mtp';
-    String chatId = chat.getChatId(app.currentUser!.uid, adminId);
 
     if (_messageController.text.trim().isNotEmpty || _selectedImage != null) {
       String text = _messageController.text;
@@ -69,7 +78,7 @@ class _ChatPageState extends State<ChatPage> {
         _selectedImage = null;
       });
 
-      await chat.sendMessage(chatId, adminId, text, imageFile: image);
+      await chat.sendMessage(_chatId!, _targetAdmin!.uid, text, imageFile: image);
       _scrollToBottom();
     }
   }
@@ -82,7 +91,7 @@ class _ChatPageState extends State<ChatPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0891B2), // Cyan Modern
+        backgroundColor: const Color(0xFF0891B2),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
@@ -100,12 +109,24 @@ class _ChatPageState extends State<ChatPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'ADMIN JNE HUB',
-                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                  _targetAdmin?.name.toUpperCase() ?? 'MEMUAT ADMIN...',
+                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 0.5),
                 ),
-                Text(
-                  'Online • Martapura Center',
-                  style: GoogleFonts.outfit(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600),
+                Row(
+                  children: [
+                    Container(
+                      width: 6, height: 6,
+                      decoration: BoxDecoration(
+                        color: (_targetAdmin?.isOnline ?? false) ? Colors.greenAccent : Colors.white38,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      (_targetAdmin?.isOnline ?? false) ? 'Online' : 'Offline',
+                      style: GoogleFonts.outfit(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -115,7 +136,7 @@ class _ChatPageState extends State<ChatPage> {
       body: Column(
         children: [
           Expanded(
-            child: chat.isLoading
+            child: chat.isLoading || _targetAdmin == null
                 ? const Center(child: CircularProgressIndicator(color: Color(0xFF0891B2)))
                 : ListView.builder(
                     controller: _scrollController,
@@ -170,7 +191,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _buildMessageBubble(ChatMessage msg, bool isMe, ChatProvider chat) {
-    bool isDeleted = (msg as dynamic).id != null && msg.text == '🚫 Pesan telah dihapus'; 
+    bool isDeleted = msg.text == '🚫 Pesan telah dihapus'; 
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -267,11 +288,10 @@ class _ChatPageState extends State<ChatPage> {
           TextButton(onPressed: () => Navigator.pop(context), child: Text('BATAL', style: GoogleFonts.outfit(color: Colors.grey, fontWeight: FontWeight.bold))),
           TextButton(
             onPressed: () {
-              final app = context.read<AppProvider>();
-              String adminId = 'admin_jne_mtp';
-              String chatId = chat.getChatId(app.currentUser!.uid, adminId);
-              chat.deleteMessage(chatId, msg.id);
-              Navigator.pop(context);
+              if (_chatId != null) {
+                chat.deleteMessage(_chatId!, msg.id);
+                Navigator.pop(context);
+              }
             }, 
             child: Text('HAPUS', style: GoogleFonts.outfit(color: Colors.red, fontWeight: FontWeight.bold))
           ),
@@ -335,13 +355,12 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                     child: TextField(
                       controller: _messageController,
+                      textCapitalization: TextCapitalization.sentences,
                       style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w600),
                       onChanged: (val) {
-                        final app = context.read<AppProvider>();
-                        final chat = context.read<ChatProvider>();
-                        String adminId = 'admin_jne_mtp';
-                        String chatId = chat.getChatId(app.currentUser!.uid, adminId);
-                        chat.updateTyping(chatId, val.isNotEmpty);
+                        if (_chatId != null) {
+                          context.read<ChatProvider>().updateTyping(_chatId!, val.isNotEmpty);
+                        }
                       },
                       decoration: InputDecoration(
                         hintText: 'Ketik pesan...',
@@ -372,3 +391,4 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 }
+

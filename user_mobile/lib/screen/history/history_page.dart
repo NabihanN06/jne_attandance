@@ -5,6 +5,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
+import '../../widgets/package_loading.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -39,9 +40,9 @@ class _HistoryPageState extends State<HistoryPage> {
     final records = provider.monthlyAttendance;
     final isLoading = provider.isLoadingHistory;
 
-    final presentCount = records.where((r) => r.checkInStatus == 'Tepat Waktu').length;
-    final leaveCount = records.where((r) => r.checkInStatus == 'Izin').length;
-    final lateCount = records.where((r) => r.checkInStatus == 'Terlambat').length;
+    final presentCount = records.where((r) => r.status == 'present').length;
+    final leaveCount = records.where((r) => r.status == 'leave').length;
+    final lateCount = records.where((r) => r.status == 'late').length;
 
     return Scaffold(
       backgroundColor: bgLight,
@@ -94,23 +95,65 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
 
           Expanded(
-            child: isLoading
-              ? const Center(child: CircularProgressIndicator(color: jneRed))
-              : records.isEmpty
-                ? _buildEmptyState()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(24),
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: records.length,
-                    itemBuilder: (context, index) {
-                      final r = records[index];
-                      return FadeInUp(
-                        key: ValueKey(r.id),
-                        duration: Duration(milliseconds: 300 + (index * 30)),
-                        child: _buildAttendanceCard(context, r),
-                      );
-                    },
-                  ),
+            child: Column(
+              children: [
+                if (provider.hasPendingAttendance) _buildSyncBanner(context, provider),
+                Expanded(
+                  child: isLoading
+                    ? const PackageLoading()
+                    : records.isEmpty
+                      ? _buildEmptyState()
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: records.length,
+                          itemBuilder: (context, index) {
+                            final r = records[index];
+                            return FadeInUp(
+                              key: ValueKey(r.id),
+                              duration: Duration(milliseconds: 300 + (index * 30)),
+                              child: _buildAttendanceCard(context, r),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSyncBanner(BuildContext context, AppProvider provider) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.cloud_off_rounded, color: Colors.amber, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Ada absensi offline yang belum terkirim.',
+              style: GoogleFonts.outfit(color: Colors.amber.shade800, fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+          ),
+          TextButton(
+            onPressed: () => provider.syncPendingRecords(),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.amber,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              minimumSize: Size.zero,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text('SYNC', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w900)),
           ),
         ],
       ),
@@ -217,14 +260,21 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Widget _buildAttendanceCard(BuildContext context, AttendanceRecord r) {
-    bool isLate = r.checkInStatus == 'Terlambat';
-    bool isAbsent = r.checkInStatus == 'Alpha';
-    bool isLeave = r.checkInStatus == 'Izin';
+    final date = DateTime.tryParse(r.date) ?? DateTime.now();
+    
+    bool isLate = r.status == 'late';
+    bool isAbsent = r.status == 'absent';
+    bool isLeave = r.status == 'leave';
     
     Color statusColor = Colors.green;
-    if (isLate) statusColor = Colors.orange;
-    if (isAbsent) statusColor = jneRed;
-    if (isLeave) statusColor = Colors.blue;
+    String statusLabel = 'Tepat Waktu';
+    
+    if (isLate) { statusColor = Colors.orange; statusLabel = 'Terlambat'; }
+    if (isAbsent) { statusColor = jneRed; statusLabel = 'Alpha'; }
+    if (isLeave) { statusColor = Colors.blue; statusLabel = 'Izin'; }
+
+    String checkInTime = r.checkIn?.time != null ? DateFormat('HH:mm').format(r.checkIn!.time!) : '--:--';
+    String checkOutTime = r.checkOut?.time != null ? DateFormat('HH:mm').format(r.checkOut!.time!) : '--:--';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -243,12 +293,12 @@ class _HistoryPageState extends State<HistoryPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    DateFormat('EEEE, d MMM yyyy', 'id').format(r.date),
+                    DateFormat('EEEE, d MMM yyyy', 'id').format(date),
                     style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w900),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    r.shift,
+                    'Shift Pagi (08:00 - 17:00)',
                     style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w600),
                   ),
                 ],
@@ -260,7 +310,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  r.checkInStatus.toUpperCase(),
+                  statusLabel.toUpperCase(),
                   style: GoogleFonts.outfit(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5),
                 ),
               ),
@@ -272,14 +322,14 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
           Row(
             children: [
-              _timeBox('MASUK', r.checkIn ?? '--:--', Icons.login_rounded, Colors.blue),
+              _timeBox('MASUK', checkInTime, Icons.login_rounded, Colors.blue),
               const Spacer(),
               const SizedBox(
                 height: 30,
                 child: VerticalDivider(color: Color(0xFFF1F5F9), width: 1),
               ),
               const Spacer(),
-              _timeBox('PULANG', r.checkOut ?? '--:--', Icons.logout_rounded, Colors.orange),
+              _timeBox('PULANG', checkOutTime, Icons.logout_rounded, Colors.orange),
               const Spacer(),
               Icon(Icons.arrow_forward_ios_rounded, color: const Color(0xFFCBD5E1), size: 14),
             ],

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
-import '../../models/app_models.dart';
+import '../../widgets/package_loading.dart';
 
 class LeavePage extends StatefulWidget {
   const LeavePage({super.key});
@@ -13,7 +13,6 @@ class LeavePage extends StatefulWidget {
 class _LeavePageState extends State<LeavePage> {
   static const Color jneCyan = Color(0xFF0891B2);
   static const Color jneRed = Color(0xFFF43F5E);
-  static const Color bgLight = Color(0xFFF8FAFC);
 
   DateTime? _fromDate;
   DateTime? _toDate;
@@ -73,16 +72,13 @@ class _LeavePageState extends State<LeavePage> {
     setState(() => _loading = true);
     await Future.delayed(const Duration(milliseconds: 800));
 
-    final req = LeaveRequest(
-      id: 'leave_${DateTime.now().millisecondsSinceEpoch}',
-      userId: provider.currentUser!.uid,
-      userName: provider.currentUser!.name,
-      fromDate: _fromDate!,
-      toDate: _toDate!,
+    await provider.submitLeave(
+      type: 'personal', // Default type
+      startDate: _fromDate!,
+      endDate: _toDate!,
+      totalDays: _workDays,
       reason: _reasonCtrl.text.trim(),
-      submittedAt: DateTime.now(),
     );
-    provider.submitLeave(req);
     
     if (mounted) {
       setState(() => _loading = false);
@@ -94,124 +90,211 @@ class _LeavePageState extends State<LeavePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgLight,
-      appBar: AppBar(
-        backgroundColor: jneCyan,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'AJUKAN IZIN',
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionTitle('Pilih Tanggal'),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(24),
+      backgroundColor: const Color(0xFF0F172A),
+      body: Stack(
+        children: [
+          // ── Background Gradient ──
+          Positioned(
+            top: -100, right: -100,
+            child: Container(
+              width: 300, height: 300,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                shape: BoxShape.circle,
+                color: jneCyan.withValues(alpha: 0.15),
               ),
-              child: Column(
-                children: [
-                  _dateField('Mulai Tanggal', _fmt(_fromDate), () => _pickDate(true)),
-                  const SizedBox(height: 20),
-                  _dateField('Sampai Tanggal', _fmt(_toDate), () => _pickDate(false)),
-                  if (_workDays > 0) ...[
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-                      child: Row(children: [
-                        const Icon(Icons.info_outline, color: Colors.orange, size: 16),
-                        const SizedBox(width: 8),
-                        Text('Total: $_workDays Hari Kerja', style: GoogleFonts.outfit(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.w700)),
-                      ]),
+              child: Center(child: Container(width: 150, height: 150, color: jneCyan.withValues(alpha: 0.1),)),
+            ),
+          ),
+
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 120,
+                floating: false,
+                pinned: true,
+                backgroundColor: const Color(0xFF0F172A).withValues(alpha: 0.8),
+                elevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    'PENGJUAN IZIN',
+                    style: GoogleFonts.outfit(
+                      color: Colors.white, 
+                      fontSize: 14, 
+                      fontWeight: FontWeight.w900, 
+                      letterSpacing: 2
                     ),
-                  ],
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            _buildSectionTitle('Alasan Izin'),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
-              ),
-              child: TextField(
-                controller: _reasonCtrl,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: 'Tuliskan alasan lengkap Anda di sini...',
-                  hintStyle: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 14),
-                  border: InputBorder.none,
+                  ),
+                  centerTitle: true,
                 ),
-                style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 14),
-              ),
-            ),
-
-            const SizedBox(height: 40),
-
-            SizedBox(
-              width: double.infinity,
-              height: 60,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: jneCyan,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 0,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                  onPressed: () => Navigator.pop(context),
                 ),
-                child: _loading 
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : Text('KIRIM PENGAJUAN', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 1)),
               ),
-            ),
-          ],
-        ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildGlassCard(
+                        title: 'DURASI IZIN',
+                        icon: Icons.calendar_month_rounded,
+                        child: Column(
+                          children: [
+                            _dateField('Mulai Tanggal', _fmt(_fromDate), () => _pickDate(true)),
+                            const SizedBox(height: 20),
+                            _dateField('Sampai Tanggal', _fmt(_toDate), () => _pickDate(false)),
+                            if (_workDays > 0) ...[
+                              const SizedBox(height: 20),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: jneCyan.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: jneCyan.withValues(alpha: 0.2)),
+                                ),
+                                child: Row(children: [
+                                  const Icon(Icons.info_outline, color: jneCyan, size: 18),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Total: $_workDays Hari Kerja Terhitung', 
+                                    style: GoogleFonts.outfit(color: jneCyan, fontSize: 13, fontWeight: FontWeight.w800)
+                                  ),
+                                ]),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      _buildGlassCard(
+                        title: 'ALASAN & KETERANGAN',
+                        icon: Icons.edit_note_rounded,
+                        child: TextField(
+                          controller: _reasonCtrl,
+                          maxLines: 4,
+                          textCapitalization: TextCapitalization.sentences,
+                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                          decoration: InputDecoration(
+                            hintText: 'Tuliskan alasan lengkap Anda di sini...',
+                            hintStyle: GoogleFonts.outfit(color: Colors.white24, fontSize: 15),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      GestureDetector(
+                        onTap: _loading ? null : _submit,
+                        child: Container(
+                          height: 70,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [jneCyan, Color(0xFF06B6D4)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: jneCyan.withValues(alpha: 0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              )
+                            ],
+                          ),
+                          child: Center(
+                            child: _loading 
+                              ? const PackageLoading(isLight: true, size: 30)
+                              : Text(
+                                  'KIRIM PENGAJUAN SEKARANG', 
+                                  style: GoogleFonts.outfit(
+                                    color: Colors.white, 
+                                    fontSize: 14, 
+                                    fontWeight: FontWeight.w900, 
+                                    letterSpacing: 1.5
+                                  )
+                                ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSectionTitle(String t) {
-    return Text(t.toUpperCase(), style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1));
+  Widget _buildGlassCard({required String title, required IconData icon, required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: jneCyan, size: 20),
+              const SizedBox(width: 12),
+              Text(
+                title, 
+                style: GoogleFonts.outfit(
+                  color: Colors.white60, 
+                  fontSize: 11, 
+                  fontWeight: FontWeight.w900, 
+                  letterSpacing: 2
+                )
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          child,
+        ],
+      ),
+    );
   }
 
   Widget _dateField(String label, String val, VoidCallback onTap) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
+        Text(label, style: GoogleFonts.outfit(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+        const SizedBox(height: 10),
         GestureDetector(
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.white.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(val.isEmpty ? 'Pilih Tanggal' : val, style: GoogleFonts.outfit(color: val.isEmpty ? const Color(0xFF94A3B8) : const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w700)),
+                Text(
+                  val.isEmpty ? 'Pilih Tanggal' : val, 
+                  style: GoogleFonts.outfit(
+                    color: val.isEmpty ? Colors.white24 : Colors.white, 
+                    fontSize: 15, 
+                    fontWeight: FontWeight.w800
+                  )
+                ),
                 const Icon(Icons.calendar_today_rounded, color: jneCyan, size: 18),
               ],
             ),

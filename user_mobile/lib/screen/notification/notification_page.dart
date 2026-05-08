@@ -134,7 +134,7 @@ class NotificationPage extends StatelessWidget {
               ],
             ),
           ),
-          if (!isRead)
+          if (!notif.isRead)
             Container(
               margin: const EdgeInsets.only(left: 8, top: 2),
               width: 8, height: 8,

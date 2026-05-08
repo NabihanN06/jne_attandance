@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'providers/app_provider.dart';
 import 'providers/chat_provider.dart';
 import 'utils/connectivity_service.dart';
@@ -38,6 +39,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await initializeDateFormatting('id', null);
 
   // Background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -61,7 +63,10 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ConnectivityService()),
-        ChangeNotifierProvider(create: (_) => AppProvider()),
+        ChangeNotifierProxyProvider<ConnectivityService, AppProvider>(
+          create: (ctx) => AppProvider(ctx.read<ConnectivityService>()),
+          update: (_, connectivity, app) => app!,
+        ),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProxyProvider<AppProvider, GeofenceService>(
           create: (_) => GeofenceService(),
@@ -133,15 +138,17 @@ class MyApp extends StatelessWidget {
   }
 
   ThemeData _buildTheme(bool dark) {
-    final Color cyanAccent = dark ? const Color(0xFF22D3EE) : const Color(0xFF0891B2);
-    final Color slateBg = dark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
-    final Color slateSurface = dark ? const Color(0xFF1E293B) : Colors.white;
+    // Modern Palette: Deep Navy / Slate Grey for Dark mode, Off-White for Light mode
+    final Color accentColor = dark ? const Color(0xFF22D3EE) : const Color(0xFF4F46E5); // Cyan (Dark) / Indigo (Light)
+    
+    final Color bgMain = dark ? const Color(0xFF121826) : const Color(0xFFF8FAFC);
+    final Color bgSurface = dark ? const Color(0xFF1E293B) : Colors.white;
     final Color textPrimary = dark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
 
     return ThemeData(
       useMaterial3: true,
       brightness: dark ? Brightness.dark : Brightness.light,
-      scaffoldBackgroundColor: slateBg,
+      scaffoldBackgroundColor: bgMain,
       fontFamily: 'Inter',
       textTheme: GoogleFonts.interTextTheme().apply(
         bodyColor: textPrimary,
@@ -153,19 +160,19 @@ class MyApp extends StatelessWidget {
       ),
       colorScheme: dark
           ? ColorScheme.dark(
-              primary: cyanAccent,
-              secondary: const Color(0xFF38BDF8), // Sky Blue accent
-              surface: slateSurface,
+              primary: accentColor,
+              secondary: const Color(0xFF10B981), // Emerald Green accent
+              surface: bgSurface,
               onSurface: textPrimary,
             )
           : ColorScheme.light(
-              primary: cyanAccent,
-              secondary: const Color(0xFF0284C7),
-              surface: slateSurface,
+              primary: accentColor,
+              secondary: const Color(0xFF1E40AF), // Deep Blue
+              surface: bgSurface,
               onSurface: textPrimary,
             ),
       appBarTheme: AppBarTheme(
-        backgroundColor: dark ? slateBg.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.8),
+        backgroundColor: bgMain.withValues(alpha: 0.8),
         foregroundColor: textPrimary,
         elevation: 0,
         centerTitle: false,
@@ -179,9 +186,9 @@ class MyApp extends StatelessWidget {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: cyanAccent,
+          backgroundColor: accentColor,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 0,
           minimumSize: const Size(double.infinity, 56),
           textStyle: GoogleFonts.inter(
@@ -192,10 +199,11 @@ class MyApp extends StatelessWidget {
         ),
       ),
       cardTheme: CardThemeData(
-        color: slateSurface,
-        elevation: 0,
+        color: bgSurface,
+        elevation: 4,
+        shadowColor: Colors.black.withValues(alpha: 0.05),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
           side: BorderSide(
             color: dark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
             width: 1,

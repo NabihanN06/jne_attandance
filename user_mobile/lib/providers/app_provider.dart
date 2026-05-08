@@ -1,82 +1,187 @@
+// ─────────────────────────────────────────────
+// providers/app_provider.dart - FINAL AUDITED VERSION
+// ─────────────────────────────────────────────
+
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../models/app_models.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
-import 'dart:io';
+import '../models/app_models.dart';
 import '../utils/offline_service.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_messaging/firebase_messaging.dart' as fcm;
-import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:path_provider/path_provider.dart';
+import '../utils/connectivity_service.dart';
+import '../utils/fortress_utils.dart';
 
-class AppProvider extends ChangeNotifier {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // ── Office Hours ──
-  final TimeOfDay officeStartTime = const TimeOfDay(hour: 8, minute: 0);
-  final TimeOfDay officeEndTime = const TimeOfDay(hour: 17, minute: 0);
+  UserModel? _currentUser;
+  UserModel? get currentUser => _currentUser;
 
-  // ── Sync Status ──
-  int _pendingSyncCount = 0;
-  int get pendingSyncCount => _pendingSyncCount;
-  bool _isSyncing = false;
-  bool get isSyncing => _isSyncing;
+  bool _isInitialized = false;
+  bool get isInitialized => _isInitialized;
 
-  // ── Theme ──
-  bool _isDarkMode = true;
+  bool _isProcessing = false;
+  bool get isProcessing => _isProcessing;
+
+  String _fortressStatus = '';
+  String get fortressStatus => _fortressStatus;
+
+  bool get isLoggedIn => _auth.currentUser != null;
+
+  // Configuration
+  double _officeLat = -3.4150;
+  double _officeLng = 114.8465;
+  double _officeRadius = 500.0;
+
+  double get officeLat => _officeLat;
+  double get officeLng => _officeLng;
+  double get officeRadius => _officeRadius;
+  TimeOfDay officeStartTime = const TimeOfDay(hour: 8, minute: 0);
+
+  bool _isDarkMode = false;
   bool get isDarkMode => _isDarkMode;
+
   void toggleTheme() {
     _isDarkMode = !_isDarkMode;
     notifyListeners();
   }
 
-  // ── Office Config ──
-  double _officeLat = -3.4150;
-  double _officeLng = 114.8465;
-  double _officeRadius = 500.0;
-  // Office rules from DepartmentRules (simplified)
-  double get officeLat => _officeLat;
-  double get officeLng => _officeLng;
-  double get officeRadius => _officeRadius;
+  // Data Lists
+  List<AttendanceRecord> _attendanceRecords = [];
+  List<AttendanceRecord> get myAttendance => _attendanceRecords;
 
-  void Function(double lat, double lng, double radius)? onSettingsChanged;
+  List<LeaveRequest> _leaveRequests = [];
+  List<LeaveRequest> get myLeaveRequests => _leaveRequests;
 
-  // ── Auth ──
-  UserModel? _currentUser;
-  UserModel? get currentUser => _currentUser;
-  bool get isLoggedIn => _currentUser != null;
-  bool get isAdmin => _currentUser?.role == 'admin';
-  
-  // Subscriptions for cleanup
-  StreamSubscription? _adminNotifSub;
+  List<AdminNotification> _notifications = [];
+  List<AdminNotification> get notifications => _notifications;
 
-  final List<UserModel> _accounts = [];
-  List<UserModel> get allAccounts => List.unmodifiable(_accounts);
-  List<UserModel> get allUsers => _accounts.where((a) => a.role == 'user' || a.role == 'employee').toList();
+  List<CalendarEvent> _events = [];
+  List<CalendarEvent> get events => _events;
 
-  // ── Notification Streams (Firestore) ──
-  List<AdminNotification> _adminNotifications = [];
-  List<AdminNotification> _userNotifications = [];
-  List<AdminNotification> get notifications => isAdmin ? _adminNotifications : _userNotifications;
-  int get unreadNotificationCount => notifications.where((n) => !n.isRead).length;
+  // History State
+  List<AttendanceRecord> _monthlyRecords = [];
+  List<AttendanceRecord> get monthlyAttendance => _monthlyRecords;
+  bool _isLoadingHistory = false;
+  bool get isLoadingHistory => _isLoadingHistory;
 
-  StreamSubscription? _userNotifSub;
+  bool _isLoadingFace = false;
+  bool get isLoadingFace => _isLoadingFace;
+
+  // Stream Subscriptions
   StreamSubscription? _settingsSub;
+  StreamSubscription? _notifSub;
+  StreamSubscription? _broadcastSub;
+  StreamSubscription? _eventSub;
+  StreamSubscription? _attendanceSub;
+  StreamSubscription? _leaveSub;
+  
+  // Heartbeat Timer
+  Timer? _heartbeatTimer;
 
-  AppProvider() {
-    _loadUsers();
-    _listenToSettings();
-    _listenToSharedData();
+  AppProvider(ConnectivityService connectivityService) {
+    _init();
+    WidgetsBinding.instance.addObserver(this);
+    
+    // Listen for connectivity recovery to auto-sync
+    connectivityService.addListener(() {
+      if (connectivityService.isOnline && isLoggedIn) {
+        syncPendingRecords();
+        _startHeartbeat();
+      } else {
+        _stopHeartbeat();
+      }
+    });
   }
 
-  Future<void> _loadUsers() async {
-    // Dipanggil hanya untuk sync lokal jika diperlukan, tapi login via Auth
-    if (_auth.currentUser != null) {
-      await _fetchCurrentUser(_auth.currentUser!.uid);
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (isLoggedIn) {
+      if (state == AppLifecycleState.resumed) {
+        _updatePresence(true);
+        _startHeartbeat();
+      } else {
+        _updatePresence(false);
+        _stopHeartbeat();
+      }
+    }
+  }
+
+  void _init() {
+    _auth.authStateChanges().listen((user) async {
+      if (user != null) {
+        await _fetchCurrentUser(user.uid);
+        _listenToSettings();
+        _startHeartbeat();
+        // Auto-sync when app starts if logged in
+        syncPendingRecords();
+      } else {
+        _stopHeartbeat();
+        _cancelAllSubscriptions();
+        _currentUser = null;
+        _isInitialized = true;
+        notifyListeners();
+      }
+    });
+  }
+
+  void _updateNotifications(QuerySnapshot snap, {required bool isBroadcast}) {
+    final newNotifs = snap.docs.map((doc) => AdminNotification.fromFirestore(doc)).toList();
+    
+    if (isBroadcast) {
+      // Filter out existing broadcasts to avoid duplicates
+      _notifications.removeWhere((n) => n.type == 'broadcast');
+      _notifications.addAll(newNotifs);
+    } else {
+      // Filter out existing personal notifs
+      _notifications.removeWhere((n) => n.type != 'broadcast');
+      _notifications.addAll(newNotifs);
+    }
+    
+    // Sort by date descending
+    _notifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    notifyListeners();
+  }
+
+  void _cancelAllSubscriptions() {
+    _settingsSub?.cancel();
+    _notifSub?.cancel();
+    _broadcastSub?.cancel();
+    _eventSub?.cancel();
+    _attendanceSub?.cancel();
+    _leaveSub?.cancel();
+  }
+
+  // ── Heartbeat Management ──
+  void _startHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _updatePresence(true);
+    _heartbeatTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
+      if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+        _updatePresence(true);
+      }
+    });
+  }
+
+  void _stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _updatePresence(false);
+  }
+
+  Future<void> _updatePresence(bool isOnline) async {
+    if (_auth.currentUser == null) return;
+    try {
+      await _db.collection('users').doc(_auth.currentUser!.uid).update({
+        'isOnline': isOnline,
+        'lastSeen': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Presence update error: $e');
     }
   }
 
@@ -84,473 +189,117 @@ class AppProvider extends ChangeNotifier {
     try {
       final doc = await _db.collection('users').doc(uid).get();
       if (doc.exists) {
-        final d = doc.data()!;
-        _currentUser = UserModel(
-          uid: doc.id,
-          name: d['name'] ?? '',
-          email: d['email'] ?? '',
-          phone: d['phone'] ?? '',
-          employeeId: d['employeeId'] ?? '',
-          role: d['role'] ?? 'employee',
-          department: d['department'] ?? '',
-          position: d['position'] ?? '',
-          faceRegistered: d['faceRegistered'] == true ? 'yes' : 'no',
-          deviceName: d['deviceName'] ?? '',
-          faceRegisteredDate: _parseDateTime(d['createdAt'])?.toIso8601String() ?? '',
-          allowRemoteAttendance: d['allowRemoteAttendance'] ?? (d['role'] == 'kurir' || d['role'] == 'driver'),
-        );
+        _currentUser = UserModel.fromFirestore(doc);
         _listenToMyData();
-        _saveFcmToken(uid);
-        notifyListeners();
       }
     } catch (e) {
       debugPrint('Error fetching user: $e');
-    }
-  }
-
-  Future<void> _saveFcmToken(String uid) async {
-    try {
-      String? token = await fcm.FirebaseMessaging.instance.getToken();
-      if (token != null) {
-        await _db.collection('users').doc(uid).update({
-          'fcmToken': token,
-          'lastSeen': FieldValue.serverTimestamp(),
-        });
-        debugPrint('FCM Token Saved: $token');
-      }
-    } catch (e) {
-      debugPrint('Error saving FCM token: $e');
-    }
-  }
-
-  Future<void> login(String email, String password) async {
-    try {
-      await _auth.signInWithEmailAndPassword(email: email, password: password);
-      
-      // Delay dihapus untuk performa maksimal
-      final user = _auth.currentUser;
-      
-      if (user != null) {
-        final doc = await _db.collection('users').doc(user.uid).get();
-        
-        if (doc.exists) {
-          final d = doc.data()!;
-          _currentUser = UserModel(
-            uid: doc.id,
-            name: d['name'] ?? 'User',
-            email: d['email'] ?? email,
-            phone: d['phone'] ?? '',
-            employeeId: d['employeeId'] ?? d['nik'] ?? '',
-            role: d['role'] ?? 'employee',
-            department: d['department'] ?? 'Umum',
-            position: d['position'] ?? 'Staff',
-            faceRegistered: d['faceRegistered'] == true ? 'yes' : 'no',
-            deviceName: d['deviceName'] ?? '',
-            faceRegisteredDate: _parseDateTime(d['createdAt'])?.toIso8601String() ?? '',
-            allowRemoteAttendance: d['allowRemoteAttendance'] ?? (d['role'] == 'kurir' || d['role'] == 'driver'),
-          );
-          
-          _listenToMyData();
-          notifyListeners();
-        } else {
-          await _auth.signOut();
-          throw Exception('Data profil Anda belum dibuat oleh Admin. Hubungi pihak JNE.');
-        }
-      } else {
-        throw Exception('Email atau password salah.');
-      }
-    } catch (e) {
-      if (e is FirebaseAuthException) {
-        String msg = 'Gagal masuk: ${e.code}';
-        if (e.code == 'wrong-password' || e.code == 'invalid-credential' || e.code == 'user-not-found') {
-          msg = 'Email atau password salah.';
-        } else if (e.code == 'user-disabled') {
-          msg = 'Akun Anda telah dinonaktifkan';
-        } else if (e.code == 'network-request-failed') {
-          msg = 'Koneksi internet terputus. Pastikan HP ada kuota/WiFi.';
-        } else if (e.message != null) {
-          msg = 'Error Firebase: ${e.message}';
-        }
-        throw Exception(msg);
-      }
-      
-      if (e.toString().contains('PigeonUserDetails') && _auth.currentUser != null) {
-        return login(email, password); 
-      }
-      throw Exception(e.toString());
-    }
-  }
-
-  void logout() async {
-    await _auth.signOut();
-    _currentUser = null;
-    _attendanceRecords.clear();
-    _leaveRequests.clear();
-    _adminNotifSub?.cancel();
-    _adminNotifSub = null;
-    _userNotifSub?.cancel();
-    _userNotifSub = null;
-    _settingsSub?.cancel();
-    _settingsSub = null;
-    notifyListeners();
-  }
-
-  void register(UserModel user) async {
-    final docRef = _db.collection('users').doc();
-    await docRef.set({
-      'uid': docRef.id,
-      'name': user.name,
-      'email': user.email,
-      'phone': user.phone,
-      'employeeId': user.employeeId,
-      'role': user.role,
-      'department': user.department,
-      'position': user.position,
-      'faceRegistered': user.faceRegistered == 'yes',
-      'deviceName': user.deviceName,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-    _currentUser = UserModel(
-      uid: docRef.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      employeeId: user.employeeId,
-      role: user.role,
-      department: user.department,
-      position: user.position,
-      faceRegistered: user.faceRegistered,
-      deviceName: user.deviceName,
-      faceRegisteredDate: user.faceRegisteredDate,
-    );
-    _listenToMyData();
-    notifyListeners();
-  }
-
-  void updateCurrentUser(UserModel updated) async {
-    await _db.collection('users').doc(updated.uid).update({
-      'name': updated.name,
-      'phone': updated.phone,
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-    _currentUser = updated;
-    notifyListeners();
-  }
-
-  // ── Notification Settings ──
-  NotificationSettings _notifSettings = const NotificationSettings();
-  NotificationSettings get notifSettings => _notifSettings;
-  void updateNotifSettings(NotificationSettings s) {
-    _notifSettings = s;
-    notifyListeners();
-  }
-
-  // ── Data Real-time Sync ──
-  List<AttendanceRecord> _attendanceRecords = [];
-  List<AttendanceRecord> get myAttendance => _attendanceRecords;
-  
-  bool get hasClockedInToday {
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    return _attendanceRecords.any((r) => DateFormat('yyyy-MM-dd').format(r.date) == today && r.checkIn != null);
-  }
-
-  bool get isLateForClockIn {
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day, officeStartTime.hour, officeStartTime.minute);
-    return now.isAfter(start) && !hasClockedInToday;
-  }
-
-  List<AttendanceRecord> get allAttendance => List.unmodifiable(_attendanceRecords);
-
-  List<LeaveRequest> _leaveRequests = [];
-  List<LeaveRequest> get myLeaveRequests => _leaveRequests;
-  List<LeaveRequest> get allLeaveRequests => List.unmodifiable(_leaveRequests);
-
-  List<OvertimeRecord> _overtimeRequests = [];
-  List<OvertimeRecord> get myOvertimeRequests => _overtimeRequests;
-  int get totalOvertimeHours => _overtimeRequests.where((o) => o.status == 'approved').fold(0, (acc, item) => acc + item.durationHours);
-
-  // ── Additional Shared Collections ──
-  List<JamKerja> _shiftList = [];
-  List<JamKerja> get shiftList => List.unmodifiable(_shiftList);
-
-  List<DepartmentItem> _departments = [];
-  List<DepartmentItem> get departments => List.unmodifiable(_departments);
-
-  List<CalendarEvent> _events = [];
-  List<CalendarEvent> get events => List.unmodifiable(_events);
-
-
-
-  SystemSettings? _systemSettings;
-  SystemSettings? get systemSettings => _systemSettings;
-
-  DateTime? _parseDateTime(dynamic value) {
-    if (value == null) return null;
-    if (value is Timestamp) return value.toDate();
-    if (value is String) return DateTime.tryParse(value);
-    return null;
-  }
-
-  // ── Mappers ──
-  JamKerja _mapJamKerja(String id, Map<String, dynamic> d) {
-    return JamKerja(
-      id: id,
-      name: d['name'] ?? '',
-      checkInTime: d['checkInTime'] ?? '08:00',
-      checkOutTime: d['checkOutTime'] ?? '17:00',
-      toleranceMinutes: d['toleranceMinutes'] ?? 15,
-      workingDays: List<String>.from(d['workingDays'] ?? ['monday','tuesday','wednesday','thursday','friday']),
-      color: d['color'] ?? '#3B82F6',
-      isActive: d['isActive'] ?? true,
-      createdAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
-      updatedAt: _parseDateTime(d['updatedAt']) ?? DateTime.now(),
-    );
-  }
-
-  DepartmentItem _mapDepartment(String id, Map<String, dynamic> d) {
-    return DepartmentItem(
-      id: id,
-      name: d['name'] ?? '',
-      description: d['description'] ?? '',
-      color: d['color'] ?? '#E31E24',
-      isActive: d['isActive'] ?? true,
-      createdAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
-      updatedAt: _parseDateTime(d['updatedAt']) ?? DateTime.now(),
-    );
-  }
-
-  CalendarEvent _mapEvent(String id, Map<String, dynamic> d) {
-    return CalendarEvent(
-      id: id,
-      title: d['title'] ?? '',
-      description: d['description'] ?? '',
-      startDate: _parseDateTime(d['startDate']) ?? DateTime.now(),
-      endDate: _parseDateTime(d['endDate']) ?? DateTime.now(),
-      location: d['location'],
-      category: d['category'] ?? 'other',
-      attendees: List<String>.from(d['attendees'] ?? []),
-      departments: d['departments'] != null ? List<String>.from(d['departments']) : null,
-      organizerId: d['organizerId'] ?? '',
-      color: d['color'],
-      imageUrl: d['imageUrl'],
-      price: d['price']?.toInt(),
-      ticketsLeft: d['ticketsLeft']?.toInt(),
-      notificationSentDayBefore: d['notificationSentDayBefore'] ?? false,
-      notificationSent30Min: d['notificationSent30Min'] ?? false,
-      createdAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
-      updatedAt: _parseDateTime(d['updatedAt']) ?? DateTime.now(),
-    );
-  }
-
-  AdminNotification _mapAdminNotification(String id, Map<String, dynamic> d) {
-    return AdminNotification(
-      id: id,
-      type: d['type'] ?? 'system',
-      title: d['title'] ?? '',
-      message: d['message'] ?? '',
-      employeeId: d['employeeId'],
-      employeeName: d['employeeName'],
-      relatedId: d['relatedId'],
-      isRead: d['isRead'] ?? false,
-      createdAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
-    );
-  }
-
-  SystemSettings? _mapSystemSettings(Map<String, dynamic>? data) {
-    if (data == null) return null;
-    try {
-      final office = data['office'] ?? {};
-      final attendance = data['attendance'] ?? {};
-      final notifications = data['notifications'] ?? {};
-      final company = data['company'] ?? {};
-      return SystemSettings(
-        office: OfficeSettings(
-          name: office['name'] ?? 'Office',
-          address: office['address'] ?? '',
-          latitude: (office['latitude'] ?? -3.4150).toDouble(),
-          longitude: (office['longitude'] ?? 114.8465).toDouble(),
-          radiusMeters: (office['radiusMeters'] ?? 500).toInt(),
-        ),
-        attendance: AttendanceSettings(
-          maxFaceAttempts: (attendance['maxFaceAttempts'] ?? 3).toInt(),
-          faceSimilarityThreshold: (attendance['faceSimilarityThreshold'] ?? 80).toInt(),
-          allowOfflineAttendance: attendance['allowOfflineAttendance'] ?? false,
-          overtimeCalculation: attendance['overtimeCalculation'] ?? false,
-        ),
-        notifications: AdminNotificationSettings(
-          notifyOnLeaveRequest: notifications['notifyOnLeaveRequest'] ?? true,
-          notifyOnFaceEnrollment: notifications['notifyOnFaceEnrollment'] ?? true,
-          notifyOnFaceFailure: notifications['notifyOnFaceFailure'] ?? true,
-          notifyOnNewEmployee: notifications['notifyOnNewEmployee'] ?? true,
-          emailNotifications: notifications['emailNotifications'] ?? false,
-          adminEmail: notifications['adminEmail'] ?? '',
-        ),
-        company: CompanySettings(
-          companyName: company['companyName'] ?? 'JNE MTP',
-          logoUrl: company['logoUrl'],
-          hrEmail: company['hrEmail'] ?? '',
-          hrPhone: company['hrPhone'] ?? '',
-          appDownloadUrl: company['appDownloadUrl'] ?? '',
-        ),
-      );
-    } catch (e) {
-      debugPrint('Error mapping system settings: $e');
-      return null;
-    }
-  }
-
-  void _listenToSettings() {
-    _settingsSub = _db.collection('settings').doc('system').snapshots().listen((snap) {
-      if (snap.exists) {
-        final data = snap.data();
-        if (data != null && data['office'] != null) {
-          final office = data['office'];
-          _officeLat = (office['latitude'] ?? -3.4150).toDouble();
-          _officeLng = (office['longitude'] ?? 114.8465).toDouble();
-          _officeRadius = (office['radiusMeters'] ?? 500).toDouble();
-          
-          debugPrint('Settings updated: $_officeLat, $_officeLng, $_officeRadius');
-          onSettingsChanged?.call(_officeLat, _officeLng, _officeRadius);
-        }
-        // Map full settings
-        _systemSettings = _mapSystemSettings(data);
-        notifyListeners();
-      }
-    });
-  }
-
-  void _listenToSharedData() {
-    // ── Shifts (Jam Kerja) ──
-    _db.collection('shifts').snapshots().listen((snap) {
-      _shiftList = snap.docs.map((d) => _mapJamKerja(d.id, d.data())).toList();
+    } finally {
+      _isInitialized = true;
       notifyListeners();
-    });
-
-    // ── Departments ──
-    _db.collection('departments').snapshots().listen((snap) {
-      _departments = snap.docs.map((d) => _mapDepartment(d.id, d.data())).toList();
-      notifyListeners();
-    });
-
-    // ── Events ──
-    _db.collection('events').orderBy('startDate').snapshots().listen((snap) {
-      _events = snap.docs.map((d) => _mapEvent(d.id, d.data())).toList();
-      notifyListeners();
-    });
-
-    // ── Admin Notifications (only for admin users) ──
-    if (_currentUser != null && (isAdmin)) {
-      _db.collection('adminNotifications')
-          .orderBy('createdAt', descending: true)
-          .limit(30)
-          .snapshots()
-          .listen((snap) {
-        _adminNotifications = snap.docs.map((d) => _mapAdminNotification(d.id, d.data())).toList();
-        notifyListeners();
-      });
     }
   }
 
   void _listenToMyData() {
     if (_currentUser == null) return;
+    _cancelAllSubscriptions();
 
-    // Cancel any existing notification subscriptions
-    _adminNotifSub?.cancel();
-    _adminNotifSub = null;
-    _userNotifSub?.cancel();
-    _userNotifSub = null;
-
-    // Listen Attendance (Legacy - keep for now to avoid breaking other parts, but we'll use by-month for History)
-    _db.collection('attendance').where('userId', isEqualTo: _currentUser!.uid).orderBy('date', descending: true).limit(50).snapshots().listen((snap) {
-      _attendanceRecords = snap.docs.map((doc) => _mapAttendanceFromDoc(doc)).toList();
+    _attendanceSub = _db.collection('attendance')
+        .where('userId', isEqualTo: _currentUser!.uid)
+        .orderBy('attendanceDate', descending: true)
+        .limit(30)
+        .snapshots()
+        .listen((snap) {
+      _attendanceRecords = snap.docs.map((doc) => AttendanceRecord.fromFirestore(doc)).toList();
       notifyListeners();
     });
 
-    // Listen Leaves
-    _db.collection('leaves').where('userId', isEqualTo: _currentUser!.uid).snapshots().listen((snap) {
-      _leaveRequests = snap.docs.map((doc) {
-        final d = doc.data();
-        return LeaveRequest(
-          id: doc.id,
-          userId: d['userId'] ?? '',
-          userName: d['employeeName'] ?? '',
-          fromDate: _parseDateTime(d['startDate']) ?? DateTime.now(),
-          toDate: _parseDateTime(d['endDate']) ?? DateTime.now(),
-          reason: d['reason'] ?? '',
-          status: d['status'] ?? 'pending',
-          submittedAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
-        );
-      }).toList();
+    _leaveSub = _db.collection('leaves')
+        .where('userId', isEqualTo: _currentUser!.uid)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .listen((snap) {
+      _leaveRequests = snap.docs.map((doc) => LeaveRequest.fromFirestore(doc)).toList();
       notifyListeners();
     });
 
-    // Listen Overtime
-    _db.collection('overtime').where('userId', isEqualTo: _currentUser!.uid).snapshots().listen((snap) {
-      _overtimeRequests = snap.docs.map((doc) {
-        final d = doc.data();
-        return OvertimeRecord(
-          id: doc.id,
-          userId: d['userId'] ?? '',
-          userName: d['employeeName'] ?? '',
-          date: _parseDateTime(d['date']) ?? DateTime.now(),
-          durationHours: d['durationHours'] ?? 0,
-          reason: d['reason'] ?? '',
-          status: d['status'] ?? 'pending',
-          createdAt: _parseDateTime(d['createdAt']) ?? DateTime.now(),
-        );
-      }).toList();
-      notifyListeners();
+    _notifSub = _db.collection('userNotifications')
+        .where('userId', isEqualTo: _currentUser!.uid)
+        .orderBy('createdAt', descending: true)
+        .limit(20)
+        .snapshots()
+        .listen((snap) {
+      _updateNotifications(snap, isBroadcast: false);
     });
 
-    // ── Notifications ──
-    if (isAdmin) {
-      _adminNotifSub = _db.collection('adminNotifications')
-          .orderBy('createdAt', descending: true)
-          .limit(50)
-          .snapshots()
-          .listen((snap) {
-        _adminNotifications = snap.docs.map((d) => _mapAdminNotification(d.id, d.data())).toList();
-        notifyListeners();
-      });
-    } else {
-      _userNotifSub = _db.collection('adminNotifications')
-          .where('employeeId', isEqualTo: _currentUser!.uid)
-          .orderBy('createdAt', descending: true)
-          .limit(50)
-          .snapshots()
-          .listen((snap) {
-        _userNotifications = snap.docs.map((d) => _mapAdminNotification(d.id, d.data())).toList();
-        notifyListeners();
-      });
+    _broadcastSub = _db.collection('broadcasts')
+        .orderBy('createdAt', descending: true)
+        .limit(10)
+        .snapshots()
+        .listen((snap) {
+      _updateNotifications(snap, isBroadcast: true);
+    });
+
+    _eventSub = _db.collection('calendarEvents')
+        .where('startDate', isGreaterThanOrEqualTo: DateTime.now().subtract(const Duration(days: 30)))
+        .snapshots()
+        .listen((snap) {
+      _events = snap.docs.map((doc) => CalendarEvent.fromFirestore(doc)).toList();
+      notifyListeners();
+    });
+  }
+
+  // ── Auth Methods ──
+  Future<void> login(String email, String password) async {
+    _isProcessing = true;
+    _fortressStatus = 'Menghubungkan ke server...';
+    notifyListeners();
+    try {
+      await FortressUtils.wrapWithRetry(
+        () => _auth.signInWithEmailAndPassword(email: email, password: password),
+        taskName: 'Login',
+        onStatusUpdate: (msg) {
+          _fortressStatus = msg;
+          notifyListeners();
+        },
+      );
+      _updatePresence(true);
+      _startHeartbeat();
+    } catch (e) {
+      throw Exception('Email atau password salah atau gangguan server. Coba cek kembali ya.');
+    } finally {
+      _isProcessing = false;
+      _fortressStatus = '';
+      notifyListeners();
     }
+  }
+
+  Future<void> changePassword(String newPassword) async {
+    _isProcessing = true;
+    notifyListeners();
+    try {
+      await _auth.currentUser?.updatePassword(newPassword);
+    } catch (e) {
+      debugPrint('Error changing password: $e');
+      throw Exception('Gagal mengubah kata sandi. Pastikan Anda baru saja masuk (recent login) untuk alasan keamanan.');
+    } finally {
+      _isProcessing = false;
+      notifyListeners();
+    }
+  }
+
+  void logout() async {
+    _stopHeartbeat();
+    _cancelAllSubscriptions();
+    await _auth.signOut();
+    _currentUser = null;
+    _attendanceRecords.clear();
+    _monthlyRecords.clear();
+    _leaveRequests.clear();
+    _notifications.clear();
+    _events.clear();
     notifyListeners();
   }
-
-  AttendanceRecord _mapAttendanceFromDoc(DocumentSnapshot doc) {
-    final d = doc.data() as Map<String, dynamic>;
-    final checkInTime = d['checkIn']?['time'];
-    final checkOutTime = d['checkOut']?['time'];
-    final dateParsed = _parseDateTime(d['date']);
-    
-    return AttendanceRecord(
-      id: doc.id,
-      userId: d['userId'] ?? '',
-      userName: d['employeeName'] ?? '',
-      date: dateParsed ?? DateTime.now(),
-      checkIn: checkInTime != null ? DateFormat('HH:mm').format(_parseDateTime(checkInTime) ?? DateTime.now()) : null,
-      checkOut: checkOutTime != null ? DateFormat('HH:mm').format(_parseDateTime(checkOutTime) ?? DateTime.now()) : null,
-      checkInStatus: _mapAdminStatusToMobile(d['status']),
-      checkOutStatus: checkOutTime != null ? 'Selesai' : 'Menunggu',
-      location: 'JNE Martapura',
-    );
-  }
-
-  // New: Fetch attendance by month for History Page
-  List<AttendanceRecord> _monthlyAttendance = [];
-  List<AttendanceRecord> get monthlyAttendance => _monthlyAttendance;
-  bool _isLoadingHistory = false;
-  bool get isLoadingHistory => _isLoadingHistory;
 
   Future<void> fetchAttendanceByMonth(int month, int year) async {
     if (_currentUser == null) return;
@@ -558,17 +307,20 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final start = DateTime(year, month, 1);
-      final end = DateTime(year, month + 1, 0);
+      final firstDay = DateTime(year, month, 1);
+      final lastDay = DateTime(year, month + 1, 0);
       
-      final q = await _db.collection('attendance')
+      final dateStart = DateFormat('yyyy-MM-dd').format(firstDay);
+      final dateEnd = DateFormat('yyyy-MM-dd').format(lastDay);
+
+      final snap = await _db.collection('attendance')
           .where('userId', isEqualTo: _currentUser!.uid)
-          .where('date', isGreaterThanOrEqualTo: DateFormat('yyyy-MM-dd').format(start))
-          .where('date', isLessThanOrEqualTo: DateFormat('yyyy-MM-dd').format(end))
-          .orderBy('date', descending: true)
+          .where('attendanceDate', isGreaterThanOrEqualTo: dateStart)
+          .where('attendanceDate', isLessThanOrEqualTo: dateEnd)
+          .orderBy('attendanceDate', descending: true)
           .get();
 
-      _monthlyAttendance = q.docs.map((doc) => _mapAttendanceFromDoc(doc)).toList();
+      _monthlyRecords = snap.docs.map((doc) => AttendanceRecord.fromFirestore(doc)).toList();
     } catch (e) {
       debugPrint('Error fetching history: $e');
     } finally {
@@ -577,337 +329,427 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  String _mapAdminStatusToMobile(String? status) {
-    switch (status) {
-      case 'present': return 'Tepat Waktu';
-      case 'late': return 'Terlambat';
-      case 'absent': return 'Alpha';
-      case 'leave': return 'Izin';
-      case 'overtime': return 'Lembur';
-      default: return 'Tepat Waktu';
+  bool _hasPendingAttendance = false;
+  bool get hasPendingAttendance => _hasPendingAttendance;
+
+  void checkPendingAttendance() async {
+    final pending = await OfflineService.getPendingAttendance();
+    _hasPendingAttendance = pending.isNotEmpty;
+    notifyListeners();
+  }
+
+  // ── Attendance Logic ──
+  bool get hasClockedInToday {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    return _attendanceRecords.any((r) => r.date == today && r.checkIn != null);
+  }
+
+  Future<void> addAttendanceCheckIn(String status, {String? localImagePath, double lat = 0, double lng = 0}) async {
+    if (_currentUser == null) return;
+    _isProcessing = true;
+    notifyListeners();
+
+    try {
+      final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      
+      final data = {
+        'userId': _currentUser!.uid,
+        'employeeName': _currentUser!.name,
+        'employeeId': _currentUser!.employeeId,
+        'department': _currentUser!.department,
+        'attendanceDate': dateStr,
+        'status': _mapMobileStatusToAdmin(status),
+        'checkIn': {
+          'time': DateTime.now().toIso8601String(),
+          'latitude': lat,
+          'longitude': lng,
+          'distance': Geolocator.distanceBetween(lat, lng, _officeLat, _officeLng).round(),
+          'photoUrl': localImagePath,
+        },
+        'checkInTime': DateTime.now().toIso8601String(),
+        'checkInLatitude': lat,
+        'checkInLongitude': lng,
+        'checkInDistance': Geolocator.distanceBetween(lat, lng, _officeLat, _officeLng).round(),
+        'checkInPhotoUrl': localImagePath,
+        'createdAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
+      };
+
+      bool isOnline = await _checkConnectivity();
+
+      if (isOnline) {
+        final firestoreData = Map<String, dynamic>.from(data);
+        final now = FieldValue.serverTimestamp();
+        firestoreData['checkIn']['time'] = now;
+        firestoreData['checkInTime'] = now;
+        firestoreData['createdAt'] = now;
+        firestoreData['updatedAt'] = now;
+        firestoreData['checkIn']['photoUrl'] = 'uploading...';
+        firestoreData['checkInPhotoUrl'] = 'uploading...';
+
+        final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+        final docId = '${_currentUser!.uid}_$today';
+        final docRef = _db.collection('attendance').doc(docId);
+
+        await _db.runTransaction((transaction) async {
+          final snapshot = await transaction.get(docRef);
+          if (snapshot.exists) {
+            throw Exception('Anda sudah melakukan absensi masuk hari ini.');
+          }
+          transaction.set(docRef, firestoreData);
+          if (localImagePath != null) {
+            _uploadAttendancePhoto(docId, localImagePath);
+          }
+        });
+      } else {
+        await OfflineService.savePendingAttendance(data);
+        _hasPendingAttendance = true;
+      }
+    } catch (e) {
+      debugPrint('Attendance error: $e');
+      throw Exception('Gagal mengirim absensi. Data akan disimpan secara otomatis jika offline.');
+    } finally {
+      _isProcessing = false;
+      notifyListeners();
     }
+  }
+
+  Future<bool> _checkConnectivity() async {
+    try {
+      final result = await InternetAddress.lookup('google.com').timeout(const Duration(seconds: 3));
+      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> syncPendingRecords() async {
+    final pending = await OfflineService.getPendingAttendance();
+    if (pending.isEmpty) return;
+
+    try {
+      for (var record in pending) {
+        final firestoreData = Map<String, dynamic>.from(record);
+        final now = FieldValue.serverTimestamp();
+        firestoreData['checkIn']['time'] = now;
+        firestoreData['checkInTime'] = now;
+        firestoreData['createdAt'] = now;
+        firestoreData['updatedAt'] = now;
+        
+        final localPath = firestoreData['checkIn']['photoUrl'];
+        firestoreData['checkIn']['photoUrl'] = 'uploading...';
+        firestoreData['checkInPhotoUrl'] = 'uploading...';
+
+        final docId = '${_currentUser!.uid}_${record['attendanceDate']}';
+        final docRef = _db.collection('attendance').doc(docId);
+        
+        await docRef.set(firestoreData, SetOptions(merge: true));
+        
+        if (localPath != null && File(localPath).existsSync()) {
+          await _uploadAttendancePhoto(docId, localPath);
+        }
+      }
+      await OfflineService.clearPendingAttendance();
+      _hasPendingAttendance = false;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Sync failed: $e');
+    }
+  }
+
+  Future<void> addAttendanceCheckOut({String? localImagePath, double lat = 0, double lng = 0}) async {
+    if (_currentUser == null) return;
+    _isProcessing = true;
+    notifyListeners();
+
+    try {
+      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final record = _attendanceRecords.firstWhere(
+        (r) => r.date == today && r.checkOut == null,
+        orElse: () => throw Exception('Absensi masuk hari ini tidak ditemukan atau sudah absen keluar.'),
+      );
+
+      final checkOutData = {
+        'time': DateTime.now().toIso8601String(),
+        'latitude': lat,
+        'longitude': lng,
+        'distance': Geolocator.distanceBetween(lat, lng, _officeLat, _officeLng).round(),
+        'photoUrl': localImagePath,
+      };
+
+      final flatCheckOutData = {
+        'checkOutTime': DateTime.now().toIso8601String(),
+        'checkOutLatitude': lat,
+        'checkOutLongitude': lng,
+        'checkOutDistance': Geolocator.distanceBetween(lat, lng, _officeLat, _officeLng).round(),
+        'checkOutPhotoUrl': localImagePath,
+      };
+
+      bool isOnline = await _checkConnectivity();
+
+      if (isOnline) {
+        final checkOutMap = Map<String, dynamic>.from(checkOutData);
+        final flatMap = Map<String, dynamic>.from(flatCheckOutData);
+        final now = FieldValue.serverTimestamp();
+        
+        checkOutMap['time'] = now;
+        flatMap['checkOutTime'] = now;
+
+        final firestoreData = {
+          'checkOut': checkOutMap,
+          ...flatMap,
+          'updatedAt': now,
+        };
+        
+        await _db.collection('attendance').doc(record.id).update(firestoreData);
+        if (localImagePath != null) {
+          await _uploadAttendancePhoto(record.id, localImagePath, isCheckOut: true);
+        }
+      } else {
+         throw Exception('Koneksi internet diperlukan untuk absen keluar.');
+      }
+    } finally {
+      _isProcessing = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _uploadAttendancePhoto(String docId, String localPath, {bool isCheckOut = false}) async {
+    try {
+      final prefix = isCheckOut ? 'checkout' : 'checkin';
+      final ref = FirebaseStorage.instance.ref().child('attendance_photos/${prefix}_$docId.jpg');
+      await ref.putFile(File(localPath));
+      final url = await ref.getDownloadURL();
+      
+      final field = isCheckOut ? 'checkOut.photoUrl' : 'checkIn.photoUrl';
+      final legacyField = isCheckOut ? 'checkOutPhotoUrl' : 'checkInPhotoUrl';
+      
+      await _db.collection('attendance').doc(docId).update({
+        field: url,
+        legacyField: url,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Photo upload failed: $e');
+    }
+  }
+
+  // ── Stats Logic ──
+  bool get isLateForClockIn {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day, officeStartTime.hour, officeStartTime.minute);
+    return now.isAfter(start.add(const Duration(minutes: 1)));
+  }
+
+  Map<String, dynamic> calculateOvertime() {
+    final overtimeRecords = _attendanceRecords.where((r) => r.status == 'overtime').length;
+    return {
+      'hours': overtimeRecords * 2,
+      'estimatedPay': overtimeRecords * 50000,
+    };
+  }
+
+  Map<String, dynamic> getStatsForMonth(int month, int year) {
+    final monthRecords = _attendanceRecords.where((r) {
+      final d = DateTime.tryParse(r.date);
+      return d?.month == month && d?.year == year;
+    }).toList();
+
+    final approvedLeaves = _leaveRequests.where((r) => 
+      r.startDate.month == month && r.startDate.year == year && r.status == 'approved'
+    ).toList();
+
+    int present = monthRecords.length;
+    int leaves = approvedLeaves.fold<int>(0, (acc, r) => acc + r.totalDays);
+    int late = monthRecords.where((r) => r.status == 'late').length;
+    
+    double punctuality = present > 0 ? ((present - late) / present) : 1.0;
+
+    return {
+      'present': present.toString().padLeft(2, '0'),
+      'leaves': leaves.toString().padLeft(2, '0'),
+      'late': late.toString().padLeft(2, '0'),
+      'hours': (present * 8).toString(),
+      'punctuality': punctuality,
+    };
+  }
+
+  // ── SOS Feature ──
+  Future<void> sendSOS(double lat, double lng, String locationName) async {
+    if (_currentUser == null) return;
+    _isProcessing = true;
+    _fortressStatus = 'Mengirim sinyal SOS...';
+    notifyListeners();
+
+    try {
+      await FortressUtils.wrapWithRetry(
+        () async {
+          final now = FieldValue.serverTimestamp();
+          await _db.collection('adminNotifications').add({
+            'title': '🚨 SOS: ${_currentUser!.name}',
+            'message': 'Bantuan Darurat di $locationName ($lat, $lng)',
+            'type': 'sos_alert',
+            'employeeId': _currentUser!.uid,
+            'employeeName': _currentUser!.name,
+            'isRead': false,
+            'createdAt': now,
+          });
+        },
+        taskName: 'SOS Alert',
+        onStatusUpdate: (msg) {
+          _fortressStatus = msg;
+          notifyListeners();
+        },
+      );
+    } catch (e) {
+      throw Exception('Gagal mengirim SOS. Coba hubungi Admin manual.');
+    } finally {
+      _isProcessing = false;
+      _fortressStatus = '';
+      notifyListeners();
+    }
+  }
+
+  // ── Leave & Overtime Methods ──
+  Future<void> submitLeave({
+    required String type,
+    required DateTime startDate,
+    required DateTime endDate,
+    required int totalDays,
+    required String reason,
+  }) async {
+    if (_currentUser == null) return;
+    _isProcessing = true;
+    _fortressStatus = 'Mengirim pengajuan izin...';
+    notifyListeners();
+
+    try {
+      await FortressUtils.wrapWithRetry(
+        () async {
+          await _db.collection('leaves').add({
+            'userId': _currentUser!.uid,
+            'employeeName': _currentUser!.name,
+            'employeeId': _currentUser!.employeeId,
+            'department': _currentUser!.department,
+            'type': type,
+            'status': 'pending',
+            'startDate': Timestamp.fromDate(startDate),
+            'endDate': Timestamp.fromDate(endDate),
+            'totalDays': totalDays,
+            'reason': reason,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        },
+        taskName: 'Submit Leave',
+        onStatusUpdate: (msg) {
+          _fortressStatus = msg;
+          notifyListeners();
+        },
+      );
+    } catch (e) {
+      throw Exception('Gagal mengirim pengajuan izin. Periksa koneksi Anda.');
+    } finally {
+      _isProcessing = false;
+      _fortressStatus = '';
+      notifyListeners();
+    }
+  }
+
+  Future<void> submitOvertime({
+    required DateTime date,
+    required String reason,
+    required int durationMinutes,
+  }) async {
+    if (_currentUser == null) return;
+    _isProcessing = true;
+    notifyListeners();
+
+    try {
+      await _db.collection('attendance').add({
+        'userId': _currentUser!.uid,
+        'employeeName': _currentUser!.name,
+        'employeeId': _currentUser!.employeeId,
+        'department': _currentUser!.department,
+        'attendanceDate': DateFormat('yyyy-MM-dd').format(date),
+        'status': 'overtime',
+        'overtimeMinutes': durationMinutes,
+        'notes': reason,
+        'createdAt': FieldValue.serverTimestamp(),
+        'checkIn': {
+          'time': FieldValue.serverTimestamp(),
+          'type': 'overtime_manual',
+        }
+      });
+    } catch (e) {
+      throw Exception('Gagal mengirim data lembur: $e');
+    } finally {
+      _isProcessing = false;
+      notifyListeners();
+    }
+  }
+
+  // ── Admin Retrieval for Chat ──
+  Future<UserModel?> getFirstAdmin() async {
+    try {
+      final snap = await _db.collection('users')
+          .where('role', whereIn: ['admin', 'moderator'])
+          .limit(1)
+          .get();
+      if (snap.docs.isNotEmpty) {
+        return UserModel.fromFirestore(snap.docs.first);
+      }
+    } catch (e) {
+      debugPrint('Error finding admin: $e');
+    }
+    return null;
   }
 
   String _mapMobileStatusToAdmin(String status) {
     if (status.contains('Tepat')) return 'present';
     if (status.contains('Lambat')) return 'late';
     if (status.contains('Izin')) return 'leave';
-    if (status.contains('Alpha')) return 'absent';
     return 'present';
   }
 
-  Future<void> addAttendanceCheckIn(String userId, String userName, String status, String location, {
-    bool isOffline = false, 
-    String? localImagePath,
-    double lat = 0,
-    double lng = 0,
-  }) async {
-    final now = DateTime.now();
-    final dateStr = DateFormat('yyyy-MM-dd').format(now);
-    
-    String finalPhotoUrl = localImagePath ?? '';
-    
-    // If not offline and we have an image, upload it first
-    if (!isOffline && localImagePath != null && localImagePath.isNotEmpty) {
-      try {
-        // --- Image Compression Protocol ---
-        final tempDir = await getTemporaryDirectory();
-        final targetPath = "${tempDir.path}/${userId}_compressed_${now.millisecondsSinceEpoch}.jpg";
-        
-        XFile? compressedFile = await FlutterImageCompress.compressAndGetFile(
-          localImagePath,
-          targetPath,
-          quality: 70, // Optimized quality/size ratio
-          minWidth: 800,
-          minHeight: 800,
-        );
-
-        if (compressedFile != null) {
-          final ref = FirebaseStorage.instance.ref().child('attendance_photos/${userId}_${now.millisecondsSinceEpoch}.jpg');
-          await ref.putFile(File(compressedFile.path));
-          finalPhotoUrl = await ref.getDownloadURL();
-          
-          // Clean up compressed temp file
-          try { File(compressedFile.path).delete(); } catch (_) {}
-        } else {
-          // Fallback to original if compression fails
-          final ref = FirebaseStorage.instance.ref().child('attendance_photos/${userId}_${now.millisecondsSinceEpoch}.jpg');
-          await ref.putFile(File(localImagePath));
-          finalPhotoUrl = await ref.getDownloadURL();
+  void _listenToSettings() {
+    _settingsSub = _db.collection('settings').doc('system').snapshots().listen((snap) {
+      if (snap.exists) {
+        final data = snap.data();
+        if (data != null && data['office'] != null) {
+          _officeLat = (data['office']['latitude'] ?? -3.4150).toDouble();
+          _officeLng = (data['office']['longitude'] ?? 114.8465).toDouble();
+          _officeRadius = (data['office']['radiusMeters'] ?? 500).toDouble();
         }
-      } catch (e) {
-        debugPrint('Failed to upload photo: $e');
       }
-    }
-
-    final data = {
-      'userId': userId,
-      'employeeName': userName,
-      'employeeId': _currentUser?.employeeId ?? '',
-      'department': _currentUser?.department ?? 'Logistik',
-      'date': dateStr,
-      'status': _mapMobileStatusToAdmin(status),
-      'checkIn': {
-        'time': FieldValue.serverTimestamp(),
-        'latitude': lat,
-        'longitude': lng,
-        'distance': Geolocator.distanceBetween(
-          lat, 
-          lng, 
-          _officeLat, 
-          _officeLng
-        ).round(),
-        'faceScore': 100,
-        'photoUrl': finalPhotoUrl,
-      },
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    };
-
-    if (isOffline) {
-      await OfflineService.savePendingAttendance(data);
-      _checkPendingSync();
-      addNotification('Offline Absensi', 'Absensi disimpan di device (PENDING). Akan otomatis upload saat internet kembali.');
-    } else {
-      await _db.collection('attendance').add(data);
-    }
-  }
-
-  Future<void> _checkPendingSync() async {
-    final pending = await OfflineService.getPendingAttendance();
-    _pendingSyncCount = pending.length;
-    notifyListeners();
-  }
-
-  Future<void> syncPendingAttendance() async {
-    if (_isSyncing) return;
-    _isSyncing = true;
-    notifyListeners();
-
-    try {
-      final pending = await OfflineService.getPendingAttendance();
-      for (var item in pending) {
-        // Check if there is a local photo URL that needs uploading
-        if (item['checkIn'] != null && item['checkIn']['photoUrl'] != null) {
-          String photoPath = item['checkIn']['photoUrl'];
-          if (photoPath.isNotEmpty && !photoPath.startsWith('http')) {
-            try {
-              final userId = item['userId'] ?? 'unknown';
-              final now = DateTime.now();
-              final ref = FirebaseStorage.instance.ref().child('attendance_photos/${userId}_${now.millisecondsSinceEpoch}.jpg');
-              await ref.putFile(File(photoPath));
-              item['checkIn']['photoUrl'] = await ref.getDownloadURL();
-            } catch (e) {
-              debugPrint('Failed to upload offline photo during sync: $e');
-            }
-          }
-        }
-        await _db.collection('attendance').add(item);
-      }
-      await OfflineService.clearPendingAttendance();
-      await _checkPendingSync();
-      addNotification('Sync Success', 'Semua absensi offline telah berhasil diunggah.');
-    } catch (e) {
-      debugPrint('Sync failed: $e');
-    } finally {
-      _isSyncing = false;
-      notifyListeners();
-    }
-  }
-
-  Map<String, dynamic> calculateOvertime() {
-    int totalHours = totalOvertimeHours;
-    int estimatedPay = totalHours * 25000; // Mock rate 25k/hr
-    
-    return {
-      'totalHours': totalHours,
-      'estimatedPay': estimatedPay,
-      'pending': _overtimeRequests.where((r) => r.status == 'pending').length,
-    };
-  }
-
-  Future<void> sendSOS(double lat, double lng, String locationName) async {
-    try {
-      final locStr = "$lat, $lng";
-      final now = FieldValue.serverTimestamp();
-
-      // 1. Log to Dedicated SOS collection
-      await _db.collection('sos_alerts').add({
-        'userId': _currentUser?.uid,
-        'employeeName': _currentUser?.name,
-        'employeeId': _currentUser?.employeeId ?? '',
-        'department': _currentUser?.department ?? '',
-        'latitude': lat,
-        'longitude': lng,
-        'locationName': locationName,
-        'status': 'active',
-        'createdAt': now,
-      });
-
-      // 2. Broadcast to Global Admin Notifications
-      await _db.collection('adminNotifications').add({
-        'title': '🚨 DARURAT (SOS): ${_currentUser?.name}',
-        'message': 'Karyawan membutuhkan bantuan! Lokasi: $locationName ($locStr)',
-        'type': 'sos_alert',
-        'employeeId': _currentUser?.uid,
-        'employeeName': _currentUser?.name,
-        'isRead': false,
-        'createdAt': now,
-      });
-
-      addNotification('SOS TERKIRIM', 'Pesan darurat telah dikirim ke Admin. Tetap tenang, bantuan akan segera diproses.');
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Failed to send SOS: $e');
-    }
-  }
-
-  Future<void> submitEditRequest(String attendanceId, String reason, Map<String, dynamic> changes) async {
-    await _db.collection('edit_requests').add({
-      'attendanceId': attendanceId,
-      'userId': _currentUser?.uid,
-      'userName': _currentUser?.name,
-      'reason': reason,
-      'status': 'pending',
-      'requestedChanges': changes,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-    
-    // Notify Admin
-    await _db.collection('adminNotifications').add({
-      'title': 'Koreksi Absen: ${_currentUser?.name}',
-      'message': 'Mengajukan koreksi absensi dengan alasan: $reason',
-      'type': 'attendance_alert',
-      'target': 'admin',
-      'isRead': false,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-
-    addNotification('Pengajuan Edit', 'Permintaan koreksi data absensi telah dikirim ke Admin.');
-  }
-
-  Future<void> submitLeave(LeaveRequest req) async {
-    await _db.collection('leaves').add({
-      'userId': req.userId,
-      'employeeName': req.userName,
-      'employeeId': _currentUser?.employeeId ?? '',
-      'department': _currentUser?.department ?? '',
-      'type': 'other',
-      'status': 'pending',
-      'startDate': req.fromDate.toIso8601String(),
-      'endDate': req.toDate.toIso8601String(),
-      'totalDays': req.toDate.difference(req.fromDate).inDays + 1,
-      'reason': req.reason,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-
-    // Notify Admin
-    await _db.collection('adminNotifications').add({
-      'title': 'Pengajuan Izin: ${_currentUser?.name}',
-      'message': '${req.reason} selama ${req.toDate.difference(req.fromDate).inDays + 1} hari.',
-      'type': 'leave_request',
-      'target': 'admin',
-      'isRead': false,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-
-    addNotification('Pengajuan Izin', 'Surat izin Anda berhasil dikirim dan menunggu persetujuan.');
-  }
-
-  void updateLeaveStatus(String id, String status) {
-    _db.collection('leaves').doc(id).update({
-      'status': status,
-      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
-  // ── Meetings (Mock for now or sync if admin has collection) ──
-  final List<MeetingModel> _meetings = [
-    MeetingModel(id: 'm1', title: 'Briefing Tim Operasional', dateTime: DateTime(2026, 2, 18, 14, 0), room: 'Ruang Rapat A', createdBy: 'admin_001', description: 'Briefing rutin tim mingguan'),
-  ];
-  List<MeetingModel> get meetings => List.unmodifiable(_meetings);
-  
-  // ── Notifications (Mock) ──
-  final List<Map<String, dynamic>> _notifications = [];
-  List<Map<String, dynamic>> get myNotifications => _notifications;
-  int get unreadCount => _notifications.where((n) => n['read'] == false).length;
-  
-  void markAllRead() {
-    for (var n in _notifications) {
-      n['read'] = true;
-    }
-    notifyListeners();
-  }
-
-  void addNotification(String title, String body, {String targetUserId = ''}) {
-    _notifications.insert(0, {
-      'id': DateTime.now().millisecondsSinceEpoch.toString(),
-      'title': title,
-      'body': body,
-      'read': false,
-      'targetUserId': targetUserId,
-      'time': DateTime.now(),
-    });
-    notifyListeners();
-  }
-
-  // ── Overtime Feature ──
-  Future<void> submitOvertime(DateTime date, int durationHours, String reason) async {
-    await _db.collection('overtime').add({
-      'userId': _currentUser?.uid,
-      'employeeName': _currentUser?.name,
-      'employeeId': _currentUser?.employeeId ?? '',
-      'department': _currentUser?.department ?? '',
-      'date': DateFormat('yyyy-MM-dd').format(date),
-      'durationHours': durationHours,
-      'reason': reason,
-      'status': 'pending',
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-    addNotification('Pengajuan Lembur', 'Permintaan lembur untuk tanggal ${DateFormat('dd MMM').format(date)} telah dikirim.');
-  }
-
-  // sendSOS consolidated above
-
-  // ── Statistics Logic ──
-  Map<String, dynamic> getStatsForMonth(int month, int year) {
-    final monthRecords = _attendanceRecords.where((r) => r.date.month == month && r.date.year == year).toList();
-    final monthLeaves = _leaveRequests.where((r) => r.fromDate.month == month && r.fromDate.year == year && r.status == 'approved').toList();
-
-    int present = monthRecords.length;
-    int leaves = monthLeaves.fold(0, (acc, r) => acc + r.toDate.difference(r.fromDate).inDays + 1);
-    int late = monthRecords.where((r) => r.checkInStatus == 'Terlambat').length;
-    
-    // Simple work hours estimation: 8 hours per record
-    int totalHours = present * 8;
-
-    double punctuality = present > 0 ? ((present - late) / present) : 1.0;
-    
-    return {
-      'present': present.toString().padLeft(2, '0'),
-      'leaves': leaves.toString().padLeft(2, '0'),
-      'late': late.toString().padLeft(2, '0'),
-      'hours': totalHours.toString(),
-      'punctuality': punctuality,
-    };
-  }
-
-  // ── Biometric Enrollment ──
   Future<void> registerFace(String localPath) async {
-    if (_currentUser == null) return;
-    
-    // In real app, you would upload the photo to Firebase Storage
-    // For now, we update the flag in Firestore
-    await _db.collection('users').doc(_currentUser!.uid).update({
-      'faceRegistered': true,
-      'faceRegisteredAt': FieldValue.serverTimestamp(),
-    });
-    
-    _currentUser = _currentUser!.copyWith(faceRegistered: 'yes');
+    _isLoadingFace = true;
     notifyListeners();
-    addNotification('Biometrik Terdaftar', 'Wajah Anda telah berhasil didaftarkan ke sistem.');
+
+    try {
+      if (_currentUser != null) {
+        await Future.delayed(const Duration(seconds: 2));
+        await _db.collection('users').doc(_currentUser!.uid).update({
+          'faceRegistered': true,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        _currentUser = _currentUser!.copyWith(faceRegistered: true);
+      }
+    } catch (e) {
+      debugPrint("Error registering face: $e");
+    } finally {
+      _isLoadingFace = false;
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _heartbeatTimer?.cancel();
+    _cancelAllSubscriptions();
+    super.dispose();
   }
 }

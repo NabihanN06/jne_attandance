@@ -32,10 +32,7 @@ class OnboardingWidget extends StatelessWidget {
               const Spacer(flex: 3),
 
               // Icon area
-              SizedBox(
-                height: 120,
-                child: icon,
-              ),
+              SizedBox(height: 120, child: icon),
 
               const Spacer(flex: 2),
 

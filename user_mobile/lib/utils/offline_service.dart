@@ -24,7 +24,16 @@ class OfflineService {
   }
 
   static Future<void> saveLocalHistory(List<AttendanceRecord> records) async {
-    // Simulating local cache for fast loading
-    // In real app, might use sqflite for complex queries
+    final prefs = await SharedPreferences.getInstance();
+    final data = records.map((r) => r.toJson()).toList();
+    await prefs.setString('local_history', jsonEncode(data));
+  }
+
+  static Future<List<AttendanceRecord>> getLocalHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? data = prefs.getString('local_history');
+    if (data == null) return [];
+    final List<dynamic> decoded = jsonDecode(data);
+    return decoded.map((e) => AttendanceRecord.fromJson(e)).toList();
   }
 }

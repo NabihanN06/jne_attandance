@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../succeed/succeed_page.dart';
+import '../../widgets/package_loading.dart';
 
 class EnrollPage extends StatefulWidget {
   const EnrollPage({super.key});
@@ -95,7 +96,7 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
           if (mounted) {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => const SucceedPage()),
+              MaterialPageRoute(builder: (_) => const SucceedPage(isEnroll: true)),
               (route) => false,
             );
           }
@@ -246,15 +247,12 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
     );
   }
 
+
   Widget _buildLoading(Color accent) => Container(
         color: const Color(0xFF0F172A),
-        child: Center(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            CircularProgressIndicator(color: accent, strokeWidth: 3),
-            const SizedBox(height: 24),
-            Text('MEMPERSIAPKAN MODUL...', 
-              style: GoogleFonts.inter(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
-          ]),
+        child: const PackageLoading(
+          message: 'Mempersiapkan Modul Biometrik...',
+          isLight: true,
         ),
       );
 

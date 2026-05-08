@@ -96,7 +96,7 @@ class ProfilePage extends StatelessWidget {
             const SizedBox(height: 20),
 
             _buildInfoSection('Keamanan & Lainnya', [
-              _buildActionItem(context, Icons.lock_outline_rounded, 'Ganti Kata Sandi', 'Ubah kredensial akses Anda', () {}),
+              _buildActionItem(context, Icons.lock_outline_rounded, 'Ganti Kata Sandi', 'Ubah kredensial akses Anda', () => _showChangePasswordDialog(context, provider)),
             ]),
 
             const SizedBox(height: 32),
@@ -227,6 +227,75 @@ class ProfilePage extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: Text('YA, KELUAR', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context, AppProvider provider) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        title: Text('GANTI KATA SANDI', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Gunakan kata sandi yang kuat untuk melindungi akun JNE Anda.',
+              style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: controller,
+              obscureText: true,
+              style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
+              decoration: InputDecoration(
+                hintText: 'Kata Sandi Baru',
+                prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                filled: true,
+                fillColor: const Color(0xFFF1F5F9),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('BATAL', style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontWeight: FontWeight.w800)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (controller.text.length < 6) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Minimal 6 karakter!')));
+                return;
+              }
+              try {
+                await provider.changePassword(controller.text);
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Kata sandi berhasil diperbarui!'),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  )
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))));
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: jneCyan,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text('SIMPAN', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w800)),
           ),
         ],
       ),

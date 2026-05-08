@@ -27,7 +27,11 @@ class _OvertimePageState extends State<OvertimePage> {
 
     setState(() => _isLoading = true);
     try {
-      await context.read<AppProvider>().submitOvertime(_selectedDate, _selectedHours, _reasonCtrl.text);
+      await context.read<AppProvider>().submitOvertime(
+        date: _selectedDate,
+        durationMinutes: _selectedHours * 60,
+        reason: _reasonCtrl.text,
+      );
       if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pengajuan lembur berhasil dikirim!'), backgroundColor: Colors.green));

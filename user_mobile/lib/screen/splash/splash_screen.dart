@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
-import '../onboarding/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -35,22 +34,28 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _controller.forward();
 
-    Timer(const Duration(seconds: 3), () async {
-      if (!mounted) return;
-      
-      final provider = Provider.of<AppProvider>(context, listen: false);
-      
-      if (provider.isLoggedIn) {
-        // Jika sudah login, langsung ke Home
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        // Jika belum, ke Onboarding
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-        );
-      }
-    });
+    // Wait for provider to initialize then navigate
+    _checkInit();
+  }
+
+  Future<void> _checkInit() async {
+    final provider = Provider.of<AppProvider>(context, listen: false);
+    
+    // Minimal delay untuk branding (1.5s)
+    await Future.delayed(const Duration(milliseconds: 1500));
+    
+    // Tunggu sampai provider selesai fetching user profile
+    while (!provider.isInitialized) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
+    if (!mounted) return;
+    
+    if (provider.isLoggedIn) {
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      Navigator.pushReplacementNamed(context, '/onboarding');
+    }
   }
 
   @override

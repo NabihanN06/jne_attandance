@@ -188,8 +188,8 @@ class _IDCardPageState extends State<IDCardPage> with SingleTickerProviderStateM
                   child: CircleAvatar(
                     radius: 70,
                     backgroundColor: Colors.white10,
-                    backgroundImage: user.photoUrl.isNotEmpty ? NetworkImage(user.photoUrl) : null,
-                    child: user.photoUrl.isEmpty ? const Icon(Icons.person, color: Colors.white, size: 50) : null,
+                    backgroundImage: (user.photoUrl != null && user.photoUrl!.isNotEmpty) ? NetworkImage(user.photoUrl!) : null,
+                    child: (user.photoUrl == null || user.photoUrl!.isEmpty) ? const Icon(Icons.person, color: Colors.white, size: 50) : null,
                   ),
                 ),
                 const SizedBox(height: 24),

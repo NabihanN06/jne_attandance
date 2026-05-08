@@ -1,0 +1,103 @@
+[debug] [2026-05-08T04:17:34.621Z] ----------------------------------------------------------------------
+[debug] [2026-05-08T04:17:34.623Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\USER\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only dataconnect
+[debug] [2026-05-08T04:17:34.624Z] CLI Version:   15.17.0
+[debug] [2026-05-08T04:17:34.624Z] Platform:      win32
+[debug] [2026-05-08T04:17:34.624Z] Node Version:  v20.20.0
+[debug] [2026-05-08T04:17:34.624Z] Time:          Fri May 08 2026 11:17:34 GMT+0700 (Western Indonesia Time)
+[debug] [2026-05-08T04:17:34.624Z] ----------------------------------------------------------------------
+[debug] 
+[error] 
+[error] Error: Cannot understand what targets to deploy/serve. No targets in firebase.json match '--only dataconnect'. If you are using PowerShell make sure you place quotes around any comma-separated lists (ex: --only "functions,firestore").
+[debug] [2026-05-08T04:17:36.352Z] Error: EBUSY: resource busy or locked, unlink 'C:\Users\USER\jne_attandance\firebase-debug.log'
+    at Object.unlinkSync (node:fs:1889:11)
+    at process.<anonymous> (C:\Users\USER\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\cli.js:44:16)
+    at process.emit (node:events:536:35)
+    at process.exit (node:internal/process/per_thread:184:15)
+    at Timeout._onTimeout (C:\Users\USER\AppData\Roaming\npm\node_modules\firebase-tools\lib\errorOut.js:20:17)
+    at listOnTimeout (node:internal/timers:581:17)
+    at process.processTimers (node:internal/timers:519:7)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-05-08T04:20:14.568Z] ----------------------------------------------------------------------
+[debug] [2026-05-08T04:20:14.569Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\USER\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only dataconnect
+[debug] [2026-05-08T04:20:14.570Z] CLI Version:   15.17.0
+[debug] [2026-05-08T04:20:14.570Z] Platform:      win32
+[debug] [2026-05-08T04:20:14.570Z] Node Version:  v20.20.0
+[debug] [2026-05-08T04:20:14.570Z] Time:          Fri May 08 2026 11:20:14 GMT+0700 (Western Indonesia Time)
+[debug] [2026-05-08T04:20:14.570Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-05-08T04:20:15.642Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-08T04:20:15.642Z] > authorizing via signed-in user (zainaril13@gmail.com)
+[debug] [2026-05-08T04:20:15.642Z] [iam] checking project admin-absensi-jne-mtp for permissions ["cloudsql.databases.create","cloudsql.databases.update","cloudsql.instances.connect","cloudsql.instances.create","cloudsql.instances.get","cloudsql.instances.list","cloudsql.instances.update","cloudsql.users.create","firebase.projects.get","firebasedataconnect.connectors.create","firebasedataconnect.connectors.delete","firebasedataconnect.connectors.list","firebasedataconnect.connectors.update","firebasedataconnect.operations.get","firebasedataconnect.schemas.create","firebasedataconnect.schemas.delete","firebasedataconnect.schemas.list","firebasedataconnect.schemas.update","firebasedataconnect.services.create","firebasedataconnect.services.delete","firebasedataconnect.services.list","firebasedataconnect.services.update"]
+[debug] [2026-05-08T04:20:15.643Z] Checked if tokens are valid: false, expires at: 1778155833957
+[debug] [2026-05-08T04:20:15.643Z] Checked if tokens are valid: false, expires at: 1778155833957
+[debug] [2026-05-08T04:20:15.643Z] > refreshing access token with scopes: []
+[debug] [2026-05-08T04:20:15.644Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-05-08T04:20:15.644Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-08T04:20:15.779Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-05-08T04:20:15.779Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-08T04:20:15.788Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/admin-absensi-jne-mtp:testIamPermissions [none]
+[debug] [2026-05-08T04:20:15.788Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/admin-absensi-jne-mtp:testIamPermissions  x-goog-user-project=admin-absensi-jne-mtp
+[debug] [2026-05-08T04:20:15.788Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/admin-absensi-jne-mtp:testIamPermissions {"permissions":["cloudsql.databases.create","cloudsql.databases.update","cloudsql.instances.connect","cloudsql.instances.create","cloudsql.instances.get","cloudsql.instances.list","cloudsql.instances.update","cloudsql.users.create","firebase.projects.get","firebasedataconnect.connectors.create","firebasedataconnect.connectors.delete","firebasedataconnect.connectors.list","firebasedataconnect.connectors.update","firebasedataconnect.operations.get","firebasedataconnect.schemas.create","firebasedataconnect.schemas.delete","firebasedataconnect.schemas.list","firebasedataconnect.schemas.update","firebasedataconnect.services.create","firebasedataconnect.services.delete","firebasedataconnect.services.list","firebasedataconnect.services.update"]}
+[debug] [2026-05-08T04:20:16.180Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/admin-absensi-jne-mtp:testIamPermissions 200
+[debug] [2026-05-08T04:20:16.180Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/admin-absensi-jne-mtp:testIamPermissions {"permissions":["cloudsql.databases.create","cloudsql.databases.update","cloudsql.instances.connect","cloudsql.instances.create","cloudsql.instances.get","cloudsql.instances.list","cloudsql.instances.update","cloudsql.users.create","firebase.projects.get","firebasedataconnect.connectors.create","firebasedataconnect.connectors.delete","firebasedataconnect.connectors.list","firebasedataconnect.connectors.update","firebasedataconnect.operations.get","firebasedataconnect.schemas.create","firebasedataconnect.schemas.delete","firebasedataconnect.schemas.list","firebasedataconnect.schemas.update","firebasedataconnect.services.create","firebasedataconnect.services.delete","firebasedataconnect.services.list","firebasedataconnect.services.update"]}
+[info] 
+[info] === Deploying to 'admin-absensi-jne-mtp'...
+[info] 
+[info] i  deploying dataconnect 
+[info] i  dataconnect: ensuring required API firebasedataconnect.googleapis.com is enabled... 
+[info] i  dataconnect: ensuring required API sqladmin.googleapis.com is enabled... 
+[debug] [2026-05-08T04:20:16.199Z] Checked if tokens are valid: true, expires at: 1778217614779
+[debug] [2026-05-08T04:20:16.199Z] Checked if tokens are valid: true, expires at: 1778217614779
+[debug] [2026-05-08T04:20:16.199Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/admin-absensi-jne-mtp/billingInfo [none]
+[debug] [2026-05-08T04:20:17.616Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/admin-absensi-jne-mtp/billingInfo 200
+[debug] [2026-05-08T04:20:17.616Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/admin-absensi-jne-mtp/billingInfo {"name":"projects/admin-absensi-jne-mtp/billingInfo","projectId":"admin-absensi-jne-mtp","billingAccountName":"billingAccounts/0142F5-0E2A67-88BC16","billingEnabled":true}
+[debug] [2026-05-08T04:20:17.616Z] Checked if tokens are valid: true, expires at: 1778217614779
+[debug] [2026-05-08T04:20:17.616Z] Checked if tokens are valid: true, expires at: 1778217614779
+[debug] [2026-05-08T04:20:17.616Z] >>> [apiv2][query] GET https://mobilesdk-pa.googleapis.com/v1/accessmanagement/tos:getStatus [none]
+[debug] [2026-05-08T04:20:18.201Z] <<< [apiv2][status] GET https://mobilesdk-pa.googleapis.com/v1/accessmanagement/tos:getStatus 200
+[debug] [2026-05-08T04:20:18.201Z] <<< [apiv2][body] GET https://mobilesdk-pa.googleapis.com/v1/accessmanagement/tos:getStatus {"overallStatus":"ACCEPTED","uTosStatus":{"tos":{"id":"firebase","tosId":"FIREBASE_UNIVERSAL"},"status":"ACCEPTED","acceptedVersion":7},"childTosStatus":[{"tos":{"id":"cloud","tosId":"CLOUD_PLATFORM"},"status":"ACCEPTED","acceptedVersion":39},{"tos":{"id":"firebase_b2b","tosId":"FIREBASE_B2B"},"status":"ACCEPTED","acceptedVersion":1},{"tos":{"id":"universal","tosId":"GOOGLE_APIS"},"status":"ACCEPTED","acceptedVersion":6}],"termsUrl":"https://firebase.google.com/terms","perServiceStatus":[{"tosId":"APP_CHECK","serviceStatus":{"tos":{"id":"app_check","tosId":"APP_CHECK"},"status":"ACCEPTED","acceptedVersion":3}},{"tosId":"APP_HOSTING_TOS","serviceStatus":{"tos":{"id":"app_hosting","tosId":"APP_HOSTING_TOS"},"status":"ACCEPTED","acceptedVersion":3}},{"tosId":"FIREBASE_DATA_CONNECT","serviceStatus":{"tos":{"id":"data_connect","tosId":"FIREBASE_DATA_CONNECT"},"status":"ACCEPTED","acceptedVersion":3}},{"tosId":"CORE_APPS","serviceStatus":{"tos":{"id":"core_apps","tosId":"CORE_APPS"},"status":"ACCEPTED","acceptedVersion":1}},{"tosId":"VERTEX_AI_IN_FIREBASE","serviceStatus":{"tos":{"id":"vertex_ai_in_firebase","tosId":"VERTEX_AI_IN_FIREBASE"},"status":"ACCEPTED","acceptedVersion":2}},{"tosId":"FIREBASE_CRASHLYTICS_APP_DISTRIBUTION","serviceStatus":{"tos":{"id":"firebase_crashlytics_app_distribution","tosId":"FIREBASE_CRASHLYTICS_APP_DISTRIBUTION"},"status":"ACCEPTED","acceptedVersion":4}},{"tosId":"GENERATIVE_LANGUAGE","serviceStatus":{"tos":{"id":"generative-language-api","tosId":"GENERATIVE_LANGUAGE"},"status":"ACCEPTED","acceptedVersion":3}}]}
+[info] i  dataconnect: downloading dataconnect-emulator-3.4.7.exe... {"metadata":{"emulator":{"name":"dataconnect"},"message":"downloading dataconnect-emulator-3.4.7.exe..."}}
+[debug] [2026-05-08T04:20:18.205Z] >>> [apiv2][query] GET https://storage.googleapis.com/firemat-preview-drop/emulator/dataconnect-emulator-windows-amd64-v3.4.7 
+[debug] [2026-05-08T04:20:18.535Z] <<< [apiv2][status] GET https://storage.googleapis.com/firemat-preview-drop/emulator/dataconnect-emulator-windows-amd64-v3.4.7 200
+[debug] [2026-05-08T04:20:18.535Z] <<< [apiv2][body] GET https://storage.googleapis.com/firemat-preview-drop/emulator/dataconnect-emulator-windows-amd64-v3.4.7 [stream]
+[info] i  dataconnect: Removing outdated emulator files: dataconnect-emulator-3.4.6.exe {"metadata":{"emulator":{"name":"dataconnect"},"message":"Removing outdated emulator files: dataconnect-emulator-3.4.6.exe"}}
+[debug] [2026-05-08T04:20:24.684Z] Error: EPERM: operation not permitted, unlink 'C:\Users\USER\.cache\firebase\emulators\dataconnect-emulator-3.4.6.exe'
+    at unlinkSync (node:fs:1889:11)
+    at _unlinkSync (node:internal/fs/rimraf:216:14)
+    at fixWinEPERMSync (node:internal/fs/rimraf:308:5)
+    at rimrafSync (node:internal/fs/rimraf:202:14)
+    at Object.rmSync (node:fs:1263:10)
+    at Object.removeSync (C:\Users\USER\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\fs-extra\lib\remove\index.js:15:28)
+    at removeOldFiles (C:\Users\USER\AppData\Roaming\npm\node_modules\firebase-tools\lib\emulator\download.js:81:16)
+    at downloadEmulator (C:\Users\USER\AppData\Roaming\npm\node_modules\firebase-tools\lib\emulator\download.js:51:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async downloadIfNecessary (C:\Users\USER\AppData\Roaming\npm\node_modules\firebase-tools\lib\emulator\downloadableEmulators.js:435:9)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-05-08T04:28:01.287Z] ----------------------------------------------------------------------
+[debug] [2026-05-08T04:28:01.289Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\USER\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init hosting
+[debug] [2026-05-08T04:28:01.289Z] CLI Version:   15.17.0
+[debug] [2026-05-08T04:28:01.290Z] Platform:      win32
+[debug] [2026-05-08T04:28:01.290Z] Node Version:  v20.20.0
+[debug] [2026-05-08T04:28:01.290Z] Time:          Fri May 08 2026 11:28:01 GMT+0700 (Western Indonesia Time)
+[debug] [2026-05-08T04:28:01.290Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-05-08T04:28:01.291Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\USER\jne_attandance
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
+[debug] [2026-05-08T04:28:02.937Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-05-08T04:28:02.937Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}

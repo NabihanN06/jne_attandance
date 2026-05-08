@@ -29,7 +29,7 @@ class _CalendarPageState extends State<CalendarPage> {
     // Filter events based on user department or if they are invited
     final events = provider.events.where((e) {
       final matchDept = e.departments?.contains(user?.department) ?? false;
-      final matchUser = e.attendees.contains(user?.uid);
+      final matchUser = e.attendees.contains(user?.uid ?? '');
       return matchDept || matchUser;
     }).toList();
 
