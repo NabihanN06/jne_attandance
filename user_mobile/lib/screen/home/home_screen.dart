@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../utils/geofence_service.dart';
 import '../../utils/connectivity_service.dart';
+import '../../widgets/bento_tile.dart';
 import 'package:animate_do/animate_do.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,11 +16,15 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  
-  // JNE Brand Colors
+  // ── ZEN PREMIUM PALETTE ──
+  static const Color zenNavy = Color(0xFF121826);
+  static const Color zenIndigo = Color(0xFF4F46E5);
+  static const Color zenCyan = Color(0xFF22D3EE);
   static const Color jneOrange = Color(0xFFFF6B00);
-  static const Color jneNavy = Color(0xFF0D1B2A);
-  static const Color jneGrey = Color(0xFF94A3B8);
+  static const Color offWhite = Color(0xFFF8FAFC);
+  static const Color slate400 = Color(0xFF94A3B8);
+
+  bool _isNavigating = false;
 
   @override
   Widget build(BuildContext context) {
@@ -28,35 +33,40 @@ class _HomeScreenState extends State<HomeScreen> {
     final conn = context.watch<ConnectivityService>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: offWhite,
       body: Stack(
         children: [
-          // ── FORTRESS OFFLINE BANNER ──
+          // ── OFFLINE BANNER ──
           if (!conn.isOnline)
             Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
+              top: 0, left: 0, right: 0,
               child: Container(
                 color: Colors.redAccent,
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Center(
-                  child: Text(
-                    'MODUS OFFLINE - DATA AKAN DISINKRONKAN OTOMATIS',
-                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: SafeArea(
+                  bottom: false,
+                  child: Center(
+                    child: Text(
+                      'OFFLINE MODE • DATA WILL SYNC LATER',
+                      style: GoogleFonts.outfit(
+                        color: Colors.white, 
+                        fontSize: 10, 
+                        fontWeight: FontWeight.w900, 
+                        letterSpacing: 2
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          // ── PREMIUM TOP HEADER ──
+            
+          // ── PREMIUM HEADER (ZEN STYLE) ──
           Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 240,
+            top: 0, left: 0, right: 0,
+            height: 280,
             child: Container(
               decoration: const BoxDecoration(
-                color: jneNavy,
+                color: zenNavy,
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(40),
                   bottomRight: Radius.circular(40),
@@ -64,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding: const EdgeInsets.fromLTRB(32, 24, 32, 0),
                   child: Column(
                     children: [
                       Row(
@@ -74,21 +84,22 @@ class _HomeScreenState extends State<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'DASHBOARD KURIR',
+                                'OPERATIONAL STATUS',
                                 style: GoogleFonts.outfit(
-                                  color: jneOrange,
-                                  fontSize: 10,
+                                  color: zenCyan,
+                                  fontSize: 9,
                                   fontWeight: FontWeight.w900,
-                                  letterSpacing: 2,
+                                  letterSpacing: 2.5,
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 8),
                               Text(
                                 p.currentUser?.name.toUpperCase() ?? 'COURIER',
                                 style: GoogleFonts.outfit(
                                   color: Colors.white,
-                                  fontSize: 22,
+                                  fontSize: 26,
                                   fontWeight: FontWeight.w900,
+                                  letterSpacing: -1,
                                 ),
                               ),
                             ],
@@ -96,25 +107,33 @@ class _HomeScreenState extends State<HomeScreen> {
                           _buildStatusIndicator(p, conn),
                         ],
                       ),
-                      const SizedBox(height: 30),
-                      // JNE LOGO MINI
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset('assets/images/jne.png', height: 25),
-                          const SizedBox(width: 12),
-                          Container(width: 1.5, height: 20, color: Colors.white24),
-                          const SizedBox(width: 12),
-                          Text(
-                            'MARTAPURA HUB',
-                            style: GoogleFonts.outfit(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.5,
+                      const SizedBox(height: 48),
+                      // JNE BRANDING BLOCK
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Image.asset('assets/images/jne.png', height: 20),
+                            const SizedBox(width: 16),
+                            Container(width: 1, height: 16, color: Colors.white10),
+                            const SizedBox(width: 16),
+                            Text(
+                              'MARTAPURA HUB',
+                              style: GoogleFonts.outfit(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 3,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -123,67 +142,67 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // ── MAIN BENTO GRID ──
+          // ── SCROLLABLE SECTOR ──
           SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: 140), // Gap for header content
+                const SizedBox(height: 180), 
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     physics: const BouncingScrollPhysics(),
                     child: Column(
                       children: [
-                        // 1. ABSENSI MAIN TILE (📍)
+                        // 1. PRIMARY TELEMETRY ACTION
                         FadeInDown(
-                          duration: const Duration(milliseconds: 600),
-                          child: _buildMainBentoTile(
-                            context,
-                            p.hasClockedInToday ? 'ABSEN PULANG' : 'ABSEN MASUK',
-                            p.hasClockedInToday ? 'Selesai tugas hari ini' : 'Mulai tugas hari ini',
-                            '📍',
-                            p.hasClockedInToday ? Colors.redAccent : jneOrange,
-                            () => _handleAttendance(context, p, geo),
+                          duration: const Duration(milliseconds: 700),
+                          child: BentoTile(
+                            title: p.hasClockedInToday ? 'PULANG OPERASIONAL' : 'MASUK OPERASIONAL',
+                            subtitle: p.hasClockedInToday ? 'Akhiri sesi penugasan hari ini' : 'Mulai sinkronisasi kehadiran hari ini',
+                            emoji: '⚡',
+                            color: p.hasClockedInToday ? Colors.redAccent : zenIndigo,
+                            isLarge: true,
+                            onTap: () => _handleAttendance(context, p, geo),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
 
-                        // 2. GRID TILES (LOOPER CONCEPT)
+                        // 2. OPERATIONAL GRID
                         GridView.count(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 1.1,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
+                          childAspectRatio: 1.0,
                           children: [
-                            _BentoItem('IZIN', 'Kirim surat izin', '✉️', const Color(0xFF3B82F6), '/leave'),
-                            _BentoItem('LEMBUR', 'Ajukan overtime', '💰', const Color(0xFF10B981), '/overtime'),
-                            _BentoItem('RIWAYAT', 'Cek absen lalu', '📜', jneNavy, '/history'),
-                            _BentoItem('STATS', 'Performa Anda', '📊', const Color(0xFF8B5CF6), '/statistic'),
+                            _BentoItem('CUTI / IZIN', 'Sistem pengajuan', '📄', const Color(0xFF6366F1), '/leave'),
+                            _BentoItem('OVERTIME', 'Input lembur', '⏳', zenCyan, '/overtime'),
+                            _BentoItem('HISTORY', 'Log kehadiran', '🏛️', zenNavy, '/history'),
+                            _BentoItem('ANALYTICS', 'Grafik performa', '📈', const Color(0xFFEC4899), '/statistic'),
                           ].asMap().entries.map((entry) {
                             int idx = entry.key;
                             var item = entry.value;
                             return FadeInUp(
-                              duration: const Duration(milliseconds: 600),
-                              delay: Duration(milliseconds: 200 + (idx * 100)),
-                              child: _buildSmallBentoTile(
-                                context,
-                                item.title,
-                                item.sub,
-                                item.emoji,
-                                item.color,
-                                () => Navigator.pushNamed(context, item.route),
+                              duration: const Duration(milliseconds: 700),
+                              delay: Duration(milliseconds: 100 + (idx * 50)),
+                              child: BentoTile(
+                                title: item.title,
+                                subtitle: item.sub,
+                                emoji: item.emoji,
+                                color: item.color,
+                                isLarge: false,
+                                onTap: () => Navigator.pushNamed(context, item.route),
                               ),
                             );
                           }).toList(),
                         ),
                         const SizedBox(height: 24),
 
-                        // 4. RECENT ADMIN RESPONSE FEEDBACK
+                        // 3. SYSTEM FEEDBACK
                         _buildRecentFeedback(p),
 
-                        const SizedBox(height: 100),
+                        const SizedBox(height: 140),
                       ],
                     ),
                   ),
@@ -192,10 +211,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // ── SOS BUTTON ──
+          // ── EMERGENCY SOS ──
           Positioned(
-            bottom: 110,
-            right: 24,
+            bottom: 120,
+            right: 32,
             child: _buildSOSButton(p, geo),
           ),
         ],
@@ -209,36 +228,35 @@ class _HomeScreenState extends State<HomeScreen> {
     bool isOnline = conn.status != ConnectionStatus.none;
     bool isFortressActive = p.fortressStatus.isNotEmpty;
     
-    String statusText = isFortressActive ? p.fortressStatus : (p.hasClockedInToday ? 'HADIR' : 'ABSEN');
-    Color statusColor = isFortressActive ? Colors.orange : (p.hasClockedInToday ? const Color(0xFF10B981) : Colors.redAccent);
+    String statusText = isFortressActive ? p.fortressStatus : (p.hasClockedInToday ? 'CONNECTED' : 'STANDBY');
+    Color statusColor = isFortressActive ? jneOrange : (p.hasClockedInToday ? const Color(0xFF10B981) : Colors.redAccent);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: 7, height: 7,
             decoration: BoxDecoration(
-              color: isOnline ? statusColor : Colors.grey,
+              color: isOnline ? statusColor : slate400,
               shape: BoxShape.circle,
-              boxShadow: isOnline ? [BoxShadow(color: statusColor.withValues(alpha: 0.5), blurRadius: 8, spreadRadius: 2)] : null,
+              boxShadow: isOnline ? [BoxShadow(color: statusColor.withValues(alpha: 0.4), blurRadius: 8, spreadRadius: 2)] : null,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Text(
-            isFortressActive ? statusText.toUpperCase() : 'STATUS: $statusText',
+            statusText,
             style: GoogleFonts.outfit(
               color: Colors.white,
               fontSize: 10,
               fontWeight: FontWeight.w900,
-              letterSpacing: 0.5,
+              letterSpacing: 1.5,
             ),
           ),
         ],
@@ -246,128 +264,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMainBentoTile(BuildContext context, String title, String sub, String emoji, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.heavyImpact();
-        onTap();
-      },
+  Widget _buildRecentFeedback(AppProvider p) {
+    final latestRequest = p.myLeaveRequests.isNotEmpty ? p.myLeaveRequests.first : null;
+    if (latestRequest == null) return const SizedBox.shrink();
+
+    Color statusColor = latestRequest.status == 'approved' ? const Color(0xFF10B981) : 
+                        latestRequest.status == 'rejected' ? Colors.redAccent : jneOrange;
+    
+    return FadeInUp(
+      duration: const Duration(milliseconds: 800),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 30, offset: const Offset(0, 15)),
+            BoxShadow(color: zenNavy.withValues(alpha: 0.03), blurRadius: 40, offset: const Offset(0, 10)),
           ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 32)),
-              ),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.outfit(
-                      color: jneNavy,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    sub,
-                    style: GoogleFonts.outfit(
-                      color: jneGrey,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios_rounded, color: jneGrey.withValues(alpha: 0.3), size: 18),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSmallBentoTile(BuildContext context, String title, String sub, String emoji, Color color, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.mediumImpact();
-        onTap();
-      },
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(32),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 30, offset: const Offset(0, 15)),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 28)),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: GoogleFonts.outfit(
-                color: jneNavy,
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              sub,
-              style: GoogleFonts.outfit(
-                color: jneGrey,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecentFeedback(AppProvider p) {
-    // Show the most recent leave or overtime request status
-    final latestRequest = p.myLeaveRequests.isNotEmpty ? p.myLeaveRequests.first : null;
-    if (latestRequest == null) return const SizedBox.shrink();
-
-    Color statusColor = latestRequest.status == 'approved' ? const Color(0xFF10B981) : 
-                        latestRequest.status == 'rejected' ? Colors.redAccent : Colors.orange;
-    
-    return FadeInUp(
-      duration: const Duration(milliseconds: 600),
-      delay: const Duration(milliseconds: 600),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: jneNavy,
-          borderRadius: BorderRadius.circular(32),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -376,35 +291,37 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'NOTIFIKASI TERAKHIR',
+                  'SISTEM FEEDBACK',
                   style: GoogleFonts.outfit(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    fontSize: 9,
+                    color: slate400,
+                    fontSize: 10,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 2,
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.2),
+                    color: statusColor.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(100),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.5)),
+                    border: Border.all(color: statusColor.withValues(alpha: 0.1)),
                   ),
                   child: Text(
                     latestRequest.status.toUpperCase(),
-                    style: GoogleFonts.outfit(color: statusColor, fontSize: 8, fontWeight: FontWeight.w900),
+                    style: GoogleFonts.outfit(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
             Text(
-              'Pengajuan ${latestRequest.type} Anda telah ${latestRequest.status == 'approved' ? 'DISETUJUI' : latestRequest.status == 'rejected' ? 'DITOLAK' : 'DIPROSES'} oleh Admin.',
-              style: GoogleFonts.outfit(
-                color: Colors.white,
+              'Pengajuan ${latestRequest.type.toUpperCase()} Anda telah ${latestRequest.status == 'approved' ? 'DISETUJUI' : latestRequest.status == 'rejected' ? 'DITOLAK' : 'DIPROSES'} oleh departemen terkait.',
+              style: GoogleFonts.plusJakartaSans(
+                color: zenNavy,
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
+                height: 1.6,
+                letterSpacing: -0.2,
               ),
             ),
           ],
@@ -420,94 +337,114 @@ class _HomeScreenState extends State<HomeScreen> {
         _showSOSConfirm(context, p, geo);
       },
       child: Container(
-        width: 70,
-        height: 70,
+        width: 76,
+        height: 76,
         decoration: BoxDecoration(
           color: jneOrange,
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(color: jneOrange.withValues(alpha: 0.4), blurRadius: 25, spreadRadius: 2, offset: const Offset(0, 10)),
+            BoxShadow(color: jneOrange.withValues(alpha: 0.3), blurRadius: 30, spreadRadius: 5, offset: const Offset(0, 12)),
           ],
         ),
-        child: const Icon(Icons.sos_rounded, color: Colors.white, size: 36),
+        child: const Center(
+          child: Icon(Icons.sos_rounded, color: Colors.white, size: 38),
+        ),
       ),
     );
   }
 
   void _handleAttendance(BuildContext context, AppProvider p, GeofenceService geo) {
+    if (_isNavigating) return;
     if (geo.isInRange) {
-      Navigator.pushNamed(context, '/attendance', arguments: {'isCheckOut': p.hasClockedInToday});
+      setState(() => _isNavigating = true);
+      Navigator.pushNamed(context, '/attendance', arguments: {'isCheckOut': p.hasClockedInToday})
+          .then((_) => setState(() => _isNavigating = false));
     } else {
-      _showSimpleError(context, '⚠️ Diluar Area JNE Martapura');
+      _showSimpleError(context, '⚠️ LOKASI DILUAR RADIUS');
     }
   }
 
   void _showSimpleError(BuildContext context, String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
-        backgroundColor: jneNavy,
+        content: Text(msg, style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
+        backgroundColor: zenNavy,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.all(32),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
     );
   }
 
   void _showSOSConfirm(BuildContext context, AppProvider p, GeofenceService geo) {
-     showDialog(
+    bool dialogLoading = false;
+    showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: const Color(0xFFFFEBEB), shape: BoxShape.circle),
-              child: const Icon(Icons.warning_rounded, color: Colors.red, size: 40),
-            ),
-            const SizedBox(height: 24),
-            Text('KIRIM SINYAL SOS?', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 20, color: jneNavy)),
-            const SizedBox(height: 12),
-            Text(
-              'Lokasi darurat Anda akan dikirimkan ke Admin JNE Martapura sekarang.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(color: jneGrey, fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 32),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: Text('BATAL', style: GoogleFonts.outfit(color: jneGrey, fontWeight: FontWeight.w900)),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (geo.currentPosition != null) {
-                        p.sendSOS(geo.currentPosition!.latitude, geo.currentPosition!.longitude, 'Area JNE Martapura');
-                      }
-                      Navigator.pop(ctx);
-                      _showSimpleError(context, '🚨 SOS TERKIRIM!');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: jneOrange,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(color: jneOrange.withValues(alpha: 0.05), shape: BoxShape.circle),
+                child: const Icon(Icons.warning_rounded, color: jneOrange, size: 40),
+              ),
+              const SizedBox(height: 24),
+              Text('SEND SOS SIGNAL?', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 22, color: zenNavy, letterSpacing: -0.5)),
+              const SizedBox(height: 12),
+              Text(
+                'Sinyal darurat dan lokasi Anda akan segera dipantau oleh Admin Hub.',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(color: slate400, fontSize: 14, fontWeight: FontWeight.w600, height: 1.5),
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: dialogLoading ? null : () => Navigator.pop(ctx),
+                      child: Text('CANCEL', style: GoogleFonts.outfit(color: slate400, fontWeight: FontWeight.w900, letterSpacing: 1)),
                     ),
-                    child: Text('KIRIM', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900)),
                   ),
-                ),
-              ],
-            )
-          ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: dialogLoading ? null : () async {
+                        setDialogState(() => dialogLoading = true);
+                        try {
+                          if (geo.currentPosition != null) {
+                            await p.sendSOS(geo.currentPosition!.latitude, geo.currentPosition!.longitude, 'Martapura Hub Area');
+                          }
+                          if (!ctx.mounted) return;
+                          Navigator.pop(ctx);
+                          _showSimpleError(context, '🚨 SOS SIGNAL TRANSMITTED!');
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                        } finally {
+                          setDialogState(() => dialogLoading = false);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: zenNavy,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                      ),
+                      child: dialogLoading
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)))
+                        : Text('SEND NOW', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, letterSpacing: 1)),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
         ),
       ),
     );
@@ -515,22 +452,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBottomNav(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(24),
-      height: 70,
+      margin: const EdgeInsets.fromLTRB(28, 0, 28, 32),
+      height: 80,
       decoration: BoxDecoration(
-        color: jneNavy,
-        borderRadius: BorderRadius.circular(35),
+        color: zenNavy,
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
-          BoxShadow(color: jneNavy.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 10)),
+          BoxShadow(color: zenNavy.withValues(alpha: 0.3), blurRadius: 40, offset: const Offset(0, 15)),
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildNavItem(Icons.home_filled, 'Beranda', true, () {}),
-          _buildNavItem(Icons.chat_bubble_rounded, 'Pesan', false, () => Navigator.pushNamed(context, '/chat')),
-          _buildNavItem(Icons.notifications_rounded, 'Notif', false, () => Navigator.pushNamed(context, '/notification')),
-          _buildNavItem(Icons.person_rounded, 'Profil', false, () => Navigator.pushNamed(context, '/profile')),
+          _buildNavItem(Icons.grid_view_rounded, 'HUB', true, () {}),
+          _buildNavItem(Icons.message_rounded, 'CHAT', false, () => Navigator.pushNamed(context, '/chat')),
+          _buildNavItem(Icons.notifications_rounded, 'ALERT', false, () => Navigator.pushNamed(context, '/notification')),
+          _buildNavItem(Icons.person_rounded, 'SELF', false, () => Navigator.pushNamed(context, '/profile')),
         ],
       ),
     );
@@ -542,17 +479,19 @@ class _HomeScreenState extends State<HomeScreen> {
         HapticFeedback.lightImpact();
         onTap();
       },
+      behavior: HitTestBehavior.opaque,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: active ? jneOrange : Colors.white54, size: 26),
-          const SizedBox(height: 4),
+          Icon(icon, color: active ? zenCyan : Colors.white24, size: 26),
+          const SizedBox(height: 8),
           Text(
             label,
             style: GoogleFonts.outfit(
-              color: active ? jneOrange : Colors.white54,
+              color: active ? zenCyan : Colors.white24,
               fontSize: 9,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
             ),
           ),
         ],
@@ -560,6 +499,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
 class _BentoItem {
   final String title;
   final String sub;

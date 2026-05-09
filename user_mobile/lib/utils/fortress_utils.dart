@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 
 /// Utility class for reliability protocols like retries and error wrapping.
@@ -57,5 +58,23 @@ class FortressUtils {
         debugPrint(' Fortress: Error disposing ${item.runtimeType}: $e');
       }
     }
+  }
+
+  /// Get approximate server time via HTTP HEAD request.
+  /// Falls back to local time if request fails.
+  static Future<DateTime> getServerTime() async {
+    try {
+      final client = HttpClient()
+        ..connectionTimeout = const Duration(seconds: 3);
+      final request = await client.getUrl(Uri.parse('https://www.google.com'));
+      final response = await request.close();
+      final dateHeader = response.headers.value('date');
+      if (dateHeader != null) {
+        return HttpDate.parse(dateHeader);
+      }
+    } catch (e) {
+      debugPrint('Server time fetch failed: $e');
+    }
+    return DateTime.now();
   }
 }

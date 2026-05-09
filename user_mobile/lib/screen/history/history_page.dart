@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -15,12 +16,18 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  static const Color jneRed = Color(0xFFE31E24);
-  static const Color bgLight = Color(0xFFF8FAFC);
-  static const Color slate950 = Color(0xFF0F172A);
+  // ── ZEN PREMIUM PALETTE ──
+  static const Color zenNavy = Color(0xFF121826);
+  static const Color zenIndigo = Color(0xFF4F46E5);
+  static const Color zenCyan = Color(0xFF22D3EE);
+  static const Color zenRose = Color(0xFFF43F5E);
+  static const Color zenEmerald = Color(0xFF10B981);
+  static const Color zenOffWhite = Color(0xFFF8FAFC);
+  static const Color zenSlate = Color(0xFF94A3B8);
 
   int _selectedMonth = DateTime.now().month;
   int _selectedYear = DateTime.now().year;
+  bool _isSyncing = false;
 
   @override
   void initState() {
@@ -45,30 +52,39 @@ class _HistoryPageState extends State<HistoryPage> {
     final lateCount = records.where((r) => r.status == 'late').length;
 
     return Scaffold(
-      backgroundColor: bgLight,
+      backgroundColor: zenOffWhite,
       appBar: AppBar(
-        backgroundColor: slate950,
+        backgroundColor: zenNavy,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.chevron_left_rounded, color: Colors.white, size: 28),
+            ),
+          ),
         ),
         title: Text(
-          'RIWAYAT KEHADIRAN',
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1),
+          'OPERATIONAL LOGS',
+          style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3),
         ),
         centerTitle: true,
       ),
       body: Column(
         children: [
-          // ── Filter Bar ──
+          // ── FILTER SECTOR ──
           Container(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
             decoration: const BoxDecoration(
-              color: slate950,
+              color: zenNavy,
               borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
+                bottomLeft: Radius.circular(48),
+                bottomRight: Radius.circular(48),
               ),
             ),
             child: Column(
@@ -80,14 +96,14 @@ class _HistoryPageState extends State<HistoryPage> {
                     Expanded(child: _buildDropdownYear()),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
                 Row(
                   children: [
-                    _headerStat('Hadir', presentCount.toString().padLeft(2, '0'), Colors.greenAccent),
+                    _headerStat('Synced', presentCount.toString().padLeft(2, '0'), zenCyan),
                     const SizedBox(width: 12),
-                    _headerStat('Izin', leaveCount.toString().padLeft(2, '0'), Colors.orangeAccent),
+                    _headerStat('Authorized', leaveCount.toString().padLeft(2, '0'), zenIndigo),
                     const SizedBox(width: 12),
-                    _headerStat('Telat', lateCount.toString().padLeft(2, '0'), Colors.redAccent),
+                    _headerStat('Delayed', lateCount.toString().padLeft(2, '0'), zenRose),
                   ],
                 ),
               ],
@@ -104,14 +120,14 @@ class _HistoryPageState extends State<HistoryPage> {
                     : records.isEmpty
                       ? _buildEmptyState()
                       : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
                           physics: const BouncingScrollPhysics(),
                           itemCount: records.length,
                           itemBuilder: (context, index) {
                             final r = records[index];
                             return FadeInUp(
                               key: ValueKey(r.id),
-                              duration: Duration(milliseconds: 300 + (index * 30)),
+                              duration: Duration(milliseconds: 300 + (index * 50)),
                               child: _buildAttendanceCard(context, r),
                             );
                           },
@@ -125,60 +141,72 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _buildSyncBanner(BuildContext context, AppProvider provider) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.amber.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.cloud_off_rounded, color: Colors.amber, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Ada absensi offline yang belum terkirim.',
-              style: GoogleFonts.outfit(color: Colors.amber.shade800, fontSize: 12, fontWeight: FontWeight.w700),
-            ),
-          ),
-          TextButton(
-            onPressed: () => provider.syncPendingRecords(),
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.amber,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              minimumSize: Size.zero,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text('SYNC', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w900)),
-          ),
-        ],
-      ),
-    );
-  }
+   Widget _buildSyncBanner(BuildContext context, AppProvider provider) {
+     return Container(
+       margin: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+       decoration: BoxDecoration(
+         color: Colors.amber.withValues(alpha: 0.06),
+         borderRadius: BorderRadius.circular(20),
+         border: Border.all(color: Colors.amber.withValues(alpha: 0.12)),
+       ),
+       child: Row(
+         children: [
+           const Icon(Icons.cloud_off_rounded, color: Colors.amber, size: 20),
+           const SizedBox(width: 16),
+           Expanded(
+             child: Text(
+               'UNSYNCED TELEMETRY DETECTED',
+               style: GoogleFonts.outfit(color: Colors.amber.shade900, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+             ),
+           ),
+           GestureDetector(
+             onTap: _isSyncing ? null : () async {
+               setState(() => _isSyncing = true);
+               try {
+                 await provider.syncPendingRecords();
+               } finally {
+                 if (mounted) setState(() => _isSyncing = false);
+               }
+             },
+             child: Container(
+               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+               decoration: BoxDecoration(
+                 color: Colors.amber,
+                 borderRadius: BorderRadius.circular(10),
+               ),
+               child: _isSyncing
+                   ? const SizedBox(
+                       height: 12, width: 12,
+                       child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                     )
+                   : Text('SYNC', style: GoogleFonts.outfit(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+             ),
+           ),
+         ],
+       ),
+     );
+   }
 
   Widget _buildDropdownMonth() {
     final months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
     ];
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: _selectedMonth,
-          dropdownColor: slate950,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70),
+          dropdownColor: zenNavy,
+          icon: const Icon(Icons.expand_more_rounded, color: Colors.white38),
           isExpanded: true,
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
+          style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
           onChanged: (val) {
             if (val != null) {
               setState(() => _selectedMonth = val);
@@ -198,19 +226,19 @@ class _HistoryPageState extends State<HistoryPage> {
     final currentYear = DateTime.now().year;
     final years = List.generate(3, (index) => currentYear - index);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: _selectedYear,
-          dropdownColor: slate950,
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70),
+          dropdownColor: zenNavy,
+          icon: const Icon(Icons.expand_more_rounded, color: Colors.white38),
           isExpanded: true,
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
+          style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
           onChanged: (val) {
             if (val != null) {
               setState(() => _selectedYear = val);
@@ -229,17 +257,17 @@ class _HistoryPageState extends State<HistoryPage> {
   Widget _headerStat(String label, String value, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.03),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
         child: Column(
           children: [
-            Text(value, style: GoogleFonts.outfit(color: color, fontSize: 20, fontWeight: FontWeight.w900)),
+            Text(value, style: GoogleFonts.outfit(color: color, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -1)),
             const SizedBox(height: 4),
-            Text(label.toUpperCase(), style: GoogleFonts.outfit(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1)),
+            Text(label.toUpperCase(), style: GoogleFonts.outfit(color: Colors.white30, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
           ],
         ),
       ),
@@ -251,9 +279,12 @@ class _HistoryPageState extends State<HistoryPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.history_toggle_off_rounded, color: const Color(0xFFCBD5E1), size: 64),
-          const SizedBox(height: 16),
-          Text('Tidak ada riwayat di bulan ini', style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w700)),
+          Icon(Icons.inventory_2_outlined, color: zenSlate.withValues(alpha: 0.2), size: 64),
+          const SizedBox(height: 20),
+          Text(
+            'NO REGISTRY RECORDS FOUND', 
+            style: GoogleFonts.outfit(color: zenSlate.withValues(alpha: 0.4), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
+          ),
         ],
       ),
     );
@@ -266,96 +297,119 @@ class _HistoryPageState extends State<HistoryPage> {
     bool isAbsent = r.status == 'absent';
     bool isLeave = r.status == 'leave';
     
-    Color statusColor = Colors.green;
-    String statusLabel = 'Tepat Waktu';
+    Color statusColor = zenEmerald;
+    String statusLabel = 'SYNCED';
     
-    if (isLate) { statusColor = Colors.orange; statusLabel = 'Terlambat'; }
-    if (isAbsent) { statusColor = jneRed; statusLabel = 'Alpha'; }
-    if (isLeave) { statusColor = Colors.blue; statusLabel = 'Izin'; }
+    if (isLate) { statusColor = zenRose; statusLabel = 'DELAYED'; }
+    if (isAbsent) { statusColor = zenRose; statusLabel = 'OFFLINE'; }
+    if (isLeave) { statusColor = zenIndigo; statusLabel = 'AUTHORIZED'; }
 
     String checkInTime = r.checkIn?.time != null ? DateFormat('HH:mm').format(r.checkIn!.time!) : '--:--';
     String checkOutTime = r.checkOut?.time != null ? DateFormat('HH:mm').format(r.checkOut!.time!) : '--:--';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(24),
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20, offset: const Offset(0, 10))],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: zenNavy.withValues(alpha: 0.03)),
+        boxShadow: [
+          BoxShadow(
+                color: zenNavy.withValues(alpha: 0.02), 
+                blurRadius: 30, 
+                offset: const Offset(0, 15)
+              )
+            ],
+          ),
+          child: Column(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    DateFormat('EEEE, d MMM yyyy', 'id').format(date),
-                    style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w900),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        DateFormat('EEEE, d MMM yyyy').format(date).toUpperCase(),
+                        style: GoogleFonts.outfit(color: zenNavy, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: -0.2),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Container(width: 6, height: 6, decoration: const BoxDecoration(color: zenIndigo, shape: BoxShape.circle)),
+                          const SizedBox(width: 8),
+                          Text(
+                            'SECTOR: MARTAPURA HUB',
+                            style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Shift Pagi (08:00 - 17:00)',
-                    style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w600),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: GoogleFonts.outfit(color: statusColor, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                    ),
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  statusLabel.toUpperCase(),
-                  style: GoogleFonts.outfit(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5),
-                ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Divider(color: zenOffWhite, thickness: 2, height: 1),
+              ),
+              Row(
+                children: [
+                  _timeBox('ENTRY SIGNAL', checkInTime, Icons.sensors_rounded, zenCyan),
+                  const Spacer(),
+                  _timeBox('EXIT SIGNAL', checkOutTime, Icons.sensors_off_rounded, zenIndigo),
+                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: zenNavy.withValues(alpha: 0.03),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.chevron_right_rounded, color: zenSlate, size: 18),
+                  ),
+                ],
               ),
             ],
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Divider(color: Color(0xFFF1F5F9), height: 1),
-          ),
-          Row(
-            children: [
-              _timeBox('MASUK', checkInTime, Icons.login_rounded, Colors.blue),
-              const Spacer(),
-              const SizedBox(
-                height: 30,
-                child: VerticalDivider(color: Color(0xFFF1F5F9), width: 1),
-              ),
-              const Spacer(),
-              _timeBox('PULANG', checkOutTime, Icons.logout_rounded, Colors.orange),
-              const Spacer(),
-              Icon(Icons.arrow_forward_ios_rounded, color: const Color(0xFFCBD5E1), size: 14),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+        );
+      }
 
-  Widget _timeBox(String label, String time, IconData icon, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+      Widget _timeBox(String label, String time, IconData icon, Color color) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 12, color: const Color(0xFF94A3B8)),
-            const SizedBox(width: 6),
-            Text(label, style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1)),
+            Row(
+              children: [
+                Icon(icon, size: 14, color: color.withValues(alpha: 0.6)),
+                const SizedBox(width: 8),
+                Text(
+                  label, 
+                  style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5)
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              time,
+              style: GoogleFonts.outfit(
+                color: zenNavy, 
+                fontSize: 20, 
+                fontWeight: FontWeight.w900, 
+                fontFeatures: [const FontFeature.tabularFigures()]
+              ),
+            ),
           ],
-        ),
-        const SizedBox(height: 6),
-        Text(
-          time,
-          style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 18, fontWeight: FontWeight.w900),
-        ),
-      ],
-    );
-  }
+        );
+      }
 }

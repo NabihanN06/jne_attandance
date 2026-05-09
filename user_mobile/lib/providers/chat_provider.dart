@@ -1,27 +1,40 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
+/// NEW: Enhanced message with status tracking
 class ChatMessage {
   final String id;
   final String text;
   final String senderId;
+  final String senderName;
+  final String senderRole;  // 'admin' or 'employee'
   final String receiverId;
+  final String receiverRole;
   final DateTime timestamp;
-  final bool isRead;
+  final MessageStatus status;  // NEW: sent, delivered, read
+  final DateTime? readAt;
+  final DateTime? deliveredAt;
   final String? imageUrl;
+  final bool isDeleted;
+
+  bool get isRead => status == MessageStatus.read;
 
   ChatMessage({
     required this.id,
     required this.text,
     required this.senderId,
+    required this.senderName,
+    required this.senderRole,
     required this.receiverId,
+    required this.receiverRole,
     required this.timestamp,
-    required this.isRead,
+    required this.status,
+    this.readAt,
+    this.deliveredAt,
     this.imageUrl,
+    this.isDeleted = false,
   });
 
   factory ChatMessage.fromFirestore(DocumentSnapshot doc) {
@@ -30,18 +43,29 @@ class ChatMessage {
       id: doc.id,
       text: data['text'] ?? '',
       senderId: data['senderId'] ?? '',
+      senderName: data['senderName'] ?? '',
+      senderRole: data['senderRole'] ?? 'employee',
       receiverId: data['receiverId'] ?? '',
+      receiverRole: data['receiverRole'] ?? 'admin',
       timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      isRead: data['isRead'] ?? false,
+      status: MessageStatus.values.firstWhere(
+        (e) => e.toString() == 'MessageStatus.${data['status'] ?? 'sent'}',
+        orElse: () => MessageStatus.sent,
+      ),
+      readAt: (data['readAt'] as Timestamp?)?.toDate(),
+      deliveredAt: (data['deliveredAt'] as Timestamp?)?.toDate(),
       imageUrl: data['imageUrl'],
+      isDeleted: data['isDeleted'] ?? false,
     );
   }
 }
 
+/// NEW: Message status enum
+enum MessageStatus { sent, delivered, read }
+
 class ChatProvider extends ChangeNotifier {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   List<ChatMessage> _messages = [];
   List<ChatMessage> get messages => _messages;
@@ -66,11 +90,11 @@ class ChatProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    // Listen to messages for this chat using chatId
     _messageSubscription = _db
-        .collection('chats')
-        .doc(chatId)
         .collection('messages')
-        .orderBy('timestamp', descending: false)
+        .where('chatId', isEqualTo: chatId)
+        .orderBy('createdAt', descending: false)
         .snapshots()
         .listen((snapshot) {
       _messages = snapshot.docs.map((doc) => ChatMessage.fromFirestore(doc)).toList();
@@ -79,8 +103,8 @@ class ChatProvider extends ChangeNotifier {
 
       // Mark messages as read
       for (var msg in _messages) {
-        if (!msg.isRead && msg.senderId != _auth.currentUser?.uid) {
-          _db.collection('chats').doc(chatId).collection('messages').doc(msg.id).update({'isRead': true});
+        if (msg.status != MessageStatus.read && msg.senderId != _auth.currentUser?.uid) {
+          _markAsRead(msg.id);
         }
       }
     });
@@ -103,6 +127,13 @@ class ChatProvider extends ChangeNotifier {
     });
   }
 
+  Future<void> _markAsRead(String messageId) async {
+    await _db.collection('messages').doc(messageId).update({
+      'status': 'read',
+      'readAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> updateTyping(String chatId, bool typing) async {
     if (_auth.currentUser == null) return;
     await _db.collection('chats').doc(chatId).collection('typing').doc('status').set({
@@ -110,46 +141,61 @@ class ChatProvider extends ChangeNotifier {
     }, SetOptions(merge: true));
   }
 
-  Future<void> sendMessage(String chatId, String receiverId, String text, {File? imageFile}) async {
+  /// NEW: Enhanced send with status tracking
+  Future<void> sendMessage({
+    required String receiverId,
+    required String receiverRole,
+    required String text,
+    String? imageUrl,
+    Map<String, dynamic>? senderInfo,
+  }) async {
     if (_auth.currentUser == null) return;
 
-    String? imageUrl;
-    if (imageFile != null) {
-      String fileName = '${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
-      Reference ref = _storage.ref().child('chats/$chatId/$fileName');
-      await ref.putFile(imageFile);
-      imageUrl = await ref.getDownloadURL();
-    }
-
     if (text.trim().isEmpty && imageUrl == null) return;
+
+    final chatId = getChatId(_auth.currentUser!.uid, receiverId);
 
     final messageData = {
       'text': text,
       'senderId': _auth.currentUser!.uid,
+      'senderName': senderInfo?['name'] ?? 'Unknown',
+      'senderRole': senderInfo?['role'] ?? 'employee',
       'receiverId': receiverId,
-      'timestamp': FieldValue.serverTimestamp(),
-      'isRead': false,
+      'receiverRole': receiverRole,
+      'chatId': chatId,
+      'status': 'sent',
+      'createdAt': FieldValue.serverTimestamp(),
+      'readAt': null,
+      'deliveredAt': null,
       'imageUrl': imageUrl,
+      'isDeleted': false,
     };
 
-    await _db.collection('chats').doc(chatId).collection('messages').add(messageData);
+    final docRef = await _db.collection('messages').add(messageData);
 
-    // Update chat metadata
-    await _db.collection('chats').doc(chatId).set({
-      'lastMessage': imageUrl != null ? '📷 Photo' : text,
-      'lastTimestamp': FieldValue.serverTimestamp(),
-      'participants': [_auth.currentUser!.uid, receiverId],
-    }, SetOptions(merge: true));
+    // Mark as delivered immediately (optimistic)
+    await docRef.update({'status': 'delivered', 'deliveredAt': FieldValue.serverTimestamp()});
   }
 
-  Future<void> deleteMessage(String chatId, String messageId) async {
+  /// NEW: Mark message as delivered when received on device
+  Future<void> markAsDelivered(String messageId) async {
+    await _db.collection('messages').doc(messageId).update({
+      'status': 'delivered',
+      'deliveredAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// NEW: Mark message as read when opened
+  Future<void> markAsRead(String messageId) async {
+    await _db.collection('messages').doc(messageId).update({
+      'status': 'read',
+      'readAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> deleteMessage(String messageId) async {
     try {
-      await _db
-          .collection('chats')
-          .doc(chatId)
-          .collection('messages')
-          .doc(messageId)
-          .update({
+      await _db.collection('messages').doc(messageId).update({
         'text': '🚫 Pesan telah dihapus',
         'imageUrl': null,
         'isDeleted': true,
@@ -162,6 +208,7 @@ class ChatProvider extends ChangeNotifier {
   @override
   void dispose() {
     _messageSubscription?.cancel();
+    _typingSubscription?.cancel();
     super.dispose();
   }
 }

@@ -23,6 +23,7 @@ class _ChatPageState extends State<ChatPage> {
   
   UserModel? _targetAdmin;
   String? _chatId;
+  bool _isSending = false;
 
   @override
   void initState() {
@@ -36,7 +37,7 @@ class _ChatPageState extends State<ChatPage> {
     
     // Find a real admin instead of hardcoded ID
     final admin = await app.getFirstAdmin();
-    if (admin != null && mounted) {
+    if (admin != null && app.currentUser != null && mounted) {
       setState(() {
         _targetAdmin = admin;
         _chatId = chat.getChatId(app.currentUser!.uid, admin.uid);
@@ -65,21 +66,38 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _handleSend() async {
-    if (_targetAdmin == null || _chatId == null) return;
+    if (_targetAdmin == null || _chatId == null || _isSending) return;
     
     final chat = context.read<ChatProvider>();
 
-    if (_messageController.text.trim().isNotEmpty || _selectedImage != null) {
-      String text = _messageController.text;
-      File? image = _selectedImage;
-      
-      _messageController.clear();
-      setState(() {
-        _selectedImage = null;
-      });
+    if (_messageController.text.trim().isEmpty && _selectedImage == null) return;
+    
+    setState(() => _isSending = true);
 
-      await chat.sendMessage(_chatId!, _targetAdmin!.uid, text, imageFile: image);
+    String text = _messageController.text;
+    File? image = _selectedImage;
+    
+    _messageController.clear();
+    setState(() {
+      _selectedImage = null;
+    });
+
+    try {
+      await chat.sendMessage(
+        receiverId: _targetAdmin!.uid,
+        receiverRole: _targetAdmin!.role,
+        text: text,
+        imageUrl: image?.path,
+      );
       _scrollToBottom();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengirim: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSending = false);
     }
   }
 
@@ -90,6 +108,7 @@ class _ChatPageState extends State<ChatPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: const Color(0xFF0891B2),
         elevation: 0,
@@ -138,19 +157,21 @@ class _ChatPageState extends State<ChatPage> {
           Expanded(
             child: chat.isLoading || _targetAdmin == null
                 ? const Center(child: CircularProgressIndicator(color: Color(0xFF0891B2)))
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(20),
-                    itemCount: chat.messages.length + (chat.otherUserTyping ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == chat.messages.length) {
-                        return _buildTypingIndicator();
-                      }
-                      final msg = chat.messages[index];
-                      bool isMe = msg.senderId == app.currentUser?.uid;
-                      return _buildMessageBubble(msg, isMe, chat);
-                    },
-                  ),
+                : chat.messages.isEmpty
+                    ? _buildEmptyState()
+                    : ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(20),
+                        itemCount: chat.messages.length + (chat.otherUserTyping ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == chat.messages.length) {
+                            return _buildTypingIndicator();
+                          }
+                          final msg = chat.messages[index];
+                          bool isMe = msg.senderId == app.currentUser?.uid;
+                          return _buildMessageBubble(msg, isMe, chat);
+                        },
+                      ),
           ),
           _buildInputArea(),
         ],
@@ -186,6 +207,19 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.chat_bubble_outline_rounded, color: const Color(0xFFCBD5E1), size: 64),
+          const SizedBox(height: 16),
+          Text('Belum ada pesan', style: GoogleFonts.outfit(color: Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }
@@ -289,7 +323,7 @@ class _ChatPageState extends State<ChatPage> {
           TextButton(
             onPressed: () {
               if (_chatId != null) {
-                chat.deleteMessage(_chatId!, msg.id);
+                chat.deleteMessage(msg.id);
                 Navigator.pop(context);
               }
             }, 
@@ -371,18 +405,23 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _handleSend,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF0891B2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                  ),
-                ),
+                 const SizedBox(width: 8),
+                 GestureDetector(
+                   onTap: _isSending ? null : _handleSend,
+                   child: Container(
+                     padding: const EdgeInsets.all(12),
+                     decoration: BoxDecoration(
+                       color: _isSending ? const Color(0xFF0891B2).withValues(alpha: 0.6) : const Color(0xFF0891B2),
+                       shape: BoxShape.circle,
+                     ),
+                     child: _isSending
+                         ? const SizedBox(
+                             width: 20, height: 20,
+                             child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                           )
+                         : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                   ),
+                 ),
               ],
             ),
           ],

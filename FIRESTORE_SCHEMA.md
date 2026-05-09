@@ -338,6 +338,86 @@ Both admin dashboard and mobile app share the same Firebase project: `admin-abse
 
 ---
 
+### 13. user_heartbeats (NEW)
+**Collection**: `user_heartbeats`
+**Purpose**: Real-time online status tracking
+
+**Fields**:
+```typescript
+{
+  userId: string
+  timestamp: Timestamp  // Last heartbeat time
+  deviceId?: string
+  appVersion?: string
+  createdAt: Timestamp
+}
+```
+
+**Logic**: 
+- Mobile app writes heartbeat every 30 seconds
+- Admin dashboard listens and calculates online status
+- If last heartbeat > 40 seconds ago, user is offline
+
+---
+
+### 14. messages (NEW - Enhanced Messaging)
+**Collection**: `messages`
+**Purpose**: Two-way reliable messaging between admin and employees
+
+**Fields**:
+```typescript
+{
+  senderId: string      // Admin or Employee UID
+  senderName: string
+  senderRole: 'admin' | 'employee'
+  receiverId: string    // Recipient UID
+  receiverRole: 'admin' | 'employee'
+  content: string
+  status: 'sent' | 'delivered' | 'read'  // Message status
+  readAt?: Timestamp    // When recipient read the message
+  deliveredAt?: Timestamp  // When message was delivered
+  createdAt: Timestamp
+}
+```
+
+**Status Flow**:
+1. 'sent' - Message created
+2. 'delivered' - Recipient's device received (triggered by onMessage in mobile)
+3. 'read' - Recipient opened chat (triggered when chat page loads)
+
+---
+
+### 15. pending_sync (NEW - Offline Absence Queue)
+**Collection**: `pending_sync`
+**Purpose**: Offline absence data waiting to be synced
+
+**Fields**:
+```typescript
+{
+  userId: string
+  employeeName: string
+  employeeId: string
+  department: string
+  date: string          // "YYYY-MM-DD"
+  type: 'checkIn' | 'checkOut'
+  time: Timestamp       // When the attendance happened
+  latitude: number
+  longitude: number
+  photoUrl?: string
+  deviceId?: string
+  createdAt: Timestamp
+  synced: boolean      // Has been pushed to attendance collection
+  syncAttempts: number  // Retry counter
+}
+```
+
+**Logic**:
+- Mobile saves offline attendance to this collection
+- Background service detects connectivity and syncs
+- Auto-sync pushes to main `attendance` collection
+
+---
+
 ## Indexes Required
 
 Firestore composite indexes should be defined in `firestore.indexes.json`:

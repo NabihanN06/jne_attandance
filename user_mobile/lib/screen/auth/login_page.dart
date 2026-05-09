@@ -13,9 +13,11 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  static const Color jneCyan = Color(0xFF0891B2);
-  static const Color slate950 = Color(0xFF0F172A);
-  static const Color slate500 = Color(0xFF64748B);
+  // ── ZEN PREMIUM PALETTE ──
+  static const Color zenNavy = Color(0xFF121826);
+  static const Color zenIndigo = Color(0xFF4F46E5);
+  static const Color zenSlate = Color(0xFF94A3B8);
+  static const Color zenOffWhite = Color(0xFFF8FAFC);
 
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
@@ -38,7 +40,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     if (email.isEmpty || password.isEmpty) {
-      _showSnack('Mohon masukkan email dan kata sandi', isError: true);
+      _showSnack('IDENTIFICATION REQUIRED: ENTER CREDENTIALS', isError: true);
       return;
     }
 
@@ -57,17 +59,17 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showSnack(e.toString().replaceAll('Exception: ', ''), isError: true);
+      _showSnack(e.toString().replaceAll('Exception: ', '').toUpperCase(), isError: true);
     }
   }
 
   void _showSnack(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
+        content: Text(msg, style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
         backgroundColor: isError ? const Color(0xFFF43F5E) : const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(20),
+        margin: const EdgeInsets.all(24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
@@ -79,90 +81,106 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 60),
+              const SizedBox(height: 80),
+              
+              // ── BRANDING SECTOR ──
               Center(
                 child: Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: jneCyan.withValues(alpha: 0.05),
-                    shape: BoxShape.circle,
+                    color: zenNavy.withOpacity(0.03),
+                    borderRadius: BorderRadius.circular(40),
+                    border: Border.all(color: zenNavy.withOpacity(0.02)),
                   ),
                   child: Image.asset(
                     'assets/images/jne_logo.png', 
                     width: 140, 
-                    errorBuilder: (_, _, _) => const Icon(Icons.local_shipping_rounded, color: jneCyan, size: 60)
+                    errorBuilder: (_, _, _) => const Icon(Icons.hub_rounded, color: zenNavy, size: 60)
                   ),
                 ),
               ),
-              const SizedBox(height: 50),
-              Text(
-                'Selamat Datang',
-                style: GoogleFonts.inter(color: slate950, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -1),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Silakan masuk untuk mengakses sistem absensi JNE Martapura.',
-                style: GoogleFonts.inter(color: slate500, fontSize: 15, fontWeight: FontWeight.w500, height: 1.5),
-              ),
-              const SizedBox(height: 48),
               
-              _label('ALAMAT EMAIL / NIK'),
+              const SizedBox(height: 64),
+              
+              Text(
+                'Operational\nAccess',
+                style: GoogleFonts.outfit(
+                  color: zenNavy, 
+                  fontSize: 40, 
+                  fontWeight: FontWeight.w900, 
+                  letterSpacing: -1.5,
+                  height: 1.1,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Authorize your biometric connection to the JNE Martapura operational registry.',
+                style: GoogleFonts.plusJakartaSans(
+                  color: zenSlate, 
+                  fontSize: 14, 
+                  fontWeight: FontWeight.w600, 
+                  height: 1.6,
+                ),
+              ),
+              
+              const SizedBox(height: 56),
+              
+              _label('REGISTRY EMAIL / SERIAL'),
               _field(
                 _emailCtrl,
-                'budi.santoso / JNE-OPS-001',
+                'Ex: budi.ops / JNE-MTP-01',
                 keyboard: TextInputType.emailAddress,
-                icon: Icons.person_rounded,
+                icon: Icons.alternate_email_rounded,
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
               
-              _label('KATA SANDI'),
+              _label('SECURITY PASSPHRASE'),
               _field(
                 _passCtrl,
                 '••••••••',
                 obscure: _obscurePass,
-                icon: Icons.lock_rounded,
+                icon: Icons.shield_outlined,
                 suffix: IconButton(
-                  icon: Icon(_obscurePass ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: const Color(0xFF94A3B8), size: 20),
+                  icon: Icon(_obscurePass ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: zenSlate.withOpacity(0.4), size: 18),
                   onPressed: () => setState(() => _obscurePass = !_obscurePass),
                 ),
               ),
               
-              const SizedBox(height: 40),
+              const SizedBox(height: 48),
               
               SizedBox(
                 width: double.infinity,
-                height: 60,
+                height: 72,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _doLogin,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: jneCyan,
+                    backgroundColor: zenNavy,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                     elevation: 0,
-                    shadowColor: jneCyan.withValues(alpha: 0.3),
                   ),
                   child: _isLoading
                       ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                      : Text('MASUK SEKARANG', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                      : Text('AUTHORIZE SESSION', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3)),
                 ),
               ),
               
-              const SizedBox(height: 32),
+              const SizedBox(height: 40),
               Center(
                 child: TextButton(
                   onPressed: () {},
                   child: Text(
-                    'Lupa kata sandi? Hubungi HR Admin',
-                    style: GoogleFonts.inter(color: slate500, fontSize: 13, fontWeight: FontWeight.w700),
+                    'SECURITY OVERRIDE? CONTACT HUB ADMIN',
+                    style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5),
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 60),
             ],
           ),
         ),
@@ -174,29 +192,29 @@ class _LoginPageState extends State<LoginPage> {
     padding: const EdgeInsets.only(bottom: 12, left: 4),
     child: Text(
       text,
-      style: GoogleFonts.inter(color: slate500, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+      style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 2),
     ),
   );
 
   Widget _field(TextEditingController ctrl, String hint, {bool obscure = false, Widget? suffix, TextInputType keyboard = TextInputType.text, IconData? icon}) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: zenOffWhite,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: zenNavy.withOpacity(0.04)),
       ),
       child: TextField(
         controller: ctrl,
         obscureText: obscure,
         keyboardType: keyboard,
-        style: GoogleFonts.inter(color: slate950, fontSize: 15, fontWeight: FontWeight.w700),
+        style: GoogleFonts.outfit(color: zenNavy, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: -0.2),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w500),
-          prefixIcon: icon != null ? Icon(icon, color: jneCyan, size: 22) : null,
+          hintStyle: GoogleFonts.outfit(color: zenSlate.withOpacity(0.3), fontSize: 14, fontWeight: FontWeight.w600),
+          prefixIcon: icon != null ? Icon(icon, color: zenIndigo, size: 20) : null,
           suffixIcon: suffix,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
         ),
       ),
     );

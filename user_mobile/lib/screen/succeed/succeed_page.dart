@@ -26,7 +26,8 @@ class SucceedPage extends StatefulWidget {
 }
 
 class _SucceedPageState extends State<SucceedPage> with SingleTickerProviderStateMixin {
-  static const Color jneBlue = Color(0xFF005596);
+  static const Color zenNavy = Color(0xFF121826);
+  static const Color zenEmerald = Color(0xFF10B981);
 
   late AnimationController _ctrl;
   late Animation<double> _scale;
@@ -57,68 +58,70 @@ class _SucceedPageState extends State<SucceedPage> with SingleTickerProviderStat
           padding: const EdgeInsets.all(32),
           child: Column(
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 60),
               ScaleTransition(
                 scale: _scale,
                 child: Container(
                   width: 100, height: 100,
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color: zenEmerald.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 64),
+                  child: const Icon(Icons.check_circle_rounded, color: zenEmerald, size: 64),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 40),
               Text(
-                widget.isEnroll ? 'Berhasil Terdaftar!' : 'Absensi Berhasil!',
-                style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 24, fontWeight: FontWeight.w900),
+                widget.isEnroll ? 'IDENTITY VERIFIED' : 'STATION SYNCED',
+                style: GoogleFonts.outfit(color: zenNavy, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5),
               ),
               const SizedBox(height: 12),
               Text(
-                widget.isEnroll ? 'Wajah Anda kini aktif untuk absensi.' : 'Data kehadiran Anda telah tercatat.',
+                widget.isEnroll ? 'Biometric profile is now active.' : 'Telemetry data transmitted successfully.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w500),
+                style: GoogleFonts.plusJakartaSans(color: const Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w600),
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 60),
               if (!widget.isEnroll)
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                    borderRadius: BorderRadius.circular(32),
+                    boxShadow: [BoxShadow(color: zenNavy.withValues(alpha: 0.03), blurRadius: 40, offset: const Offset(0, 10))],
+                    border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
                   ),
                   child: Column(
                     children: [
-                      _row('Tipe Log', widget.jenis),
+                      _row('SIGNAL TYPE', widget.jenis),
                       _div(),
-                      _row('Waktu', _waktu),
+                      _row('TIMESTAMP', _waktu),
                       _div(),
-                      _row('Status', widget.status, vc: Colors.green),
+                      _row('STATUS', widget.status, vc: zenEmerald),
                       _div(),
-                      _row('Lokasi', widget.lokasi),
+                      _row('SECTOR', widget.lokasi),
                     ],
                   ),
                 ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 60),
               SizedBox(
                 width: double.infinity,
-                height: 60,
+                height: 64,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (r) => false),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: jneBlue,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    backgroundColor: zenNavy,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     elevation: 0,
                   ),
-                  child: Text('KEMBALI KE BERANDA', style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                  child: Text('RETURN TO HUB', style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 2)),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               TextButton(
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryPage())),
-                child: Text('LIHAT RIWAYAT', style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w700)),
+                child: Text('VIEW FULL LOGS', style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
               ),
             ],
           ),

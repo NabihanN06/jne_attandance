@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'providers/app_provider.dart';
 import 'providers/chat_provider.dart';
@@ -31,9 +32,73 @@ import 'screen/overtime/overtime_page.dart';
 import 'screen/chat/chat_page.dart';
 import 'screen/calendar/calendar_page.dart';
 
+/// Initialize local notifications
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  debugPrint("Handling a background message: ${message.messageId}");
+  debugPrint("Handling background message: ${message.messageId}");
+}
+
+Future<void> _setupFCM() async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  
+  await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  // Get and save FCM token (will be saved again after login)
+  String? token = await messaging.getToken();
+  debugPrint('FCM Token: $token');
+
+  // Listen for token refresh
+  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+    debugPrint('FCM Token refreshed: $newToken');
+    // Token will be saved after login via AppProvider._saveFCMToken()
+  });
+
+  // Initialize local notifications
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+  
+  const DarwinInitializationSettings initializationSettingsDarwin =
+      DarwinInitializationSettings();
+
+  const InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+    iOS: initializationSettingsDarwin,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+  // Foreground message handler
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    debugPrint('Got foreground message: ${message.notification?.title}');
+    
+    RemoteNotification? notification = message.notification;
+    AndroidNotification? android = message.notification?.android;
+
+    if (notification != null && android != null) {
+      flutterLocalNotificationsPlugin.show(
+        notification.hashCode,
+        notification.title,
+        notification.body,
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'high_importance_channel',
+            'High Importance Notifications',
+            channelDescription: 'This channel is used for important notifications.',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@mipmap/ic_launcher',
+          ),
+          iOS: const DarwinNotificationDetails(),
+        ),
+      );
+    }
+  });
 }
 
 void main() async {
@@ -41,16 +106,11 @@ void main() async {
   await Firebase.initializeApp();
   await initializeDateFormatting('id', null);
 
+  // Setup FCM
+  await _setupFCM();
+
   // Background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  // Request notification permissions
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
-  await messaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
 
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -59,157 +119,76 @@ void main() async {
     systemNavigationBarColor: Colors.white,
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ConnectivityService()),
-        ChangeNotifierProxyProvider<ConnectivityService, AppProvider>(
-          create: (ctx) => AppProvider(ctx.read<ConnectivityService>()),
-          update: (_, connectivity, app) => app!,
-        ),
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
-        ChangeNotifierProxyProvider<AppProvider, GeofenceService>(
-          create: (_) => GeofenceService(),
-          update: (ctx, app, geofence) {
-            geofence!.updateOfficeConfig(app.officeLat, app.officeLng, app.officeRadius);
-            return geofence;
-          },
-        ),
-      ],
-      child: const MyApp(),
-    ),
-  );
+   runApp(
+     MultiProvider(
+       providers: [
+         ChangeNotifierProvider(create: (_) => ConnectivityService()),
+         ChangeNotifierProxyProvider<ConnectivityService, AppProvider>(
+           create: (ctx) => AppProvider(ctx.read<ConnectivityService>()),
+           update: (_, connectivity, app) => app!,
+         ),
+         ChangeNotifierProvider(create: (_) => ChatProvider()),
+         ChangeNotifierProxyProvider<AppProvider, GeofenceService>(
+           create: (_) => GeofenceService(),
+           update: (ctx, app, geofence) {
+             geofence!.updateOfficeConfig(app.officeLat, app.officeLng, app.officeRadius);
+             return geofence;
+           },
+         ),
+       ],
+       child: const MyApp(),
+     ),
+   );
+ }
 
-  // Listen for foreground messages
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    debugPrint('Got a message whilst in the foreground!');
-    debugPrint('Message data: ${message.data}');
-
-    if (message.notification != null) {
-      debugPrint('Message also contained a notification: ${message.notification}');
-    }
-  });
-}
-
+// ── ROOT WIDGET ──
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<AppProvider>();
     return MaterialApp(
-      title: 'JNE Attendance App',
+      title: 'JNE Attendance',
       debugShowCheckedModeBanner: false,
-      theme: _buildTheme(false),
-      darkTheme: _buildTheme(true),
-      themeMode: provider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      builder: (context, child) {
-        return ScrollConfiguration(
-          behavior: const ScrollBehavior().copyWith(overscroll: false),
-          child: child!,
-        );
-      },
-      initialRoute: '/splash',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0891B2)),
+        brightness: Brightness.light,
+        fontFamily: GoogleFonts.outfit().fontFamily,
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF0891B2),
+          brightness: Brightness.dark,
+        ),
+        fontFamily: GoogleFonts.outfit().fontFamily,
+      ),
+      themeMode: ThemeMode.system,
+      initialRoute: '/',
       routes: {
-        '/splash':              (_) => const SplashScreen(),
-        '/onboarding':          (_) => const OnboardingScreen(),
-        '/login':               (_) => const LoginPage(),
-        '/permission/location': (_) => const LocationPermissionPage(),
-        '/permission/camera':   (_) => const CameraPermissionPage(),
-        '/welcome':             (_) => const WelcomePage(),
-        '/enroll':              (_) => const EnrollPage(),
-        '/succeed':             (_) => const SucceedPage(),
-        '/home':                (_) => const HomeScreen(),
-        '/option':              (_) => const OptionPage(),
-        '/attendance':          (_) => const AttendancePage(),
-        '/leave':               (_) => const LeavePage(),
-        '/statistic':           (_) => const StatisticPage(),
-        '/history':             (_) => const HistoryPage(),
-        '/profile': (context) => const ProfilePage(),
-        '/id_card': (context) => const IDCardPage(),
-        '/notification': (context) => const NotificationPage(),
-        '/settings':            (_) => const SettingsPage(),
-        '/overtime':            (_) => const OvertimePage(),
-        '/chat':                (_) => const ChatPage(),
-        '/calendar':            (_) => const CalendarPage(),
+        '/': (ctx) => const SplashScreen(),
+        '/login': (ctx) => const LoginPage(),
+        '/onboarding': (ctx) => const OnboardingScreen(),
+        '/permission/location': (ctx) => const LocationPermissionPage(),
+        '/permission/camera': (ctx) => const CameraPermissionPage(),
+        '/welcome': (ctx) => const WelcomePage(),
+        '/enroll': (ctx) => const EnrollPage(),
+        '/succeed': (ctx) => const SucceedPage(),
+        '/home': (ctx) => const HomeScreen(),
+        '/option': (ctx) => const OptionPage(),
+        '/attendance': (ctx) => const AttendancePage(),
+        '/leave': (ctx) => const LeavePage(),
+        '/statistic': (ctx) => const StatisticPage(),
+        '/history': (ctx) => const HistoryPage(),
+        '/profile': (ctx) => const ProfilePage(),
+        '/profile/id_card': (ctx) => const IDCardPage(),
+        '/notification': (ctx) => const NotificationPage(),
+        '/settings': (ctx) => const SettingsPage(),
+        '/overtime': (ctx) => const OvertimePage(),
+        '/chat': (ctx) => const ChatPage(),
+        '/calendar': (ctx) => const CalendarPage(),
       },
-      onUnknownRoute: (_) => MaterialPageRoute(builder: (_) => const SplashScreen()),
-    );
-  }
-
-  ThemeData _buildTheme(bool dark) {
-    // Modern Palette: Deep Navy / Slate Grey for Dark mode, Off-White for Light mode
-    final Color accentColor = dark ? const Color(0xFF22D3EE) : const Color(0xFF4F46E5); // Cyan (Dark) / Indigo (Light)
-    
-    final Color bgMain = dark ? const Color(0xFF121826) : const Color(0xFFF8FAFC);
-    final Color bgSurface = dark ? const Color(0xFF1E293B) : Colors.white;
-    final Color textPrimary = dark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
-
-    return ThemeData(
-      useMaterial3: true,
-      brightness: dark ? Brightness.dark : Brightness.light,
-      scaffoldBackgroundColor: bgMain,
-      fontFamily: 'Inter',
-      textTheme: GoogleFonts.interTextTheme().apply(
-        bodyColor: textPrimary,
-        displayColor: textPrimary,
-      ).copyWith(
-        bodyLarge: GoogleFonts.inter(letterSpacing: -0.5, color: textPrimary),
-        bodyMedium: GoogleFonts.inter(letterSpacing: -0.5, color: textPrimary),
-        titleLarge: GoogleFonts.inter(letterSpacing: -0.8, fontWeight: FontWeight.w900, color: textPrimary),
-      ),
-      colorScheme: dark
-          ? ColorScheme.dark(
-              primary: accentColor,
-              secondary: const Color(0xFF10B981), // Emerald Green accent
-              surface: bgSurface,
-              onSurface: textPrimary,
-            )
-          : ColorScheme.light(
-              primary: accentColor,
-              secondary: const Color(0xFF1E40AF), // Deep Blue
-              surface: bgSurface,
-              onSurface: textPrimary,
-            ),
-      appBarTheme: AppBarTheme(
-        backgroundColor: bgMain.withValues(alpha: 0.8),
-        foregroundColor: textPrimary,
-        elevation: 0,
-        centerTitle: false,
-        titleTextStyle: GoogleFonts.inter(
-          color: textPrimary,
-          fontSize: 16,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.5,
-        ),
-        iconTheme: IconThemeData(color: textPrimary),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: accentColor,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 0,
-          minimumSize: const Size(double.infinity, 56),
-          textStyle: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
-        ),
-      ),
-      cardTheme: CardThemeData(
-        color: bgSurface,
-        elevation: 4,
-        shadowColor: Colors.black.withValues(alpha: 0.05),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: dark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-            width: 1,
-          ),
-        ),
-      ),
     );
   }
 }

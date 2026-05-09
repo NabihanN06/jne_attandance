@@ -33,6 +33,28 @@
 
 ## 🏗️ System Architecture
 
+### 🗼 Zen Premium Command Center Architecture
+
+Sistem ini dirancang dengan arsitektur **Closed-Loop Telemetry**, memastikan sinkronisasi presisi antara unit mobile (Karyawan) dan Command Tower (Admin).
+
+#### 🏗️ Technology Stack
+
+- **Command Dashboard:** Next.js + Tailwind CSS (Zen Premium UI)
+- **Mobile Unit:** Flutter (Biometric & Geofencing)
+- **Central Intelligence:** Firebase Firestore (NoSQL Real-time)
+- **Authentication:** Firebase Auth (Secure Protocol)
+- **Storage:** Firebase Storage (Biometric Evidence)
+
+#### 📡 Operational Flow (GACOR Sync)
+
+1. **Heartbeat Sync:** Mobile app mengirimkan sinyal "Heartbeat" setiap 30 detik ke `user_heartbeats`. Admin memantau status online secara real-time di Dashboard.
+2. **Biometric Validation:** Absensi menggunakan verifikasi wajah yang tersimpan di Firebase Storage sebagai bukti operasional (Evidence).
+3. **Geofencing Protocol:** Mobile app memvalidasi radius geofence (Haversine) sebelum mengizinkan transmisi data absensi.
+4. **SOS Emergency Signal:** Sinyal darurat dikirimkan secara simultan ke `sos_alerts` (Live Dashboard) dan `adminNotifications` (History), memastikan respon cepat dari Tower Command.
+5. **Offline Resiliency:** Jika sinyal hilang, data absensi disimpan secara lokal dan akan disinkronisasi secara otomatis saat koneksi kembali stabil (Auto-Sync Queue).
+
+---
+
 The following diagram illustrates the data flow between the mobile application, administrative portal, and the relational database backend via GraphQL.
 
 ```mermaid
@@ -91,8 +113,8 @@ To ensure accurate attendance, the mobile application implements the **Haversine
 > [!NOTE]
 > The calculation is performed on the client-side to provide instant feedback to the user before submitting to the backend.
 
-* **Calculation**: `d = 2R × arcsin(√[sin²(Δφ/2) + cos(φ1)cos(φ2)sin²(Δλ/2)])`
-* **Validation**: Attendance is only permitted if `d <= radius_limit` (typically 500m).
+- **Calculation**: `d = 2R × arcsin(√[sin²(Δφ/2) + cos(φ1)cos(φ2)sin²(Δλ/2)])`
+- **Validation**: Attendance is only permitted if `d <= radius_limit` (typically 500m).
 
 ---
 
@@ -100,10 +122,10 @@ To ensure accurate attendance, the mobile application implements the **Haversine
 
 To maintain a "State of the Art" look, all UI components must follow these design tokens:
 
-* **Dark Mode Background**: `#121826` (Deep Navy) - Avoids pure black.
-* **Light Mode Background**: `#F8FAFC` (Off-White) - Soft on the eyes.
-* **Primary Accent**: `#4F46E5` (Indigo) / `#22D3EE` (Cyan).
-* **Call to Action**: `#FF6B00` (JNE Orange) - Strictly for priority buttons.
+- **Dark Mode Background**: `#121826` (Deep Navy) - Avoids pure black.
+- **Light Mode Background**: `#F8FAFC` (Off-White) - Soft on the eyes.
+- **Primary Accent**: `#4F46E5` (Indigo) / `#22D3EE` (Cyan).
+- **Call to Action**: `#FF6B00` (JNE Orange) - Strictly for priority buttons.
 
 ---
 
@@ -111,9 +133,9 @@ To maintain a "State of the Art" look, all UI components must follow these desig
 
 ### Prerequisites
 
-* **Flutter SDK**: Stable version.
-* **Node.js**: 18+ version.
-* **Firebase CLI**: Installed and logged in (`firebase login`).
+- **Flutter SDK**: Stable version.
+- **Node.js**: 18+ version.
+- **Firebase CLI**: Installed and logged in (`firebase login`).
 
 ### Quick Start
 
@@ -158,30 +180,30 @@ firebase deploy --only dataconnect
 
 ### 2. Admin Dashboard (Next.js)
 
-* **Platform**: [Vercel](https://vercel.com)
-* **Configuration**:
+- **Platform**: [Vercel](https://vercel.com)
+- **Configuration**:
     1. Connect GitHub repository.
     2. Add all `.env` variables in Vercel settings.
     3. Ensure `Authorized Domains` in Firebase Auth includes your Vercel URL.
 
 ### 3. Mobile App (Flutter)
 
-* **Build Production APK**:
+- **Build Production APK**:
 
   ```bash
   cd user_mobile
   flutter build apk --release
   ```
 
-* **Distribution**: Upload the generated APK in `build/app/outputs/flutter-apk/app-release.apk` to **Firebase App Distribution** or the **Google Play Console**.
+- **Distribution**: Upload the generated APK in `build/app/outputs/flutter-apk/app-release.apk` to **Firebase App Distribution** or the **Google Play Console**.
 
 ---
 
 ## 🗺️ 2026 Future Roadmap
 
-* 🤖 **AI Analytics**: Predictive analysis for late-coming patterns and workforce trends.
-* 📶 **NFC Integration**: Physical tap-in support as a secure backup for GPS/Face.
-* 📄 **Auto-Payroll**: Automated PDF generation for monthly performance and attendance reports.
+- 🤖 **AI Analytics**: Predictive analysis for late-coming patterns and workforce trends.
+- 📶 **NFC Integration**: Physical tap-in support as a secure backup for GPS/Face.
+- 📄 **Auto-Payroll**: Automated PDF generation for monthly performance and attendance reports.
 
 ---
 
@@ -192,8 +214,8 @@ firebase deploy --only dataconnect
 
 ### ❌ Undefined Class Errors
 
-* **Fix**: Ensure `import '../models/app_models.dart';` is present at the top of the file.
-* **Fix**: Run `flutter clean && flutter pub get` to reset the dependency cache.
+- **Fix**: Ensure `import '../models/app_models.dart';` is present at the top of the file.
+- **Fix**: Run `flutter clean && flutter pub get` to reset the dependency cache.
 
 ---
 

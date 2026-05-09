@@ -6,10 +6,13 @@ import '../auth/login_page.dart';
 import '../enroll/enroll_page.dart';
 
 class ProfilePage extends StatelessWidget {
-  static const Color jneCyan = Color(0xFF0891B2);
-  static const Color slate950 = Color(0xFF0F172A);
-  static const Color jneDanger = Color(0xFFF43F5E);
-  static const Color bgLight = Color(0xFFF8FAFC);
+  // ── ZEN PREMIUM PALETTE ──
+  static const Color zenNavy = Color(0xFF121826);
+  static const Color zenIndigo = Color(0xFF4F46E5);
+  static const Color zenCyan = Color(0xFF22D3EE);
+  static const Color zenRose = Color(0xFFF43F5E);
+  static const Color zenSlate = Color(0xFF94A3B8);
+  static const Color zenOffWhite = Color(0xFFF8FAFC);
 
   const ProfilePage({super.key});
 
@@ -20,153 +23,261 @@ class ProfilePage extends StatelessWidget {
     if (user == null) return const SizedBox();
 
     return Scaffold(
-      backgroundColor: bgLight,
-      appBar: AppBar(
-        backgroundColor: slate950,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'PROFIL SAYA',
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1),
-        ),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
+      backgroundColor: zenOffWhite,
+      body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            // ── Top Header Section ──
-            Stack(
+        slivers: [
+          // ── PREMIUM NAVIGATION BAR ──
+          SliverAppBar(
+            expandedHeight: 120,
+            floating: false,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: Colors.white.withValues(alpha: 0.8),
+            flexibleSpace: FlexibleSpaceBar(
+              centerTitle: true,
+              title: Text(
+                'PERSONNEL REGISTRY',
+                style: GoogleFonts.outfit(
+                  color: zenNavy,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2.5,
+                ),
+              ),
+            ),
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: zenNavy.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.chevron_left_rounded, color: zenNavy, size: 28),
+                ),
+              ),
+            ),
+          ),
+
+          SliverToBoxAdapter(
+            child: Column(
               children: [
-                Container(height: 80, color: slate950),
+                // ── CORE IDENTITY HUB ──
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
                   child: Container(
-                    margin: const EdgeInsets.only(top: 20),
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 5))],
+                      borderRadius: BorderRadius.circular(40),
+                      border: Border.all(color: zenNavy.withValues(alpha: 0.04)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: zenNavy.withValues(alpha: 0.03),
+                          blurRadius: 40,
+                          offset: const Offset(0, 20),
+                        )
+                      ],
                     ),
-                    child: Row(
+                    child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: 36,
-                          backgroundColor: jneCyan.withValues(alpha: 0.1),
-                          child: const Icon(Icons.person_rounded, color: jneCyan, size: 40),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: zenIndigo.withValues(alpha: 0.1), width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 54,
+                            backgroundColor: zenNavy.withValues(alpha: 0.03),
+                            child: const Icon(Icons.person_rounded, color: zenNavy, size: 56),
+                          ),
                         ),
-                        const SizedBox(width: 20),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(user.name, style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 18, fontWeight: FontWeight.w800)),
-                              const SizedBox(height: 4),
-                              Text('${user.position} · ${user.department}', style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600)),
-                            ],
+                        const SizedBox(height: 28),
+                        Text(
+                          user.name.toUpperCase(),
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.outfit(
+                            color: zenNavy,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.8,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: zenIndigo.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(100),
+                            border: Border.all(color: zenIndigo.withValues(alpha: 0.1)),
+                          ),
+                          child: Text(
+                            '${user.position} • ${user.department}'.toUpperCase(),
+                            style: GoogleFonts.outfit(
+                              color: zenIndigo,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ],
-            ),
 
-            const SizedBox(height: 24),
+                // ── OPERATIONAL TELEMETRY ──
+                _buildSectionHeader('Operational Telemetry'),
+                _buildCardWrapper([
+                  _buildInfoItem(Icons.alternate_email_rounded, 'Registry Email', user.email),
+                  _buildDivider(),
+                  _buildInfoItem(Icons.phone_iphone_rounded, 'Signal Frequency', user.phone.isEmpty ? '+62 000-000-0000' : user.phone),
+                  _buildDivider(),
+                  _buildInfoItem(Icons.fingerprint_rounded, 'Registry Serial', user.employeeId),
+                ]),
 
-            // ── Info Sections ──
-            _buildInfoSection('Data Pribadi', [
-              _buildInfoItem(Icons.email_rounded, 'Alamat Email', user.email),
-              _buildInfoItem(Icons.phone_rounded, 'Nomor Telepon', user.phone.isEmpty ? '+62 000-0000-0000' : user.phone),
-              _buildInfoItem(Icons.badge_rounded, 'ID Karyawan', user.employeeId),
-            ]),
+                const SizedBox(height: 32),
 
-            const SizedBox(height: 20),
+                // ── ACCESS PROTOCOLS ──
+                _buildSectionHeader('Access Protocols'),
+                _buildCardWrapper([
+                  _buildActionItem(context, Icons.badge_outlined, 'Identity Badge', 'Official HUB-MTP Registry', () => Navigator.pushNamed(context, '/id_card')),
+                  _buildDivider(),
+                  _buildActionItem(context, Icons.face_retouching_natural_rounded, 'Biometric Recalibration', 'Sync Facial Signatures', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EnrollPage()))),
+                ]),
 
-            _buildInfoSection('Akses Karyawan', [
-              _buildActionItem(context, Icons.badge_rounded, 'Digital ID Card', 'Lihat kartu identitas resmi Anda', () => Navigator.pushNamed(context, '/id_card')),
-              _buildActionItem(context, Icons.face_unlock_rounded, 'Registrasi Ulang Wajah', 'Perbarui data biometrik Anda', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EnrollPage()))),
-            ]),
+                const SizedBox(height: 32),
 
-            const SizedBox(height: 20),
+                // ── SECURITY ARCHITECTURE ──
+                _buildSectionHeader('Security Architecture'),
+                _buildCardWrapper([
+                  _buildActionItem(context, Icons.shield_outlined, 'Access Override', 'Rotate Hub Credentials', () => _showChangePasswordDialog(context, provider)),
+                ]),
 
-            _buildInfoSection('Keamanan & Lainnya', [
-              _buildActionItem(context, Icons.lock_outline_rounded, 'Ganti Kata Sandi', 'Ubah kredensial akses Anda', () => _showChangePasswordDialog(context, provider)),
-            ]),
+                const SizedBox(height: 48),
 
-            const SizedBox(height: 32),
-
-            // ── Logout Button ──
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: GestureDetector(
-                onTap: () => _confirmLogout(context, provider),
-                child: Container(
-                  height: 60,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: jneDanger.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: jneDanger.withValues(alpha: 0.2)),
-                  ),
-                  child: Center(
-                    child: Text('Keluar dari Akun', style: GoogleFonts.outfit(color: jneDanger, fontSize: 15, fontWeight: FontWeight.w800)),
+                // ── TERMINATION SECTOR ──
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: GestureDetector(
+                    onTap: () => _confirmLogout(context, provider),
+                    child: Container(
+                      height: 72,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: zenRose.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: zenRose.withValues(alpha: 0.12)),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'TERMINATE ACTIVE SESSION',
+                          style: GoogleFonts.outfit(
+                            color: zenRose,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 3,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                
+                const SizedBox(height: 80),
+              ],
             ),
-            
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoSection(String title, List<Widget> items) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title.toUpperCase(), style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1)),
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
-            ),
-            child: Column(children: items),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 0, 32, 16),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title.toUpperCase(),
+          style: GoogleFonts.outfit(
+            color: zenSlate,
+            fontSize: 9,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 4,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardWrapper(List<Widget> children) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: zenNavy.withValues(alpha: 0.03)),
+          boxShadow: [
+            BoxShadow(
+              color: zenNavy.withValues(alpha: 0.02),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            )
+          ],
+        ),
+        child: Column(children: children),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(height: 1, thickness: 1, color: zenNavy.withValues(alpha: 0.02));
+  }
+
   Widget _buildInfoItem(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: jneCyan.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
-            child: Icon(icon, color: jneCyan, size: 20),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: zenNavy.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: zenSlate, size: 20),
           ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 2),
-              Text(value, style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w800)),
-            ],
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  style: GoogleFonts.outfit(
+                    color: zenSlate,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: GoogleFonts.outfit(
+                    color: zenNavy,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -176,26 +287,47 @@ class ProfilePage extends StatelessWidget {
   Widget _buildActionItem(BuildContext context, IconData icon, String title, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(32),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: jneCyan.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: jneCyan, size: 20),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: zenIndigo.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: zenIndigo, size: 20),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 20),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w800)),
-                  Text(subtitle, style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w500)),
+                  Text(
+                    title,
+                    style: GoogleFonts.outfit(
+                      color: zenNavy,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: zenSlate,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFFCBD5E1)),
+            Icon(Icons.arrow_forward_ios_rounded, color: zenSlate.withValues(alpha: 0.3), size: 14),
           ],
         ),
       ),
@@ -208,25 +340,28 @@ class ProfilePage extends StatelessWidget {
       builder: (_) => AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        title: Text('KELUAR AKUN?', style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontWeight: FontWeight.w900, fontSize: 18)),
-        content: Text('Anda perlu melakukan login kembali untuk dapat melakukan absensi dan mengakses data kerja Anda.', style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 14, height: 1.5)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+        title: Text('TERMINATE SESSION?', style: GoogleFonts.outfit(color: zenNavy, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 0.5)),
+        content: Text('Operational connection to Hub Martapura will be severed. Manual re-sync is mandatory for future telemetry access.', style: GoogleFonts.plusJakartaSans(color: zenSlate, fontSize: 13, height: 1.6)),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('BATAL', style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontWeight: FontWeight.w800, fontSize: 13)),
+            child: Text('ABORT', style: GoogleFonts.outfit(color: zenSlate, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 2)),
           ),
+          const SizedBox(width: 8),
           ElevatedButton(
             onPressed: () {
               provider.logout();
               Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginPage()), (r) => false);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: jneCyan,
+              backgroundColor: zenRose,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            child: Text('YA, KELUAR', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+            child: Text('TERMINATE', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 2)),
           ),
         ],
       ),
@@ -239,39 +374,45 @@ class ProfilePage extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        title: Text('GANTI KATA SANDI', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18)),
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+        title: Text('ACCESS OVERRIDE', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18, color: zenNavy)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Gunakan kata sandi yang kuat untuk melindungi akun JNE Anda.',
-              style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 13),
+              'Specify a high-entropy passphrase to secure your active personnel registry node.',
+              style: GoogleFonts.plusJakartaSans(color: zenSlate, fontSize: 13, height: 1.6),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 28),
             TextField(
               controller: controller,
               obscureText: true,
-              style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
+              style: GoogleFonts.outfit(fontWeight: FontWeight.w800, color: zenNavy),
               decoration: InputDecoration(
-                hintText: 'Kata Sandi Baru',
-                prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                hintText: 'New Access Token',
+                hintStyle: GoogleFonts.outfit(color: zenSlate.withValues(alpha: 0.4), fontSize: 13, fontWeight: FontWeight.w600),
+                prefixIcon: const Icon(Icons.shield_rounded, size: 18, color: zenSlate),
                 filled: true,
-                fillColor: const Color(0xFFF1F5F9),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                fillColor: zenNavy.withValues(alpha: 0.03),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.all(22),
               ),
             ),
           ],
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('BATAL', style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontWeight: FontWeight.w800)),
+            child: Text('CANCEL', style: GoogleFonts.outfit(color: zenSlate, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1)),
           ),
+          const SizedBox(width: 8),
           ElevatedButton(
             onPressed: () async {
               if (controller.text.length < 6) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Minimal 6 karakter!')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Access Token must be ≥ 6 chars.')));
                 return;
               }
               try {
@@ -280,10 +421,11 @@ class ProfilePage extends StatelessWidget {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text('Kata sandi berhasil diperbarui!'),
-                    backgroundColor: Colors.green,
+                    content: const Text('Access Token Synced Successfully.'),
+                    backgroundColor: zenIndigo,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    margin: const EdgeInsets.all(24),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   )
                 );
               } catch (e) {
@@ -292,10 +434,12 @@ class ProfilePage extends StatelessWidget {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: jneCyan,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              backgroundColor: zenNavy,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            child: Text('SIMPAN', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w800)),
+            child: Text('SYNC TOKEN', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1)),
           ),
         ],
       ),

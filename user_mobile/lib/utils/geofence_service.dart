@@ -12,10 +12,11 @@ class GeofenceService extends ChangeNotifier {
   bool _isInRange = false;
   String _errorMessage = '';
 
-  Position? get currentPosition => _currentPosition;
-  double get distanceFromOffice => _distanceFromOffice;
-  bool get isInRange => _isInRange;
-  String get errorMessage => _errorMessage;
+   Position? get currentPosition => _currentPosition;
+   double get distanceFromOffice => _distanceFromOffice;
+   bool get isInRange => _isInRange;
+   String get errorMessage => _errorMessage;
+   bool get isLocationMocked => _currentPosition?.isMocked ?? false;
 
   double get officeLat => _officeLat;
   double get officeLng => _officeLng;
