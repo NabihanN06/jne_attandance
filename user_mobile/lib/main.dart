@@ -40,9 +40,26 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint("Handling background message: ${message.messageId}");
 }
 
+/// Navigator key global agar bisa navigate dari luar widget tree
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+/// Navigasi ke route berdasarkan data notifikasi
+void _handleNotificationNavigation(Map<String, dynamic>? data) {
+  if (data == null) return;
+  final type = data['type'] as String? ?? '';
+  final route = switch (type) {
+    'leave_request'   => '/leave',
+    'attendance_alert'=> '/attendance',
+    'meeting_reminder'=> '/calendar',
+    'face_enrolled' || 'face_failed' => '/notification',
+    _                 => '/notification',
+  };
+  navigatorKey.currentState?.pushNamed(route);
+}
+
 Future<void> _setupFCM() async {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
-  
+
   await messaging.requestPermission(
     alert: true,
     badge: true,
@@ -62,7 +79,7 @@ Future<void> _setupFCM() async {
   // Initialize local notifications
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
-  
+
   const DarwinInitializationSettings initializationSettingsDarwin =
       DarwinInitializationSettings();
 
@@ -71,12 +88,32 @@ Future<void> _setupFCM() async {
     iOS: initializationSettingsDarwin,
   );
 
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  // Handle tap pada local notification (saat app foreground/background)
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse: (NotificationResponse response) {
+      _handleNotificationNavigation({'type': response.payload});
+    },
+  );
+
+  // App dibuka dari notifikasi saat app TERMINATED
+  final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+  if (initialMessage != null) {
+    // Delay sedikit biar navigator sudah siap
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _handleNotificationNavigation(initialMessage.data);
+    });
+  }
+
+  // App dibuka dari notifikasi saat app BACKGROUND (tidak terminated)
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    _handleNotificationNavigation(message.data);
+  });
 
   // Foreground message handler
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     debugPrint('Got foreground message: ${message.notification?.title}');
-    
+
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = message.notification?.android;
 
@@ -96,6 +133,8 @@ Future<void> _setupFCM() async {
           ),
           iOS: const DarwinNotificationDetails(),
         ),
+        // Kirim type sebagai payload agar bisa dipakai saat tap
+        payload: message.data['type'],
       );
     }
   });
@@ -145,26 +184,100 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  ThemeData _lightTheme() => ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.light,
+    fontFamily: GoogleFonts.outfit().fontFamily,
+    colorScheme: const ColorScheme.light(
+      primary: Color(0xFF005596),
+      secondary: Color(0xFFE31E24),
+      surface: Color(0xFFF8FAFC),
+      onSurface: Color(0xFF1E293B),
+      onPrimary: Colors.white,
+    ),
+    scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+    appBarTheme: AppBarTheme(
+      backgroundColor: const Color(0xFF005596),
+      foregroundColor: Colors.white,
+      elevation: 0,
+      titleTextStyle: GoogleFonts.outfit(
+        color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1,
+      ),
+      iconTheme: const IconThemeData(color: Colors.white),
+    ),
+    cardTheme: CardThemeData(
+      color: Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? const Color(0xFF005596) : null),
+      trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? const Color(0xFF005596).withValues(alpha: 0.3) : null),
+    ),
+    dividerTheme: const DividerThemeData(color: Color(0xFFF1F5F9), thickness: 1),
+    textTheme: GoogleFonts.outfitTextTheme().copyWith(
+      bodyLarge: const TextStyle(color: Color(0xFF1E293B), letterSpacing: 0.1),
+      bodyMedium: const TextStyle(color: Color(0xFF1E293B), letterSpacing: 0.1),
+      bodySmall: const TextStyle(color: Color(0xFF64748B), letterSpacing: 0.2),
+    ),
+  );
+
+  ThemeData _darkTheme() => ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.dark,
+    fontFamily: GoogleFonts.outfit().fontFamily,
+    colorScheme: const ColorScheme.dark(
+      primary: Color(0xFF3B9EE8),
+      secondary: Color(0xFFEF4444),
+      surface: Color(0xFF0B1120),
+      onSurface: Color(0xFFF1F5F9),
+      onPrimary: Colors.white,
+      outline: Color(0xFF1E3050),
+    ),
+    scaffoldBackgroundColor: const Color(0xFF0B1120),
+    appBarTheme: AppBarTheme(
+      backgroundColor: const Color(0xFF0B1120),
+      foregroundColor: const Color(0xFFF1F5F9),
+      elevation: 0,
+      titleTextStyle: GoogleFonts.outfit(
+        color: const Color(0xFFF1F5F9), fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1,
+      ),
+      iconTheme: const IconThemeData(color: Color(0xFFF1F5F9)),
+    ),
+    cardTheme: CardThemeData(
+      color: const Color(0xFF131D2E),
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? const Color(0xFF3B9EE8) : null),
+      trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? const Color(0xFF3B9EE8).withValues(alpha: 0.3) : null),
+    ),
+    dividerTheme: const DividerThemeData(color: Color(0xFF1E3050), thickness: 1),
+    textTheme: GoogleFonts.outfitTextTheme(ThemeData(brightness: Brightness.dark).textTheme).copyWith(
+      bodyLarge: const TextStyle(color: Color(0xFFF1F5F9), letterSpacing: 0.1),
+      bodyMedium: const TextStyle(color: Color(0xFFF1F5F9), letterSpacing: 0.1),
+      bodySmall: const TextStyle(color: Color(0xFF94A3B8), letterSpacing: 0.2),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return Consumer<AppProvider>(
+      builder: (context, appProvider, _) {
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: appProvider.isDarkMode ? Brightness.light : Brightness.dark,
+          systemNavigationBarColor: appProvider.isDarkMode ? const Color(0xFF0B1120) : Colors.white,
+          systemNavigationBarIconBrightness: appProvider.isDarkMode ? Brightness.light : Brightness.dark,
+        ));
+        return MaterialApp(
       title: 'JNE Attendance',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0891B2)),
-        brightness: Brightness.light,
-        fontFamily: GoogleFonts.outfit().fontFamily,
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0891B2),
-          brightness: Brightness.dark,
-        ),
-        fontFamily: GoogleFonts.outfit().fontFamily,
-      ),
-      themeMode: ThemeMode.system,
+      navigatorKey: navigatorKey,
+      theme: _lightTheme(),
+      darkTheme: _darkTheme(),
+      themeMode: appProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       initialRoute: '/',
       routes: {
         '/': (ctx) => const SplashScreen(),
@@ -188,6 +301,8 @@ class MyApp extends StatelessWidget {
         '/overtime': (ctx) => const OvertimePage(),
         '/chat': (ctx) => const ChatPage(),
         '/calendar': (ctx) => const CalendarPage(),
+      },
+        );
       },
     );
   }

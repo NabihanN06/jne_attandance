@@ -9,5 +9,6 @@
             "default": true
         }
     ],
-    "java.jdt.ls.java.home": "C:\\Users\\USER\\AppData\\Roaming\\Antigravity\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\java\\latest"
+    "java.jdt.ls.java.home": "C:\\Users\\USER\\AppData\\Roaming\\Antigravity\\User\\globalStorage\\pleiades.java-extension-pack-jdk\\java\\latest",
+    "claudeCode.useTerminal": false
 }

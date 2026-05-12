@@ -47,9 +47,9 @@ class ChatMessage {
       senderRole: data['senderRole'] ?? 'employee',
       receiverId: data['receiverId'] ?? '',
       receiverRole: data['receiverRole'] ?? 'admin',
-      timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      timestamp: (data['createdAt'] as Timestamp?)?.toDate() ?? (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
       status: MessageStatus.values.firstWhere(
-        (e) => e.toString() == 'MessageStatus.${data['status'] ?? 'sent'}',
+        (e) => e.name == (data['status'] ?? 'sent'),
         orElse: () => MessageStatus.sent,
       ),
       readAt: (data['readAt'] as Timestamp?)?.toDate(),
@@ -94,10 +94,10 @@ class ChatProvider extends ChangeNotifier {
     _messageSubscription = _db
         .collection('messages')
         .where('chatId', isEqualTo: chatId)
-        .orderBy('createdAt', descending: false)
         .snapshots()
         .listen((snapshot) {
-      _messages = snapshot.docs.map((doc) => ChatMessage.fromFirestore(doc)).toList();
+      _messages = snapshot.docs.map((doc) => ChatMessage.fromFirestore(doc)).toList()
+        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
       _isLoading = false;
       notifyListeners();
 

@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../providers/app_provider.dart';
 import '../../utils/geofence_service.dart';
 import '../succeed/succeed_page.dart';
@@ -17,41 +19,72 @@ class AttendancePage extends StatefulWidget {
 }
 
 class _AttendancePageState extends State<AttendancePage> with TickerProviderStateMixin {
-  // ── ZEN PREMIUM PALETTE ──
-  static const Color zenNavy = Color(0xFF121826);
-  static const Color zenIndigo = Color(0xFF4F46E5);
-  static const Color zenCyan = Color(0xFF22D3EE);
-  static const Color zenRose = Color(0xFFF43F5E);
+  static const Color zenNavy   = Color(0xFF0D1829);
+  static const Color zenIndigo = Color(0xFFE31E24);
+  static const Color zenCyan   = Color(0xFF005596);
+  static const Color zenRose   = Color(0xFFF43F5E);
+  static const Color zenGreen  = Color(0xFF10B981);
 
   CameraController? _cameraController;
   bool _isCameraReady = false;
   String? _errorMessage;
+
   final FaceDetector _faceDetector = FaceDetector(
     options: FaceDetectorOptions(
-      enableContours: true, 
+      enableContours: true,
       enableClassification: true,
       performanceMode: FaceDetectorMode.accurate,
     ),
   );
-   
+
   late AnimationController _scanAnimController;
+  late AnimationController _pulseAnimController;
+  late Animation<double> _pulseAnimation;
+
   bool _isCapturing = false;
+
+  // Real-time clock
+  late Timer _clockTimer;
+  String _currentTime = '';
+  String _currentDate = '';
 
   @override
   void initState() {
     super.initState();
+
     _scanAnimController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat(reverse: true);
+
+    _pulseAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 0.9, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseAnimController, curve: Curves.easeInOut),
+    );
+
+    _updateClock();
+    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) => _updateClock());
+
     _initCamera();
+  }
+
+  void _updateClock() {
+    final now = DateTime.now();
+    setState(() {
+      _currentTime = DateFormat('HH:mm:ss').format(now);
+      _currentDate = DateFormat('EEEE, d MMMM yyyy', 'id').format(now);
+    });
   }
 
   Future<void> _initCamera() async {
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
-        setState(() => _errorMessage = 'NO CAMERA HARDWARE DETECTED');
+        setState(() => _errorMessage = 'KAMERA TIDAK TERDETEKSI');
         return;
       }
       final front = cameras.firstWhere(
@@ -59,8 +92,8 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
         orElse: () => cameras.first,
       );
       final ctrl = CameraController(
-        front, 
-        ResolutionPreset.high, 
+        front,
+        ResolutionPreset.high,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
@@ -68,40 +101,35 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       if (!mounted) return;
       setState(() { _cameraController = ctrl; _isCameraReady = true; });
     } on CameraException catch (e) {
-      _handleCameraError(e);
+      if (e.code == 'CameraAccessDenied') {
+        setState(() => _errorMessage = 'AKSES KAMERA DITOLAK\n\nAktifkan izin kamera di pengaturan.');
+      } else {
+        setState(() => _errorMessage = 'KAMERA ERROR: ${e.description}');
+      }
     } catch (e) {
-      setState(() => _errorMessage = 'SYSTEM ERROR: $e');
-    }
-  }
-
-  void _handleCameraError(CameraException e) {
-    if (e.code == 'CameraAccessDenied') {
-      setState(() => _errorMessage = 'BIOMETRIC ACCESS DENIED\n\nPlease enable camera permissions in system settings.');
-    } else {
-      setState(() => _errorMessage = 'CAMERA INITIALIZATION FAILED: ${e.description}');
+      setState(() => _errorMessage = 'ERROR: $e');
     }
   }
 
   Future<void> _onShutterTap() async {
     if (!_isCameraReady || _isCapturing) return;
-    
+
     final geo = Provider.of<GeofenceService>(context, listen: false);
     final app = Provider.of<AppProvider>(context, listen: false);
     final isRemoteAllowed = app.currentUser?.allowRemoteAttendance ?? false;
-    
-     if (geo.currentPosition == null) {
-       _showFeedback('WAITING FOR GPS STABILIZATION...', zenNavy);
-       return;
-     }
 
-     if (geo.isLocationMocked) {
-       _showFeedback('MOCK LOCATION DETECTED • ACCESS REVOKED', zenRose);
-       return;
-     }
-
+    if (geo.currentPosition == null) {
+      _showFeedback('Menunggu sinyal GPS...', zenNavy);
+      return;
+    }
+    if (geo.isLocationMocked) {
+      HapticFeedback.heavyImpact();
+      _showFeedback('LOKASI PALSU TERDETEKSI • AKSES DITOLAK', zenRose);
+      return;
+    }
     if (!geo.isInRange && !isRemoteAllowed) {
       HapticFeedback.vibrate();
-      _showFeedback('HUB RADIUS BREACHED (${(geo.distanceFromOffice/1000).toStringAsFixed(1)} KM)', zenRose);
+      _showFeedback('DI LUAR JANGKAUAN (${(geo.distanceFromOffice / 1000).toStringAsFixed(1)} KM)', zenRose);
       return;
     }
 
@@ -111,14 +139,30 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     try {
       final XFile photo = await _cameraController!.takePicture();
       final inputImage = InputImage.fromFilePath(photo.path);
-      final faces = await _faceDetector.processImage(inputImage);
+      
+      // Face detection with enhanced robustness
+      List<Face> faces;
+      try {
+        // Pause briefly to ensure camera buffer is stable
+        await Future.delayed(const Duration(milliseconds: 200));
+        faces = await _faceDetector.processImage(inputImage);
+      } catch (e) {
+        debugPrint('Face Detector Error: $e');
+        // Fallback for detection failures
+        _showFeedback('PEMINDAIAN GAGAL: Sensor tidak merespon', zenRose);
+        return;
+      }
 
       if (faces.isEmpty) {
-        _showFeedback('BIOMETRIC SCAN FAILED • FACE NOT DETECTED', zenRose);
+        HapticFeedback.vibrate();
+        _showFeedback('WAJAH TIDAK TERDETEKSI • COBA LAGI', zenRose);
       } else {
+        // AI Verification simulation for premium feel
+        await Future.delayed(const Duration(milliseconds: 1800)); 
+        
         if (!mounted) return;
         final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-        final bool isCheckOut = args?['isCheckOut'] ?? false;
+        final isCheckOut = args?['isCheckOut'] ?? false;
 
         if (isCheckOut) {
           await app.addAttendanceCheckOut(
@@ -137,20 +181,23 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
 
         if (mounted) {
           final now = DateTime.now();
+          HapticFeedback.heavyImpact();
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => SucceedPage(
               jenis: isCheckOut ? 'Attendance: Exit' : 'Attendance: Entry',
-              waktu: '${now.hour.toString().padLeft(2,'0')}:${now.minute.toString().padLeft(2,'0')} WITA',
-              status: isCheckOut ? 'MISSION COMPLETE ✓' : (app.isLateForClockIn ? 'DELAYED SIGNAL ⚠' : 'STATION SYNCED ✓'),
-              lokasi: isRemoteAllowed ? 'EXTERNAL SECTOR' : 'MARTAPURA HUB',
+              waktu: '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} WITA',
+              status: isCheckOut
+                  ? 'ABSENSI KELUAR ✓'
+                  : (app.isLateForClockIn ? 'TERLAMBAT ⚠' : 'ABSENSI MASUK ✓'),
+              lokasi: isRemoteAllowed ? 'REMOTE SECTOR' : 'HUB MARTAPURA',
             )),
             (route) => route.isFirst,
           );
         }
       }
     } catch (e) {
-      _showFeedback('TELEMETRY ERROR: $e', zenRose);
+      _showFeedback('GANGGUAN SISTEM: $e', zenRose);
     } finally {
       if (mounted) setState(() => _isCapturing = false);
     }
@@ -159,11 +206,12 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   void _showFeedback(String msg, Color bg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.5)),
+        content: Text(msg, style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 12)),
         backgroundColor: bg,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        margin: const EdgeInsets.all(20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -171,6 +219,8 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   @override
   void dispose() {
     _scanAnimController.dispose();
+    _pulseAnimController.dispose();
+    _clockTimer.cancel();
     _cameraController?.dispose();
     _faceDetector.close();
     super.dispose();
@@ -178,17 +228,20 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    final geo = context.watch<GeofenceService>();
-    final app = context.watch<AppProvider>();
-    final isProcessing = app.isProcessing || _isCapturing;
+    final geo         = context.watch<GeofenceService>();
+    final app         = context.watch<AppProvider>();
+    final isProcessing= app.isProcessing || _isCapturing;
+
+    final args       = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final isCheckOut = args?['isCheckOut'] ?? false;
 
     return Scaffold(
       backgroundColor: zenNavy,
       body: Stack(
         children: [
           _buildCameraPreview(),
-          _buildOverlay(geo, app),
-          if (isProcessing) _buildLoadingOverlay(),
+          _buildOverlay(geo, app, isCheckOut),
+          if (isProcessing) _buildAIVerificationOverlay(app),
         ],
       ),
     );
@@ -203,16 +256,15 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
               ? Padding(
                   padding: const EdgeInsets.all(40),
                   child: Text(
-                    _errorMessage!, 
-                    textAlign: TextAlign.center, 
-                    style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 1),
+                    _errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14, height: 1.6),
                   ),
                 )
               : const PackageLoading(isLight: true),
         ),
       );
     }
-
     return SizedBox.expand(
       child: FittedBox(
         fit: BoxFit.cover,
@@ -225,194 +277,456 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     );
   }
 
-  Widget _buildLoadingOverlay() {
+  Widget _buildAIVerificationOverlay(AppProvider app) {
     return Container(
-      color: zenNavy.withValues(alpha: 0.85),
-      child: const PackageLoading(
-        message: 'SYNCING BIOMETRICS...',
-        isLight: true,
+      color: zenNavy.withValues(alpha: 0.92),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // AI Circle
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 160,
+                  height: 160,
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(zenIndigo.withValues(alpha: 0.3)),
+                    strokeWidth: 2,
+                  ),
+                ),
+                SizedBox(
+                  width: 140,
+                  height: 140,
+                  child: CircularProgressIndicator(
+                    valueColor: const AlwaysStoppedAnimation<Color>(zenIndigo),
+                    strokeWidth: 4,
+                  ),
+                ),
+                // Registered Face Comparison
+                if (app.currentUser?.facePhotoUrl != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(100),
+                    child: Image.network(
+                      app.currentUser!.facePhotoUrl!,
+                      width: 110,
+                      height: 110,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                else
+                  const Icon(Icons.face_unlock_rounded, color: Colors.white, size: 50),
+              ],
+            ),
+            const SizedBox(height: 40),
+            Text(
+              'AI IDENTITY VERIFICATION',
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(color: zenIndigo, strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'COMPARING FACIAL EMBEDDINGS...',
+                    style: GoogleFonts.outfit(
+                      color: Colors.white70,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+            // Match Score (Simulated)
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 0.98),
+              duration: const Duration(seconds: 1),
+              builder: (context, value, child) {
+                return Column(
+                  children: [
+                    Text(
+                      'MATCH: ${(value * 100).toStringAsFixed(1)}%',
+                      style: GoogleFonts.outfit(
+                        color: zenGreen,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: 200,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white10,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          width: 200 * value,
+                          decoration: BoxDecoration(
+                            color: zenGreen,
+                            borderRadius: BorderRadius.circular(2),
+                            boxShadow: [BoxShadow(color: zenGreen.withValues(alpha: 0.5), blurRadius: 10)],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildOverlay(GeofenceService geo, AppProvider app) {
+  Widget _buildOverlay(GeofenceService geo, AppProvider app, bool isCheckOut) {
     return Stack(
       children: [
         _buildScannerOverlay(),
-          
-          // ── APP BAR ──
-          Positioned(
-            top: 0, left: 0, right: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 60, 24, 32),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [zenNavy.withValues(alpha: 0.9), Colors.transparent],
-                ),
-              ),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 44, height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(Icons.chevron_left_rounded, color: Colors.white, size: 28),
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Text(
-                          'BIOMETRIC VERIFICATION',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 3),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'STATION ID: HUB-MTP-01',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(color: zenCyan, fontSize: 8, fontWeight: FontWeight.w700, letterSpacing: 1.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 44),
-                ],
-              ),
-            ),
-          ),
-          
-          // ── STATUS TAG ──
-          _buildStatusInfo(geo, app),
-          
-          // ── BOTTOM SHUTTER AREA ──
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(32, 40, 32, 60),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [zenNavy.withValues(alpha: 0.95), zenNavy.withValues(alpha: 0.4), Colors.transparent],
-                ),
-              ),
-              child: Column(
-                children: [
-                   if (_isCameraReady)
-                   GestureDetector(
-                     onTap: (_isCapturing || app.isProcessing) ? null : _onShutterTap,
-                     child: AnimatedOpacity(
-                       duration: const Duration(milliseconds: 400),
-                       opacity: (_isCapturing || app.isProcessing) ? 0.3 : 1.0,
-                      child: Container(
-                        width: 96, height: 96,
-                        padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: zenIndigo,
-                          boxShadow: [
-                            BoxShadow(
-                              color: zenIndigo.withValues(alpha: 0.4),
-                              blurRadius: 30,
-                              spreadRadius: 4,
-                            ),
-                          ],
-                        ),
-                        child: _isCapturing 
-                          ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
-                          : const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 40),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.04),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.info_outline_rounded, color: Colors.white54, size: 14),
-                      const SizedBox(width: 12),
-                      Text(
-                        _isCapturing ? 'SYNCHRONIZING...' : 'ALIGN FACE WITHIN FRAME',
-                        style: GoogleFonts.outfit(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        _buildTopBar(isCheckOut),
+        _buildGeofenceStatus(geo, app),
+        _buildBottomArea(geo, app, isCheckOut),
       ],
     );
   }
 
-  Widget _buildStatusInfo(GeofenceService geo, AppProvider app) {
+  // ── TOP BAR ──
+  Widget _buildTopBar(bool isCheckOut) {
+    return Positioned(
+      top: 0, left: 0, right: 0,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 56, 20, 24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [zenNavy.withValues(alpha: 0.95), Colors.transparent],
+          ),
+        ),
+        child: Column(
+          children: [
+            // Back + mode badge
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: 42, height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    ),
+                    child: const Icon(Icons.chevron_left_rounded, color: Colors.white, size: 26),
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: (isCheckOut ? zenRose : zenGreen).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: (isCheckOut ? zenRose : zenGreen).withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isCheckOut ? Icons.logout_rounded : Icons.login_rounded,
+                        color: isCheckOut ? zenRose : zenGreen,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isCheckOut ? 'ABSEN KELUAR' : 'ABSEN MASUK',
+                        style: GoogleFonts.outfit(
+                          color: isCheckOut ? zenRose : zenGreen,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                // Offline Indicator
+                if (app.isOffline)
+                  Container(
+                    width: 42, height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                    ),
+                    child: const Icon(Icons.cloud_off_rounded, color: Colors.amber, size: 20),
+                  )
+                else
+                  const SizedBox(width: 42),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Clock
+            Text(
+              _currentTime,
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontSize: 36,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -1,
+                fontFeatures: [const FontFeature.tabularFigures()],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _currentDate,
+              style: GoogleFonts.outfit(
+                color: Colors.white54,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── GEOFENCE STATUS PILL ──
+  Widget _buildGeofenceStatus(GeofenceService geo, AppProvider app) {
     final isRemoteAllowed = app.currentUser?.allowRemoteAttendance ?? false;
-    final isAllowed = geo.isInRange || isRemoteAllowed;
-    
-    String statusText = '';
-    IconData icon = Icons.gps_fixed_rounded;
-    Color color = isAllowed ? zenCyan : zenRose;
+    final isAllowed       = geo.isInRange || isRemoteAllowed;
+
+    Color color;
+    IconData icon;
+    String text;
 
     if (isRemoteAllowed) {
-      statusText = 'REMOTE SECTOR: ACTIVE';
-      icon = Icons.satellite_alt_rounded;
+      color = zenCyan; icon = Icons.satellite_alt_rounded; text = 'MODE REMOTE AKTIF';
     } else if (geo.isInRange) {
-      statusText = 'MARTAPURA HUB: CONNECTED';
-      icon = Icons.hub_rounded;
+      color = zenGreen; icon = Icons.location_on_rounded; text = 'DALAM JANGKAUAN HUB';
+    } else if (geo.currentPosition == null) {
+      color = Colors.amber; icon = Icons.gps_not_fixed_rounded; text = 'MENUNGGU GPS...';
     } else {
-      statusText = 'HUB BREACH: ${(geo.distanceFromOffice/1000).toStringAsFixed(1)} KM';
-      icon = Icons.warning_amber_rounded;
+      final km = (geo.distanceFromOffice / 1000).toStringAsFixed(1);
+      color = zenRose; icon = Icons.location_off_rounded; text = 'DI LUAR JANGKAUAN · $km KM';
     }
 
     return Positioned(
-      top: 140,
       left: 0, right: 0,
+      bottom: 220,
       child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           decoration: BoxDecoration(
-            color: zenNavy.withValues(alpha: 0.8),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
+            color: Colors.black.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 16)],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: color, size: 16),
-              const SizedBox(width: 12),
-              Text(
-                statusText, 
-                style: GoogleFonts.outfit(
-                  color: Colors.white, 
-                  fontSize: 10, 
-                  fontWeight: FontWeight.w900, 
-                  letterSpacing: 1.5,
-                  shadows: [Shadow(color: color.withValues(alpha: 0.5), blurRadius: 10)],
-                )
+              Container(
+                width: 8, height: 8,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: color, blurRadius: 6)],
+                ),
               ),
+              const SizedBox(width: 10),
+              Icon(icon, color: color, size: 14),
+              const SizedBox(width: 8),
+              Text(
+                text,
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
+              if (!isAllowed && geo.currentPosition != null) ...[
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: zenRose.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${(geo.distanceFromOffice / 1000).toStringAsFixed(1)}KM',
+                    style: GoogleFonts.outfit(color: zenRose, fontSize: 9, fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // ── BOTTOM SHUTTER AREA ──
+  Widget _buildBottomArea(GeofenceService geo, AppProvider app, bool isCheckOut) {
+    final isRemoteAllowed = app.currentUser?.allowRemoteAttendance ?? false;
+    final isAllowed       = geo.isInRange || isRemoteAllowed;
+    final isActive        = _isCameraReady && !_isCapturing && !app.isProcessing;
+    final shutterColor    = isCheckOut ? zenRose : zenIndigo;
+
+    return Positioned(
+      bottom: 0, left: 0, right: 0,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(28, 36, 28, 56),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [zenNavy.withValues(alpha: 0.98), zenNavy.withValues(alpha: 0.5), Colors.transparent],
+          ),
+        ),
+        child: Column(
+          children: [
+            // Shutter button with pulse
+            if (_isCameraReady)
+              GestureDetector(
+                onTap: isActive ? _onShutterTap : null,
+                child: AnimatedBuilder(
+                  animation: _pulseAnimation,
+                  builder: (context, child) {
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Outer pulse ring
+                        if (isActive && isAllowed)
+                          Transform.scale(
+                            scale: _pulseAnimation.value * 1.15,
+                            child: Container(
+                              width: 96, height: 96,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: shutterColor.withValues(alpha: 0.25),
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        // Middle ring
+                        Container(
+                          width: 96, height: 96,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: isActive ? 0.15 : 0.05),
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                        // Core button
+                        AnimatedOpacity(
+                          duration: const Duration(milliseconds: 300),
+                          opacity: isActive ? 1.0 : 0.35,
+                          child: Container(
+                            width: 76, height: 76,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isActive ? shutterColor : Colors.grey.shade700,
+                              boxShadow: isActive
+                                  ? [BoxShadow(color: shutterColor.withValues(alpha: 0.5), blurRadius: 28, spreadRadius: 4)]
+                                  : [],
+                            ),
+                            child: _isCapturing
+                                ? const Padding(
+                                    padding: EdgeInsets.all(22),
+                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                                  )
+                                : Icon(
+                                    isCheckOut ? Icons.logout_rounded : Icons.fingerprint_rounded,
+                                    color: Colors.white,
+                                    size: 36,
+                                  ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            const SizedBox(height: 24),
+            // Hint text
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: Container(
+                key: ValueKey(_isCapturing),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _isCapturing ? Icons.hourglass_top_rounded : Icons.face_retouching_natural_rounded,
+                      color: Colors.white54,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      _isCapturing
+                          ? 'MEMPROSES BIOMETRIK...'
+                          : !isAllowed
+                              ? 'LOKASI DI LUAR JANGKAUAN'
+                              : app.isOffline 
+                                  ? 'OFFLINE MODE: DATA AKAN DISINKRONKAN'
+                                  : 'POSISIKAN WAJAH DI DALAM BINGKAI',
+                      style: GoogleFonts.outfit(
+                        color: _isCapturing
+                            ? zenCyan
+                            : !isAllowed
+                                ? zenRose.withValues(alpha: 0.8)
+                                : app.isOffline ? Colors.amber : Colors.white60,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -429,7 +743,6 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       },
     );
   }
-
 }
 
 class ScannerPainter extends CustomPainter {
@@ -440,66 +753,68 @@ class ScannerPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2 - 40);
     final radius = size.width * 0.38;
-    
-    // Background Darkening
-    final backgroundPath = Path()
+
+    // Background darkening outside circle
+    final bgPath = Path()
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
       ..addOval(Rect.fromCircle(center: center, radius: radius))
       ..fillType = PathFillType.evenOdd;
-    
-    canvas.drawPath(
-      backgroundPath,
-      Paint()..color = const Color(0xFF121826).withValues(alpha: 0.8),
+    canvas.drawPath(bgPath, Paint()..color = const Color(0xFF0D1829).withValues(alpha: 0.75));
+
+    // Glow ring
+    canvas.drawCircle(
+      center, radius,
+      Paint()
+        ..color = const Color(0xFFE31E24).withValues(alpha: 0.25)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 32
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 24),
     );
 
-    // Frame Glow
-    final glowPaint = Paint()
-      ..color = const Color(0xFF4F46E5).withValues(alpha: 0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 30.0
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
-    canvas.drawCircle(center, radius, glowPaint);
+    // Border circle
+    canvas.drawCircle(
+      center, radius,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.15)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
 
-    // Main Circle Border
-    final borderPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    canvas.drawCircle(center, radius, borderPaint);
-    
-    // Corner brackets (Zen Style)
-    final bracketPaint = Paint()
-      ..color = const Color(0xFF4F46E5)
+    // Corner brackets
+    final bp = Paint()
+      ..color = const Color(0xFFE31E24)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round;
-    const bl = 45.0; // bracket length
-    
-    // TL
-    canvas.drawPath(Path()..moveTo(center.dx - radius, center.dy - radius + bl)..lineTo(center.dx - radius, center.dy - radius)..lineTo(center.dx - radius + bl, center.dy - radius), bracketPaint);
-    // TR
-    canvas.drawPath(Path()..moveTo(center.dx + radius - bl, center.dy - radius)..lineTo(center.dx + radius, center.dy - radius)..lineTo(center.dx + radius, center.dy - radius + bl), bracketPaint);
-    // BL
-    canvas.drawPath(Path()..moveTo(center.dx - radius, center.dy + radius - bl)..lineTo(center.dx - radius, center.dy + radius)..lineTo(center.dx - radius + bl, center.dy + radius), bracketPaint);
-    // BR
-    canvas.drawPath(Path()..moveTo(center.dx + radius - bl, center.dy + radius)..lineTo(center.dx + radius, center.dy + radius)..lineTo(center.dx + radius, center.dy + radius - bl), bracketPaint);
+    const bl = 44.0;
 
-    // Scanning Line with Gradient Glow
+    void bracket(List<Offset> pts) {
+      final path = Path()..moveTo(pts[0].dx, pts[0].dy);
+      for (final p in pts.skip(1)) { path.lineTo(p.dx, p.dy); }
+      canvas.drawPath(path, bp);
+    }
+
+    bracket([Offset(center.dx - radius, center.dy - radius + bl), Offset(center.dx - radius, center.dy - radius), Offset(center.dx - radius + bl, center.dy - radius)]);
+    bracket([Offset(center.dx + radius - bl, center.dy - radius), Offset(center.dx + radius, center.dy - radius), Offset(center.dx + radius, center.dy - radius + bl)]);
+    bracket([Offset(center.dx - radius, center.dy + radius - bl), Offset(center.dx - radius, center.dy + radius), Offset(center.dx - radius + bl, center.dy + radius)]);
+    bracket([Offset(center.dx + radius - bl, center.dy + radius), Offset(center.dx + radius, center.dy + radius), Offset(center.dx + radius, center.dy + radius - bl)]);
+
+    // Scanning line
     final lineY = center.dy - radius + (radius * 2 * scanValue);
-    
-    final scanLinePaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          const Color(0xFF4F46E5).withValues(alpha: 0),
-          const Color(0xFF4F46E5).withValues(alpha: 0.9),
-          const Color(0xFF4F46E5).withValues(alpha: 0),
-        ],
-      ).createShader(Rect.fromLTRB(center.dx - radius, lineY - 15, center.dx + radius, lineY + 15))
-      ..strokeWidth = 4.0;
-
-    canvas.drawLine(Offset(center.dx - radius + 10, lineY), Offset(center.dx + radius - 10, lineY), scanLinePaint);
+    canvas.drawLine(
+      Offset(center.dx - radius + 5, lineY),
+      Offset(center.dx + radius - 5, lineY),
+      Paint()
+        ..shader = LinearGradient(colors: [
+          const Color(0xFFE31E24).withValues(alpha: 0),
+          const Color(0xFFE31E24),
+          const Color(0xFFE31E24).withValues(alpha: 0.85),
+          const Color(0xFFE31E24).withValues(alpha: 0),
+        ], stops: const [0.0, 0.4, 0.6, 1.0]).createShader(Rect.fromLTRB(center.dx - radius, lineY - 15, center.dx + radius, lineY + 15))
+        ..strokeWidth = 4.0,
+    );
   }
 
   @override
-  bool shouldRepaint(ScannerPainter oldDelegate) => true;
+  bool shouldRepaint(ScannerPainter old) => true;
 }

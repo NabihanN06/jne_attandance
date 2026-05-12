@@ -18,6 +18,8 @@ class UserModel {
   final bool allowRemoteAttendance;
   final String? jamKerjaId;
   final bool isOnline;
+  final bool passwordChanged;
+  final String? facePhotoUrl;
 
   const UserModel({
     required this.uid,
@@ -33,12 +35,14 @@ class UserModel {
     this.allowRemoteAttendance = false,
     this.jamKerjaId,
     this.isOnline = false,
+    this.passwordChanged = false,
+    this.facePhotoUrl,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return UserModel(
-      uid: data['uid'] ?? doc.id,
+      uid: doc.id, // Always use Firestore doc ID = Firebase Auth UID
       name: data['name'] ?? '',
       email: data['email'] ?? '',
       phone: data['phone'] ?? '',
@@ -51,6 +55,8 @@ class UserModel {
       allowRemoteAttendance: data['allowRemoteAttendance'] ?? false,
       jamKerjaId: data['jamKerjaId'],
       isOnline: data['isOnline'] ?? false,
+      passwordChanged: data['passwordChanged'] ?? false,
+      facePhotoUrl: data['facePhotoUrl'],
     );
   }
 
@@ -68,6 +74,7 @@ class UserModel {
       'photoUrl': photoUrl,
       'allowRemoteAttendance': allowRemoteAttendance,
       'jamKerjaId': jamKerjaId,
+      'facePhotoUrl': facePhotoUrl,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -85,6 +92,8 @@ class UserModel {
     bool? allowRemoteAttendance,
     String? jamKerjaId,
     bool? isOnline,
+    bool? passwordChanged,
+    String? facePhotoUrl,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -100,6 +109,8 @@ class UserModel {
       allowRemoteAttendance: allowRemoteAttendance ?? this.allowRemoteAttendance,
       jamKerjaId: jamKerjaId ?? this.jamKerjaId,
       isOnline: isOnline ?? this.isOnline,
+      passwordChanged: passwordChanged ?? this.passwordChanged,
+      facePhotoUrl: facePhotoUrl ?? this.facePhotoUrl,
     );
   }
 }
@@ -423,12 +434,14 @@ class AdminNotification {
 
   factory AdminNotification.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    final ts = data['createdAt'];
+    final createdAt = ts is Timestamp ? ts.toDate() : DateTime.now();
     return AdminNotification(
       id: doc.id,
       title: data['title'] ?? '',
       message: data['message'] ?? '',
       type: data['type'] ?? 'info',
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: createdAt,
       isRead: data['isRead'] ?? false,
     );
   }

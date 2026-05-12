@@ -73,6 +73,9 @@ class OfflineService {
     final user = _auth.currentUser;
     if (user == null) return;
 
+    // Use current local time to preserve the actual capture moment
+    final captureTime = Timestamp.now();
+
     await _firestore.collection('pending_sync').add({
       'userId': user.uid,
       'employeeName': record.employeeName,
@@ -80,11 +83,11 @@ class OfflineService {
       'department': record.department,
       'date': record.date,
       'type': type,
-      'time': FieldValue.serverTimestamp(),
+      'time': captureTime, // Preserved local time
       'latitude': record.checkIn?.latitude ?? 0,
       'longitude': record.checkIn?.longitude ?? 0,
       'photoUrl': record.checkIn?.photoUrl,
-      'createdAt': FieldValue.serverTimestamp(),
+      'createdAt': captureTime,
       'synced': false,
       'syncAttempts': 0,
     });

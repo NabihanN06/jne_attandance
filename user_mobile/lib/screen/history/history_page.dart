@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -16,14 +15,15 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  // ── ZEN PREMIUM PALETTE ──
-  static const Color zenNavy = Color(0xFF121826);
-  static const Color zenIndigo = Color(0xFF4F46E5);
-  static const Color zenCyan = Color(0xFF22D3EE);
-  static const Color zenRose = Color(0xFFF43F5E);
-  static const Color zenEmerald = Color(0xFF10B981);
-  static const Color zenOffWhite = Color(0xFFF8FAFC);
-  static const Color zenSlate = Color(0xFF94A3B8);
+  // Premium Color Palette
+  static const Color zenCream   = Color(0xFFF9F7F2);
+  static const Color zenNavy    = Color(0xFF0F172A);
+  static const Color zenIndigo  = Color(0xFF4F46E5);
+  static const Color zenAmber   = Color(0xFFF59E0B);
+  static const Color zenSlate   = Color(0xFF64748B);
+  static const Color zenRose    = Color(0xFFF43F5E);
+  static const Color zenGreen   = Color(0xFF10B981);
+  static const Color zenCyan    = Color(0xFF06B6D4);
 
   int _selectedMonth = DateTime.now().month;
   int _selectedYear = DateTime.now().year;
@@ -44,94 +44,48 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
-    final records = provider.monthlyAttendance;
+    final records  = provider.monthlyAttendance;
     final isLoading = provider.isLoadingHistory;
 
     final presentCount = records.where((r) => r.status == 'present').length;
-    final leaveCount = records.where((r) => r.status == 'leave').length;
-    final lateCount = records.where((r) => r.status == 'late').length;
+    final leaveCount   = records.where((r) => r.status == 'leave').length;
+    final lateCount    = records.where((r) => r.status == 'late').length;
 
     return Scaffold(
-      backgroundColor: zenOffWhite,
-      appBar: AppBar(
-        backgroundColor: zenNavy,
-        elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.chevron_left_rounded, color: Colors.white, size: 28),
-            ),
-          ),
-        ),
-        title: Text(
-          'OPERATIONAL LOGS',
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3),
-        ),
-        centerTitle: true,
-      ),
+      backgroundColor: zenCream,
+      appBar: _buildAppBar(),
       body: Column(
         children: [
-          // ── FILTER SECTOR ──
-          Container(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-            decoration: const BoxDecoration(
-              color: zenNavy,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(48),
-                bottomRight: Radius.circular(48),
-              ),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(child: _buildDropdownMonth()),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildDropdownYear()),
-                  ],
-                ),
-                const SizedBox(height: 28),
-                Row(
-                  children: [
-                    _headerStat('Synced', presentCount.toString().padLeft(2, '0'), zenCyan),
-                    const SizedBox(width: 12),
-                    _headerStat('Authorized', leaveCount.toString().padLeft(2, '0'), zenIndigo),
-                    const SizedBox(width: 12),
-                    _headerStat('Delayed', lateCount.toString().padLeft(2, '0'), zenRose),
-                  ],
-                ),
-              ],
-            ),
+          // ── STATS SECTION (Bento Box) ──
+          FadeInDown(
+            duration: const Duration(milliseconds: 400),
+            child: _buildHeaderSection(presentCount, leaveCount, lateCount),
           ),
 
+          // ── LIST SECTION ──
           Expanded(
             child: Column(
               children: [
-                if (provider.hasPendingAttendance) _buildSyncBanner(context, provider),
+                if (provider.hasPendingAttendance) 
+                  FadeIn(child: _buildSyncBanner(context, provider)),
+                
                 Expanded(
                   child: isLoading
-                    ? const PackageLoading()
-                    : records.isEmpty
-                      ? _buildEmptyState()
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: records.length,
-                          itemBuilder: (context, index) {
-                            final r = records[index];
-                            return FadeInUp(
-                              key: ValueKey(r.id),
-                              duration: Duration(milliseconds: 300 + (index * 50)),
-                              child: _buildAttendanceCard(context, r),
-                            );
-                          },
-                        ),
+                      ? const Center(child: PackageLoading())
+                      : records.isEmpty
+                          ? _buildEmptyState()
+                          : ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(20, 24, 20, 40),
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: records.length,
+                              itemBuilder: (context, index) {
+                                final r = records[index];
+                                return FadeInUp(
+                                  duration: Duration(milliseconds: 300 + (index * 50)),
+                                  child: _buildAttendanceCard(r),
+                                );
+                              },
+                            ),
                 ),
               ],
             ),
@@ -141,135 +95,307 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-   Widget _buildSyncBanner(BuildContext context, AppProvider provider) {
-     return Container(
-       margin: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-       decoration: BoxDecoration(
-         color: Colors.amber.withValues(alpha: 0.06),
-         borderRadius: BorderRadius.circular(20),
-         border: Border.all(color: Colors.amber.withValues(alpha: 0.12)),
-       ),
-       child: Row(
-         children: [
-           const Icon(Icons.cloud_off_rounded, color: Colors.amber, size: 20),
-           const SizedBox(width: 16),
-           Expanded(
-             child: Text(
-               'UNSYNCED TELEMETRY DETECTED',
-               style: GoogleFonts.outfit(color: Colors.amber.shade900, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
-             ),
-           ),
-           GestureDetector(
-             onTap: _isSyncing ? null : () async {
-               setState(() => _isSyncing = true);
-               try {
-                 await provider.syncPendingRecords();
-               } finally {
-                 if (mounted) setState(() => _isSyncing = false);
-               }
-             },
-             child: Container(
-               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-               decoration: BoxDecoration(
-                 color: Colors.amber,
-                 borderRadius: BorderRadius.circular(10),
-               ),
-               child: _isSyncing
-                   ? const SizedBox(
-                       height: 12, width: 12,
-                       child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
-                     )
-                   : Text('SYNC', style: GoogleFonts.outfit(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
-             ),
-           ),
-         ],
-       ),
-     );
-   }
-
-  Widget _buildDropdownMonth() {
-    final months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: zenCream,
+      elevation: 0,
+      centerTitle: true,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10)],
+            ),
+            child: const Icon(Icons.chevron_left_rounded, color: zenNavy, size: 28),
+          ),
+        ),
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<int>(
-          value: _selectedMonth,
-          dropdownColor: zenNavy,
-          icon: const Icon(Icons.expand_more_rounded, color: Colors.white38),
-          isExpanded: true,
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
-          onChanged: (val) {
-            if (val != null) {
-              setState(() => _selectedMonth = val);
-              _onFilterChanged();
-            }
-          },
-          items: List.generate(12, (index) => DropdownMenuItem(
-            value: index + 1,
-            child: Text(months[index]),
-          )),
+      title: Text(
+        'RIWAYAT',
+        style: GoogleFonts.outfit(
+          color: zenNavy,
+          fontSize: 14,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 2,
         ),
       ),
     );
   }
 
-  Widget _buildDropdownYear() {
-    final currentYear = DateTime.now().year;
-    final years = List.generate(3, (index) => currentYear - index);
+  Widget _buildHeaderSection(int present, int leave, int late) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        color: zenCream,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+      ),
+      child: Column(
+        children: [
+          // Month/Year Selectors
+          Row(
+            children: [
+              Expanded(child: _buildElegantDropdown(
+                value: _selectedMonth,
+                items: List.generate(12, (i) => DropdownMenuItem(
+                  value: i + 1,
+                  child: Text(_monthName(i + 1)),
+                )),
+                onChanged: (val) {
+                  if (val != null) { setState(() => _selectedMonth = val); _onFilterChanged(); }
+                },
+              )),
+              const SizedBox(width: 12),
+              Expanded(child: _buildElegantDropdown(
+                value: _selectedYear,
+                items: List.generate(3, (i) => DateTime.now().year - i).map((y) => DropdownMenuItem(
+                  value: y,
+                  child: Text(y.toString()),
+                )).toList(),
+                onChanged: (val) {
+                  if (val != null) { setState(() => _selectedYear = val); _onFilterChanged(); }
+                },
+              )),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Mini Stats
+          Row(
+            children: [
+              _buildStatChip('Hadir', present, zenGreen),
+              const SizedBox(width: 12),
+              _buildStatChip('Izin', leave, zenIndigo),
+              const SizedBox(width: 12),
+              _buildStatChip('Late', late, zenRose),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildElegantDropdown<T>({
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: zenNavy.withValues(alpha: 0.05)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
       ),
       child: DropdownButtonHideUnderline(
-        child: DropdownButton<int>(
-          value: _selectedYear,
-          dropdownColor: zenNavy,
-          icon: const Icon(Icons.expand_more_rounded, color: Colors.white38),
+        child: DropdownButton<T>(
+          value: value,
+          dropdownColor: Colors.white,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: zenSlate, size: 20),
           isExpanded: true,
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
-          onChanged: (val) {
-            if (val != null) {
-              setState(() => _selectedYear = val);
-              _onFilterChanged();
-            }
-          },
-          items: years.map((y) => DropdownMenuItem(
-            value: y,
-            child: Text(y.toString()),
-          )).toList(),
+          style: GoogleFonts.outfit(color: zenNavy, fontSize: 14, fontWeight: FontWeight.w700),
+          onChanged: onChanged,
+          items: items,
         ),
       ),
     );
   }
 
-  Widget _headerStat(String label, String value, Color color) {
+  Widget _buildStatChip(String label, int count, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.03),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.1)),
+          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: Column(
           children: [
-            Text(value, style: GoogleFonts.outfit(color: color, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -1)),
-            const SizedBox(height: 4),
-            Text(label.toUpperCase(), style: GoogleFonts.outfit(color: Colors.white30, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+            Text(
+              count.toString().padLeft(2, '0'),
+              style: GoogleFonts.outfit(
+                color: color, fontSize: 24, fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label.toUpperCase(),
+              style: GoogleFonts.outfit(
+                color: zenSlate, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: 1.2,
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildAttendanceCard(AttendanceRecord r) {
+    final date = DateTime.tryParse(r.date) ?? DateTime.now();
+    
+    Color statusColor;
+    String statusLabel;
+    IconData statusIcon;
+    
+    switch (r.status) {
+      case 'late':
+        statusColor = zenRose; statusLabel = 'TERLAMBAT'; statusIcon = Icons.access_time_rounded;
+        break;
+      case 'absent':
+        statusColor = zenRose; statusLabel = 'ABSEN'; statusIcon = Icons.close_rounded;
+        break;
+      case 'leave':
+        statusColor = zenIndigo; statusLabel = 'IZIN/CUTI'; statusIcon = Icons.article_rounded;
+        break;
+      default:
+        statusColor = zenGreen; statusLabel = 'HADIR'; statusIcon = Icons.verified_user_rounded;
+    }
+
+    final checkIn  = r.checkIn?.time  != null ? DateFormat('HH:mm').format(r.checkIn!.time!)  : '--:--';
+    final checkOut = r.checkOut?.time != null ? DateFormat('HH:mm').format(r.checkOut!.time!) : '--:--';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 15, offset: const Offset(0, 8)),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Top Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(statusIcon, color: statusColor, size: 16),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        DateFormat('EEEE, d MMM yyyy', 'id').format(date).toUpperCase(),
+                        style: GoogleFonts.outfit(
+                          color: zenNavy, fontSize: 13, fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        statusLabel,
+                        style: GoogleFonts.outfit(
+                          color: statusColor, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: zenNavy.withValues(alpha: 0.05)),
+          // Time Info
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildTimeInfo('IN', checkIn, zenCyan),
+                _buildTimeInfo('OUT', checkOut, zenIndigo),
+                if (r.checkIn?.time != null && r.checkOut?.time != null)
+                  _buildDurationChip(r.checkIn!.time!, r.checkOut!.time!),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeInfo(String label, String time, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.outfit(
+            color: zenSlate, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.5,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          time,
+          style: GoogleFonts.outfit(
+            color: zenNavy, fontSize: 20, fontWeight: FontWeight.w900,
+            fontFeatures: [const FontFeature.tabularFigures()],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDurationChip(DateTime cin, DateTime cout) {
+    final dur = cout.difference(cin);
+    final h = dur.inHours;
+    final m = dur.inMinutes % 60;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: zenGreen.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: zenGreen.withValues(alpha: 0.1)),
+      ),
+      child: Text(
+        '${h}j ${m}m',
+        style: GoogleFonts.outfit(color: zenGreen, fontSize: 12, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+
+  Widget _buildSyncBanner(BuildContext context, AppProvider provider) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: zenAmber.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: zenAmber.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.cloud_off_rounded, color: zenAmber, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Ada data yang belum sinkron',
+              style: GoogleFonts.outfit(color: zenAmber, fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+          ),
+          TextButton(
+            onPressed: _isSyncing ? null : () async {
+              setState(() => _isSyncing = true);
+              await provider.syncPendingRecords();
+              if (mounted) setState(() => _isSyncing = false);
+            },
+            child: Text('SYNC', style: GoogleFonts.outfit(color: zenAmber, fontWeight: FontWeight.w900)),
+          ),
+        ],
       ),
     );
   }
@@ -279,137 +405,28 @@ class _HistoryPageState extends State<HistoryPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inventory_2_outlined, color: zenSlate.withValues(alpha: 0.2), size: 64),
-          const SizedBox(height: 20),
+          Icon(Icons.history_toggle_off_rounded, color: zenSlate.withValues(alpha: 0.2), size: 80),
+          const SizedBox(height: 24),
           Text(
-            'NO REGISTRY RECORDS FOUND', 
-            style: GoogleFonts.outfit(color: zenSlate.withValues(alpha: 0.4), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
+            'Tidak Ada Riwayat',
+            style: GoogleFonts.outfit(color: zenNavy, fontSize: 18, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Silakan pilih bulan lain\natau lakukan absensi hari ini.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.outfit(color: zenSlate, fontSize: 14, fontWeight: FontWeight.w500),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAttendanceCard(BuildContext context, AttendanceRecord r) {
-    final date = DateTime.tryParse(r.date) ?? DateTime.now();
-    
-    bool isLate = r.status == 'late';
-    bool isAbsent = r.status == 'absent';
-    bool isLeave = r.status == 'leave';
-    
-    Color statusColor = zenEmerald;
-    String statusLabel = 'SYNCED';
-    
-    if (isLate) { statusColor = zenRose; statusLabel = 'DELAYED'; }
-    if (isAbsent) { statusColor = zenRose; statusLabel = 'OFFLINE'; }
-    if (isLeave) { statusColor = zenIndigo; statusLabel = 'AUTHORIZED'; }
-
-    String checkInTime = r.checkIn?.time != null ? DateFormat('HH:mm').format(r.checkIn!.time!) : '--:--';
-    String checkOutTime = r.checkOut?.time != null ? DateFormat('HH:mm').format(r.checkOut!.time!) : '--:--';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(40),
-        border: Border.all(color: zenNavy.withValues(alpha: 0.03)),
-        boxShadow: [
-          BoxShadow(
-                color: zenNavy.withValues(alpha: 0.02), 
-                blurRadius: 30, 
-                offset: const Offset(0, 15)
-              )
-            ],
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        DateFormat('EEEE, d MMM yyyy').format(date).toUpperCase(),
-                        style: GoogleFonts.outfit(color: zenNavy, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: -0.2),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Container(width: 6, height: 6, decoration: const BoxDecoration(color: zenIndigo, shape: BoxShape.circle)),
-                          const SizedBox(width: 8),
-                          Text(
-                            'SECTOR: MARTAPURA HUB',
-                            style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      statusLabel,
-                      style: GoogleFonts.outfit(color: statusColor, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1.5),
-                    ),
-                  ),
-                ],
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Divider(color: zenOffWhite, thickness: 2, height: 1),
-              ),
-              Row(
-                children: [
-                  _timeBox('ENTRY SIGNAL', checkInTime, Icons.sensors_rounded, zenCyan),
-                  const Spacer(),
-                  _timeBox('EXIT SIGNAL', checkOutTime, Icons.sensors_off_rounded, zenIndigo),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: zenNavy.withValues(alpha: 0.03),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.chevron_right_rounded, color: zenSlate, size: 18),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      }
-
-      Widget _timeBox(String label, String time, IconData icon, Color color) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 14, color: color.withValues(alpha: 0.6)),
-                const SizedBox(width: 8),
-                Text(
-                  label, 
-                  style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5)
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              time,
-              style: GoogleFonts.outfit(
-                color: zenNavy, 
-                fontSize: 20, 
-                fontWeight: FontWeight.w900, 
-                fontFeatures: [const FontFeature.tabularFigures()]
-              ),
-            ),
-          ],
-        );
-      }
+  String _monthName(int m) {
+    const months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+    ];
+    return months[m - 1];
+  }
 }

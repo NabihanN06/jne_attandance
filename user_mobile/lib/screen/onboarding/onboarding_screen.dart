@@ -13,24 +13,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
+  static const Color _jneBlue = Color(0xFF005596);
+  static const Color _jneRed  = Color(0xFFE31E24);
+
   final List<OnboardingData> _pages = [
     OnboardingData(
       title: 'Geofencing Pintar',
       description: 'Absensi otomatis terdeteksi saat Anda berada di dalam radius kantor JNE.',
       icon: Icons.location_on_rounded,
-      color: const Color(0xFF005596),
     ),
     OnboardingData(
       title: 'Biometrik Wajah',
       description: 'Keamanan ekstra dengan verifikasi wajah untuk memastikan kehadiran yang valid.',
       icon: Icons.face_retouching_natural_rounded,
-      color: const Color(0xFFE31E24),
     ),
     OnboardingData(
       title: 'Laporan Real-time',
       description: 'Pantau riwayat absensi dan status kerja Anda secara instan dalam genggaman.',
       icon: Icons.analytics_rounded,
-      color: const Color(0xFF0891B2),
     ),
   ];
 
@@ -71,9 +71,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         height: 8,
                         width: _currentPage == index ? 24 : 8,
                         decoration: BoxDecoration(
-                          color: _currentPage == index 
-                              ? _pages[_currentPage].color 
-                              : const Color(0xFFE2E8F0),
+                          color: _currentPage == index
+                              ? _jneRed
+                              : const Color(0xFFCCDDEE),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -98,13 +98,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         }
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _pages[_currentPage].color,
+                        backgroundColor: _jneRed,
+                        foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         elevation: 0,
                       ),
                       child: Text(
                         _currentPage == _pages.length - 1 ? 'MULAI SEKARANG' : 'LANJUTKAN',
                         style: GoogleFonts.outfit(
+                          color: Colors.white,
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1,
@@ -131,10 +133,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             width: 260,
             height: 260,
             decoration: BoxDecoration(
-              color: data.color.withValues(alpha: 0.05),
+              color: _jneBlue.withValues(alpha: 0.07),
               shape: BoxShape.circle,
             ),
-            child: Icon(data.icon, color: data.color, size: 100),
+            child: Icon(data.icon, color: _jneBlue, size: 100),
           ),
           const SizedBox(height: 60),
           Text(
@@ -168,12 +170,10 @@ class OnboardingData {
   final String title;
   final String description;
   final IconData icon;
-  final Color color;
 
   OnboardingData({
     required this.title,
     required this.description,
     required this.icon,
-    required this.color,
   });
 }
