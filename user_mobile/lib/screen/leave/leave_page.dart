@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
-import '../../models/app_models.dart';
+import '../../widgets/package_loading.dart';
 
 class LeavePage extends StatefulWidget {
   const LeavePage({super.key});
@@ -10,10 +11,12 @@ class LeavePage extends StatefulWidget {
 }
 
 class _LeavePageState extends State<LeavePage> {
+  static const Color jneCyan = Color(0xFF0891B2);
+  static const Color jneRed = Color(0xFFF43F5E);
+
   DateTime? _fromDate;
   DateTime? _toDate;
   final _reasonCtrl = TextEditingController();
-  String? _docName;
   bool _loading = false;
 
   @override
@@ -38,7 +41,7 @@ class _LeavePageState extends State<LeavePage> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.dark(primary: Color(0xFFE31E24), surface: Color(0xFF0D1F38)),
+          colorScheme: const ColorScheme.light(primary: jneCyan, onPrimary: Colors.white, surface: Colors.white, onSurface: Color(0xFF1E293B)),
         ),
         child: child!,
       ),
@@ -59,49 +62,27 @@ class _LeavePageState extends State<LeavePage> {
   Future<void> _submit() async {
     final provider = context.read<AppProvider>();
     if (_fromDate == null || _toDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih tanggal izin terlebih dahulu'), backgroundColor: Color(0xFFB71C1C)));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih tanggal izin terlebih dahulu'), backgroundColor: jneRed));
       return;
     }
     if (_reasonCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Alasan izin tidak boleh kosong'), backgroundColor: Color(0xFFB71C1C)));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Alasan izin tidak boleh kosong'), backgroundColor: jneRed));
       return;
     }
     setState(() => _loading = true);
     await Future.delayed(const Duration(milliseconds: 800));
 
-    final req = LeaveRequest(
-      id: 'leave_${DateTime.now().millisecondsSinceEpoch}',
-      userId: provider.currentUser!.uid,
-      userName: provider.currentUser!.name,
-      fromDate: _fromDate!,
-      toDate: _toDate!,
+    await provider.submitLeave(
+      type: 'personal', // Default type
+      startDate: _fromDate!,
+      endDate: _toDate!,
+      totalDays: _workDays,
       reason: _reasonCtrl.text.trim(),
-      submittedAt: DateTime.now(),
     );
-    provider.submitLeave(req);
-    provider.addNotification(
-      '📋 Pengajuan Izin Baru',
-      '${provider.currentUser!.name} mengajukan izin ${_fmt(_fromDate)} - ${_fmt(_toDate)}',
-      targetUserId: 'admin_001',
-    );
-    provider.addNotification(
-      '✅ Izin Terkirim',
-      'Pengajuan izinmu sudah dikirim dan sedang diproses Admin HR',
-      targetUserId: provider.currentUser!.uid,
-    );
-
+    
     if (mounted) {
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Row(children: [
-          Icon(Icons.check_circle, color: Colors.white, size: 18),
-          SizedBox(width: 8),
-          Text('Pengajuan izin berhasil dikirim!'),
-        ]),
-        backgroundColor: const Color(0xFF1B5E20),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pengajuan izin berhasil dikirim!'), backgroundColor: Colors.green));
       Navigator.pop(context);
     }
   }
@@ -109,179 +90,217 @@ class _LeavePageState extends State<LeavePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1628),
-      appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)),
-        title: const Text('Ajukan Izin'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(children: [
-          const SizedBox(height: 8),
+      backgroundColor: const Color(0xFF0F172A),
+      body: Stack(
+        children: [
+          // ── Background Gradient ──
+          Positioned(
+            top: -100, right: -100,
+            child: Container(
+              width: 300, height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: jneCyan.withValues(alpha: 0.15),
+              ),
+              child: Center(child: Container(width: 150, height: 150, color: jneCyan.withValues(alpha: 0.1),)),
+            ),
+          ),
 
-          // Tanggal Izin
-          _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Tanggal Izin', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 14),
-            const Text('Dari Tanggal', style: TextStyle(color: Color(0xFF90A4AE), fontSize: 12)),
-            const SizedBox(height: 6),
-            _datePicker(_fmt(_fromDate), () => _pickDate(true)),
-            const SizedBox(height: 12),
-            const Text('Sampai Tanggal', style: TextStyle(color: Color(0xFF90A4AE), fontSize: 12)),
-            const SizedBox(height: 6),
-            _datePicker(_fmt(_toDate), () => _pickDate(false)),
-            if (_workDays > 0) ...[
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-                decoration: BoxDecoration(color: const Color(0xFFF57C00), borderRadius: BorderRadius.circular(8)),
-                child: Row(children: [
-                  const Icon(Icons.circle, size: 8, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text('$_workDays hari kerja dipilih', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                ]),
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 120,
+                floating: false,
+                pinned: true,
+                backgroundColor: const Color(0xFF0F172A).withValues(alpha: 0.8),
+                elevation: 0,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    'PENGJUAN IZIN',
+                    style: GoogleFonts.outfit(
+                      color: Colors.white, 
+                      fontSize: 14, 
+                      fontWeight: FontWeight.w900, 
+                      letterSpacing: 2
+                    ),
+                  ),
+                  centerTitle: true,
+                ),
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildGlassCard(
+                        title: 'DURASI IZIN',
+                        icon: Icons.calendar_month_rounded,
+                        child: Column(
+                          children: [
+                            _dateField('Mulai Tanggal', _fmt(_fromDate), () => _pickDate(true)),
+                            const SizedBox(height: 20),
+                            _dateField('Sampai Tanggal', _fmt(_toDate), () => _pickDate(false)),
+                            if (_workDays > 0) ...[
+                              const SizedBox(height: 20),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: jneCyan.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: jneCyan.withValues(alpha: 0.2)),
+                                ),
+                                child: Row(children: [
+                                  const Icon(Icons.info_outline, color: jneCyan, size: 18),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Total: $_workDays Hari Kerja Terhitung', 
+                                    style: GoogleFonts.outfit(color: jneCyan, fontSize: 13, fontWeight: FontWeight.w800)
+                                  ),
+                                ]),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      _buildGlassCard(
+                        title: 'ALASAN & KETERANGAN',
+                        icon: Icons.edit_note_rounded,
+                        child: TextField(
+                          controller: _reasonCtrl,
+                          maxLines: 4,
+                          textCapitalization: TextCapitalization.sentences,
+                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                          decoration: InputDecoration(
+                            hintText: 'Tuliskan alasan lengkap Anda di sini...',
+                            hintStyle: GoogleFonts.outfit(color: Colors.white24, fontSize: 15),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      GestureDetector(
+                        onTap: _loading ? null : _submit,
+                        child: Container(
+                          height: 70,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [jneCyan, Color(0xFF06B6D4)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: jneCyan.withValues(alpha: 0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              )
+                            ],
+                          ),
+                          child: Center(
+                            child: _loading 
+                              ? const PackageLoading(isLight: true, size: 30)
+                              : Text(
+                                  'KIRIM PENGAJUAN SEKARANG', 
+                                  style: GoogleFonts.outfit(
+                                    color: Colors.white, 
+                                    fontSize: 14, 
+                                    fontWeight: FontWeight.w900, 
+                                    letterSpacing: 1.5
+                                  )
+                                ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
               ),
             ],
-          ])),
-
-          const SizedBox(height: 12),
-
-          // Alasan Izin
-          _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Alasan Izin', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _reasonCtrl,
-              maxLength: 500,
-              maxLines: 4,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-              decoration: InputDecoration(
-                hintText: 'Tuliskan alasan izin kamu...',
-                hintStyle: const TextStyle(color: Color(0xFF4A6080)),
-                filled: true, fillColor: const Color(0xFF162440),
-                contentPadding: const EdgeInsets.all(12),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-                counterStyle: const TextStyle(color: Color(0xFF90A4AE)),
-              ),
-            ),
-          ])),
-
-          const SizedBox(height: 12),
-
-          // Dokumen Pendukung
-          _card(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Dokumen Pendukung (Opsional)', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () => setState(() => _docName = 'dokumen_izin.pdf'),
-              child: Container(
-                width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
-                decoration: BoxDecoration(color: const Color(0xFF162440), borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF263E5E), style: BorderStyle.solid)),
-                child: Row(children: [
-                  const Icon(Icons.attach_file, color: Color(0xFF90A4AE), size: 18),
-                  const SizedBox(width: 8),
-                  Text(_docName ?? 'Upload JPG, PNG, atau PDF | Maks 5MB',
-                      style: TextStyle(color: _docName != null ? Colors.white : const Color(0xFF90A4AE), fontSize: 12)),
-                ]),
-              ),
-            ),
-          ])),
-
-          const SizedBox(height: 12),
-
-          // Info
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(color: const Color(0xFF1565C0).withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFF1565C0))),
-            child: Row(children: const [
-              Icon(Icons.info_outline, color: Color(0xFF64B5F6), size: 16),
-              SizedBox(width: 8),
-              Expanded(child: Text('📋 Pengajuan akan diproses oleh Admin HR',
-                  style: TextStyle(color: Color(0xFF64B5F6), fontSize: 12))),
-            ]),
           ),
-
-          const SizedBox(height: 16),
-
-          // Kirim
-          _PressBtn(
-            label: _loading ? '' : '📩 Kirim Pengajuan',
-            color: const Color(0xFFE31E24),
-            onTap: _loading ? () {} : _submit,
-            child: _loading ? const SizedBox(width: 20, height: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : null,
-          ),
-
-          const SizedBox(height: 10),
-          _PressBtn(label: 'Batal', color: Colors.transparent, border: Colors.white54,
-              onTap: () => Navigator.pop(context)),
-          const SizedBox(height: 32),
-        ]),
+        ],
       ),
     );
   }
 
-  Widget _card({required Widget child}) => Container(
-    width: double.infinity, padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-    child: child,
-  );
-
-  Widget _datePicker(String value, VoidCallback onTap) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(color: const Color(0xFF162440), borderRadius: BorderRadius.circular(8)),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(value.isEmpty ? 'Pilih tanggal' : value,
-            style: TextStyle(color: value.isEmpty ? const Color(0xFF4A6080) : Colors.white, fontSize: 14)),
-        const Icon(Icons.calendar_today, color: Color(0xFF90A4AE), size: 16),
-      ]),
-    ),
-  );
-}
-
-class _PressBtn extends StatefulWidget {
-  final String label; final Color color; final Color? border;
-  final VoidCallback onTap; final Widget? child;
-  const _PressBtn({required this.label, required this.color, required this.onTap, this.border, this.child});
-  @override
-  State<_PressBtn> createState() => _PressBtnState();
-}
-class _PressBtnState extends State<_PressBtn> with SingleTickerProviderStateMixin {
-  late AnimationController _c;
-  late Animation<double> _s;
-  @override
-  void initState() {
-    super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
-    _s = Tween<double>(begin: 1.0, end: 0.95).animate(CurvedAnimation(parent: _c, curve: Curves.easeOut));
-  }
-  @override
-  void dispose() { _c.dispose(); super.dispose(); }
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _c.forward(),
-      onTapUp: (_) async { await _c.reverse(); widget.onTap(); },
-      onTapCancel: () => _c.reverse(),
-      child: AnimatedBuilder(animation: _s, builder: (_, _) => Transform.scale(
-        scale: _s.value,
-        child: Container(
-          width: double.infinity, height: 48,
-          decoration: BoxDecoration(
-            color: widget.color, borderRadius: BorderRadius.circular(10),
-            border: widget.border != null ? Border.all(color: widget.border!) : null,
-            boxShadow: widget.color != Colors.transparent
-                ? [BoxShadow(color: widget.color.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 3))] : null,
+  Widget _buildGlassCard({required String title, required IconData icon, required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: jneCyan, size: 20),
+              const SizedBox(width: 12),
+              Text(
+                title, 
+                style: GoogleFonts.outfit(
+                  color: Colors.white60, 
+                  fontSize: 11, 
+                  fontWeight: FontWeight.w900, 
+                  letterSpacing: 2
+                )
+              ),
+            ],
           ),
-          alignment: Alignment.center,
-          child: widget.child ?? Text(widget.label,
-              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 24),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _dateField(String label, String val, VoidCallback onTap) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.outfit(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  val.isEmpty ? 'Pilih Tanggal' : val, 
+                  style: GoogleFonts.outfit(
+                    color: val.isEmpty ? Colors.white24 : Colors.white, 
+                    fontSize: 15, 
+                    fontWeight: FontWeight.w800
+                  )
+                ),
+                const Icon(Icons.calendar_today_rounded, color: jneCyan, size: 18),
+              ],
+            ),
+          ),
         ),
-      )),
+      ],
     );
   }
 }

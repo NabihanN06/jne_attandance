@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
 import '../auth/login_page.dart';
 import '../enroll/enroll_page.dart';
 
 class ProfilePage extends StatelessWidget {
+  // ── ZEN PREMIUM PALETTE ──
+  static const Color zenNavy = Color(0xFF121826);
+  static const Color zenIndigo = Color(0xFF4F46E5);
+  static const Color zenCyan = Color(0xFF22D3EE);
+  static const Color zenRose = Color(0xFFF43F5E);
+  static const Color zenSlate = Color(0xFF94A3B8);
+  static const Color zenOffWhite = Color(0xFFF8FAFC);
+
   const ProfilePage({super.key});
 
   @override
@@ -14,211 +23,314 @@ class ProfilePage extends StatelessWidget {
     if (user == null) return const SizedBox();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1628),
-      appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)),
-        title: const Text('Profile Karyawan'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
-          // ── Profile header ──
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-            child: Row(children: [
-              Container(
-                width: 64, height: 64,
-                decoration: BoxDecoration(color: const Color(0xFF162440), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.person, color: Color(0xFF90A4AE), size: 36),
+      backgroundColor: zenOffWhite,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // ── PREMIUM NAVIGATION BAR ──
+          SliverAppBar(
+            expandedHeight: 120,
+            floating: false,
+            pinned: true,
+            elevation: 0,
+            backgroundColor: Colors.white.withValues(alpha: 0.8),
+            flexibleSpace: FlexibleSpaceBar(
+              centerTitle: true,
+              title: Text(
+                'PERSONNEL REGISTRY',
+                style: GoogleFonts.outfit(
+                  color: zenNavy,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2.5,
+                ),
               ),
-              const SizedBox(width: 14),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(user.name, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text('${user.position} · ${user.department}',
-                    style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 12, height: 1.4)),
-              ])),
-            ]),
-          ),
-
-          const SizedBox(height: 20),
-
-          _sectionLabel('Informasi Pribadi'),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-            child: Column(children: [
-              _infoItem(Icons.email_outlined, user.email, 'Email'),
-              _divider(),
-              _infoItem(Icons.phone_outlined, user.phone.isEmpty ? '+62 000-0000-0000' : user.phone, 'Nomor Telepon'),
-              _divider(),
-              _infoItem(Icons.badge_outlined, 'NIK: ${user.nik}', 'ID Karyawan'),
-            ]),
-          ),
-
-          const SizedBox(height: 20),
-
-          _sectionLabel('Jadwal Kerja'),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-            child: Column(children: [
-              _infoItem(Icons.alarm, '08:00–16:00', 'Jam Masuk - Pulang', iconBg: const Color(0xFFB71C1C)),
-              _divider(),
-              _infoItem(Icons.calendar_month, 'Senin – Jum\'at', 'Hari Kerja', iconBg: const Color(0xFF1565C0)),
-              _divider(),
-              _infoItem(Icons.warning_amber_rounded, '15 Menit', 'Toleransi', iconBg: const Color(0xFFE65100)),
-            ]),
-          ),
-
-          const SizedBox(height: 20),
-
-          _sectionLabel('Keamanan'),
-          const SizedBox(height: 8),
-          Container(
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-            child: Column(children: [
-              _actionItem(
-                icon: Icons.face_retouching_natural,
-                title: 'Wajah Terdaftar ✓',
-                subtitle: 'Didaftarkan ${user.faceRegisteredDate.isEmpty ? "1 Jan 2026" : user.faceRegisteredDate} · ${user.deviceName.isEmpty ? "Perangkat ini" : user.deviceName}',
-                iconBg: const Color(0xFF1565C0),
-                onTap: () {},
+            ),
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: zenNavy.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.chevron_left_rounded, color: zenNavy, size: 28),
+                ),
               ),
-              _divider(),
-              _actionItem(
-                icon: Icons.phonelink_setup,
-                title: 'Daftar Ulang Wajah',
-                subtitle: 'Ganti data wajah untuk verifikasi',
-                iconBg: const Color(0xFF4A235A),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EnrollPage())),
-              ),
-              _divider(),
-              _actionItem(
-                icon: Icons.key,
-                title: 'Ganti Password',
-                subtitle: 'Verifikasi via WhatsApp OTP',
-                iconBg: const Color(0xFF1B5E20),
-                onTap: () => _showChangePasswordDialog(context),
-              ),
-            ]),
+            ),
           ),
 
-          const SizedBox(height: 20),
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                // ── CORE IDENTITY HUB ──
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                  child: Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(40),
+                      border: Border.all(color: zenNavy.withValues(alpha: 0.04)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: zenNavy.withValues(alpha: 0.03),
+                          blurRadius: 40,
+                          offset: const Offset(0, 20),
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: zenIndigo.withValues(alpha: 0.1), width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 54,
+                            backgroundColor: zenNavy.withValues(alpha: 0.03),
+                            child: const Icon(Icons.person_rounded, color: zenNavy, size: 56),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        Text(
+                          user.name.toUpperCase(),
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.outfit(
+                            color: zenNavy,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.8,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: zenIndigo.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(100),
+                            border: Border.all(color: zenIndigo.withValues(alpha: 0.1)),
+                          ),
+                          child: Text(
+                            '${user.position} • ${user.department}'.toUpperCase(),
+                            style: GoogleFonts.outfit(
+                              color: zenIndigo,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
-          _sectionLabel('Pengaturan Notifikasi'),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-            child: Column(children: [
-              _notifToggle(context, 'Reminder Absen Masuk', provider.notifSettings.reminderAbsenMasuk,
-                  (v) => provider.updateNotifSettings(provider.notifSettings.copyWith(reminderAbsenMasuk: v))),
-              _divider(),
-              _notifToggle(context, 'Reminder Absen Pulang', provider.notifSettings.reminderAbsenPulang,
-                  (v) => provider.updateNotifSettings(provider.notifSettings.copyWith(reminderAbsenPulang: v))),
-              _divider(),
-              _notifToggle(context, 'Notifikasi Status Izin', provider.notifSettings.notifikasiStatusIzin,
-                  (v) => provider.updateNotifSettings(provider.notifSettings.copyWith(notifikasiStatusIzin: v))),
-              _divider(),
-              _notifToggle(context, 'Notifikasi Meeting', provider.notifSettings.notifikasiMeeting,
-                  (v) => provider.updateNotifSettings(provider.notifSettings.copyWith(notifikasiMeeting: v))),
-            ]),
+                // ── OPERATIONAL TELEMETRY ──
+                _buildSectionHeader('Operational Telemetry'),
+                _buildCardWrapper([
+                  _buildInfoItem(Icons.alternate_email_rounded, 'Registry Email', user.email),
+                  _buildDivider(),
+                  _buildInfoItem(Icons.phone_iphone_rounded, 'Signal Frequency', user.phone.isEmpty ? '+62 000-000-0000' : user.phone),
+                  _buildDivider(),
+                  _buildInfoItem(Icons.fingerprint_rounded, 'Registry Serial', user.employeeId),
+                ]),
+
+                const SizedBox(height: 32),
+
+                // ── ACCESS PROTOCOLS ──
+                _buildSectionHeader('Access Protocols'),
+                _buildCardWrapper([
+                  _buildActionItem(context, Icons.badge_outlined, 'Identity Badge', 'Official HUB-MTP Registry', () => Navigator.pushNamed(context, '/id_card')),
+                  _buildDivider(),
+                  _buildActionItem(context, Icons.face_retouching_natural_rounded, 'Biometric Recalibration', 'Sync Facial Signatures', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EnrollPage()))),
+                ]),
+
+                const SizedBox(height: 32),
+
+                // ── SECURITY ARCHITECTURE ──
+                _buildSectionHeader('Security Architecture'),
+                _buildCardWrapper([
+                  _buildActionItem(context, Icons.shield_outlined, 'Access Override', 'Rotate Hub Credentials', () => _showChangePasswordDialog(context, provider)),
+                ]),
+
+                const SizedBox(height: 48),
+
+                // ── TERMINATION SECTOR ──
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: GestureDetector(
+                    onTap: () => _confirmLogout(context, provider),
+                    child: Container(
+                      height: 72,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: zenRose.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: zenRose.withValues(alpha: 0.12)),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'TERMINATE ACTIVE SESSION',
+                          style: GoogleFonts.outfit(
+                            color: zenRose,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 3,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 80),
+              ],
+            ),
           ),
-
-          const SizedBox(height: 20),
-
-          _sectionLabel('Tentang Aplikasi'),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: const Color(0xFF0D1F38), borderRadius: BorderRadius.circular(12)),
-            child: Row(children: [
-              Container(width: 40, height: 40,
-                  decoration: BoxDecoration(color: const Color(0xFF162440), borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.info_outline, color: Color(0xFF90A4AE), size: 22)),
-              const SizedBox(width: 12),
-              const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('v0.3.0', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                Text('Versi Aplikasi', style: TextStyle(color: Color(0xFF90A4AE), fontSize: 11)),
-              ]),
-            ]),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Log Out button
-          _PressBtn(
-            label: 'Log Out',
-            color: const Color(0xFFE31E24),
-            onTap: () => _confirmLogout(context, provider),
-          ),
-
-          const SizedBox(height: 32),
-        ]),
+        ],
       ),
     );
   }
 
-  Widget _sectionLabel(String t) => Text(t,
-      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700));
-
-  Widget _divider() => const Divider(color: Color(0xFF1E3A5F), height: 1, indent: 16, endIndent: 16);
-
-  Widget _infoItem(IconData icon, String value, String label, {Color iconBg = const Color(0xFF162440)}) {
+  Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(children: [
-        Container(width: 38, height: 38,
-            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, color: Colors.white70, size: 20)),
-        const SizedBox(width: 12),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-          Text(label, style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 11)),
-        ]),
-      ]),
+      padding: const EdgeInsets.fromLTRB(32, 0, 32, 16),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title.toUpperCase(),
+          style: GoogleFonts.outfit(
+            color: zenSlate,
+            fontSize: 9,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 4,
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _actionItem({required IconData icon, required String title, required String subtitle,
-      required Color iconBg, required VoidCallback onTap}) {
+  Widget _buildCardWrapper(List<Widget> children) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: zenNavy.withValues(alpha: 0.03)),
+          boxShadow: [
+            BoxShadow(
+              color: zenNavy.withValues(alpha: 0.02),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            )
+          ],
+        ),
+        child: Column(children: children),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(height: 1, thickness: 1, color: zenNavy.withValues(alpha: 0.02));
+  }
+
+  Widget _buildInfoItem(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: zenNavy.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: zenSlate, size: 20),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  style: GoogleFonts.outfit(
+                    color: zenSlate,
+                    fontSize: 8,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: GoogleFonts.outfit(
+                    color: zenNavy,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionItem(BuildContext context, IconData icon, String title, String subtitle, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(32),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(children: [
-          Container(width: 38, height: 38,
-              decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(8)),
-              child: Icon(icon, color: Colors.white70, size: 20)),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-            Text(subtitle, style: const TextStyle(color: Color(0xFF90A4AE), fontSize: 11)),
-          ])),
-          const Icon(Icons.chevron_right, color: Color(0xFF90A4AE), size: 18),
-        ]),
-      ),
-    );
-  }
-
-  Widget _notifToggle(BuildContext context, String label, bool value, ValueChanged<bool> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(label, style: const TextStyle(color: Colors.white, fontSize: 13)),
-        Switch(
-          value: value,
-          onChanged: onChanged,
-          activeThumbColor: const Color(0xFFE31E24),
-          activeTrackColor: const Color(0xFFE31E24).withValues(alpha: 0.4),
-          inactiveThumbColor: Colors.grey,
-          inactiveTrackColor: Colors.grey.withValues(alpha: 0.3),
+        padding: const EdgeInsets.all(24),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: zenIndigo.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: zenIndigo, size: 20),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.outfit(
+                      color: zenNavy,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.plusJakartaSans(
+                      color: zenSlate,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, color: zenSlate.withValues(alpha: 0.3), size: 14),
+          ],
         ),
-      ]),
+      ),
     );
   }
 
@@ -226,76 +338,111 @@ class ProfilePage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF0D1F38),
-        title: const Text('Log Out', style: TextStyle(color: Colors.white)),
-        content: const Text('Yakin ingin keluar? Akun kamu tetap tersimpan.',
-            style: TextStyle(color: Color(0xFF90A4AE))),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+        title: Text('TERMINATE SESSION?', style: GoogleFonts.outfit(color: zenNavy, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 0.5)),
+        content: Text('Operational connection to Hub Martapura will be severed. Manual re-sync is mandatory for future telemetry access.', style: GoogleFonts.plusJakartaSans(color: zenSlate, fontSize: 13, height: 1.6)),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context),
-              child: const Text('Batal', style: TextStyle(color: Color(0xFF90A4AE)))),
           TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('ABORT', style: GoogleFonts.outfit(color: zenSlate, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 2)),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
             onPressed: () {
               provider.logout();
-              Navigator.pushAndRemoveUntil(context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()), (r) => false);
+              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginPage()), (r) => false);
             },
-            child: const Text('Log Out', style: TextStyle(color: Color(0xFFE31E24), fontWeight: FontWeight.w700)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: zenRose,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+            child: Text('TERMINATE', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 2)),
           ),
         ],
       ),
     );
   }
 
-  void _showChangePasswordDialog(BuildContext context) {
+  void _showChangePasswordDialog(BuildContext context, AppProvider provider) {
+    final controller = TextEditingController();
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF0D1F38),
-        title: const Text('Ganti Password', style: TextStyle(color: Colors.white)),
-        content: const Text('Fitur ganti password via WhatsApp OTP akan segera tersedia.',
-            style: TextStyle(color: Color(0xFF90A4AE))),
-        actions: [TextButton(onPressed: () => Navigator.pop(context),
-            child: const Text('OK', style: TextStyle(color: Color(0xFFE31E24))))],
-      ),
-    );
-  }
-}
-
-class _PressBtn extends StatefulWidget {
-  final String label; final Color color; final VoidCallback onTap;
-  const _PressBtn({required this.label, required this.color, required this.onTap});
-  @override
-  State<_PressBtn> createState() => _PressBtnState();
-}
-class _PressBtnState extends State<_PressBtn> with SingleTickerProviderStateMixin {
-  late AnimationController _c;
-  late Animation<double> _s;
-  @override
-  void initState() {
-    super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
-    _s = Tween<double>(begin: 1.0, end: 0.95).animate(CurvedAnimation(parent: _c, curve: Curves.easeOut));
-  }
-  @override
-  void dispose() { _c.dispose(); super.dispose(); }
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _c.forward(),
-      onTapUp: (_) async { await _c.reverse(); widget.onTap(); },
-      onTapCancel: () => _c.reverse(),
-      child: AnimatedBuilder(animation: _s, builder: (_, _) => Transform.scale(
-        scale: _s.value,
-        child: Container(
-          width: double.infinity, height: 48,
-          decoration: BoxDecoration(
-            color: widget.color, borderRadius: BorderRadius.circular(10),
-            boxShadow: [BoxShadow(color: widget.color.withValues(alpha: 0.35), blurRadius: 8, offset: const Offset(0, 3))],
-          ),
-          alignment: Alignment.center,
-          child: Text(widget.label, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+        title: Text('ACCESS OVERRIDE', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 18, color: zenNavy)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Specify a high-entropy passphrase to secure your active personnel registry node.',
+              style: GoogleFonts.plusJakartaSans(color: zenSlate, fontSize: 13, height: 1.6),
+            ),
+            const SizedBox(height: 28),
+            TextField(
+              controller: controller,
+              obscureText: true,
+              style: GoogleFonts.outfit(fontWeight: FontWeight.w800, color: zenNavy),
+              decoration: InputDecoration(
+                hintText: 'New Access Token',
+                hintStyle: GoogleFonts.outfit(color: zenSlate.withValues(alpha: 0.4), fontSize: 13, fontWeight: FontWeight.w600),
+                prefixIcon: const Icon(Icons.shield_rounded, size: 18, color: zenSlate),
+                filled: true,
+                fillColor: zenNavy.withValues(alpha: 0.03),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.all(22),
+              ),
+            ),
+          ],
         ),
-      )),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('CANCEL', style: GoogleFonts.outfit(color: zenSlate, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1)),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: () async {
+              if (controller.text.length < 6) {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Access Token must be ≥ 6 chars.')));
+                return;
+              }
+              try {
+                await provider.changePassword(controller.text);
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Access Token Synced Successfully.'),
+                    backgroundColor: zenIndigo,
+                    behavior: SnackBarBehavior.floating,
+                    margin: const EdgeInsets.all(24),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  )
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))));
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: zenNavy,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+            child: Text('SYNC TOKEN', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1)),
+          ),
+        ],
+      ),
     );
   }
 }

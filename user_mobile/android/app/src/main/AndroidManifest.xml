@@ -15,8 +15,9 @@
     <application
         android:label="jneattendance_mobile"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/launcher_icon"
         android:requestLegacyExternalStorage="true"
+        android:usesCleartextTraffic="true"
         android:enableOnBackInvokedCallback="false">
         <activity
             android:name=".MainActivity"
@@ -38,6 +39,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2"/>
+
+        <!-- Google Maps API Key -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyD8_xQ095GsDSOr_nhONflsPa0qtMnWfkY"/>
     </application>
 
     <queries>

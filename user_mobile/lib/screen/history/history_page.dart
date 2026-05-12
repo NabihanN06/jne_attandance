@@ -1,39 +1,276 @@
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
+import '../../widgets/package_loading.dart';
 
-class HistoryPage extends StatelessWidget {
+class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
+
+  @override
+  State<HistoryPage> createState() => _HistoryPageState();
+}
+
+class _HistoryPageState extends State<HistoryPage> {
+  // ── ZEN PREMIUM PALETTE ──
+  static const Color zenNavy = Color(0xFF121826);
+  static const Color zenIndigo = Color(0xFF4F46E5);
+  static const Color zenCyan = Color(0xFF22D3EE);
+  static const Color zenRose = Color(0xFFF43F5E);
+  static const Color zenEmerald = Color(0xFF10B981);
+  static const Color zenOffWhite = Color(0xFFF8FAFC);
+  static const Color zenSlate = Color(0xFF94A3B8);
+
+  int _selectedMonth = DateTime.now().month;
+  int _selectedYear = DateTime.now().year;
+  bool _isSyncing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppProvider>().fetchAttendanceByMonth(_selectedMonth, _selectedYear);
+    });
+  }
+
+  void _onFilterChanged() {
+    context.read<AppProvider>().fetchAttendanceByMonth(_selectedMonth, _selectedYear);
+  }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
-    final records = provider.myAttendance;
+    final records = provider.monthlyAttendance;
+    final isLoading = provider.isLoadingHistory;
+
+    final presentCount = records.where((r) => r.status == 'present').length;
+    final leaveCount = records.where((r) => r.status == 'leave').length;
+    final lateCount = records.where((r) => r.status == 'late').length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A1628),
+      backgroundColor: zenOffWhite,
       appBar: AppBar(
-        title: const Text('Riwayat Kehadiran'),
-        actions: [
-          IconButton(icon: const Icon(Icons.help_outline), onPressed: () => _showHelp(context)),
+        backgroundColor: zenNavy,
+        elevation: 0,
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.chevron_left_rounded, color: Colors.white, size: 28),
+            ),
+          ),
+        ),
+        title: Text(
+          'OPERATIONAL LOGS',
+          style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3),
+        ),
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          // ── FILTER SECTOR ──
+          Container(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+            decoration: const BoxDecoration(
+              color: zenNavy,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(48),
+                bottomRight: Radius.circular(48),
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: _buildDropdownMonth()),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildDropdownYear()),
+                  ],
+                ),
+                const SizedBox(height: 28),
+                Row(
+                  children: [
+                    _headerStat('Synced', presentCount.toString().padLeft(2, '0'), zenCyan),
+                    const SizedBox(width: 12),
+                    _headerStat('Authorized', leaveCount.toString().padLeft(2, '0'), zenIndigo),
+                    const SizedBox(width: 12),
+                    _headerStat('Delayed', lateCount.toString().padLeft(2, '0'), zenRose),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: Column(
+              children: [
+                if (provider.hasPendingAttendance) _buildSyncBanner(context, provider),
+                Expanded(
+                  child: isLoading
+                    ? const PackageLoading()
+                    : records.isEmpty
+                      ? _buildEmptyState()
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: records.length,
+                          itemBuilder: (context, index) {
+                            final r = records[index];
+                            return FadeInUp(
+                              key: ValueKey(r.id),
+                              duration: Duration(milliseconds: 300 + (index * 50)),
+                              child: _buildAttendanceCard(context, r),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
-      body: records.isEmpty
-          ? _buildEmptyState()
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: records.length,
-              itemBuilder: (context, index) {
-                final r = records[index];
-                return FadeInUp(
-                  duration: Duration(milliseconds: 300 + (index * 50)),
-                  child: _buildAttendanceCard(context, r),
-                );
-              },
-            ),
+    );
+  }
+
+   Widget _buildSyncBanner(BuildContext context, AppProvider provider) {
+     return Container(
+       margin: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+       decoration: BoxDecoration(
+         color: Colors.amber.withValues(alpha: 0.06),
+         borderRadius: BorderRadius.circular(20),
+         border: Border.all(color: Colors.amber.withValues(alpha: 0.12)),
+       ),
+       child: Row(
+         children: [
+           const Icon(Icons.cloud_off_rounded, color: Colors.amber, size: 20),
+           const SizedBox(width: 16),
+           Expanded(
+             child: Text(
+               'UNSYNCED TELEMETRY DETECTED',
+               style: GoogleFonts.outfit(color: Colors.amber.shade900, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+             ),
+           ),
+           GestureDetector(
+             onTap: _isSyncing ? null : () async {
+               setState(() => _isSyncing = true);
+               try {
+                 await provider.syncPendingRecords();
+               } finally {
+                 if (mounted) setState(() => _isSyncing = false);
+               }
+             },
+             child: Container(
+               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+               decoration: BoxDecoration(
+                 color: Colors.amber,
+                 borderRadius: BorderRadius.circular(10),
+               ),
+               child: _isSyncing
+                   ? const SizedBox(
+                       height: 12, width: 12,
+                       child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                     )
+                   : Text('SYNC', style: GoogleFonts.outfit(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+             ),
+           ),
+         ],
+       ),
+     );
+   }
+
+  Widget _buildDropdownMonth() {
+    final months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: _selectedMonth,
+          dropdownColor: zenNavy,
+          icon: const Icon(Icons.expand_more_rounded, color: Colors.white38),
+          isExpanded: true,
+          style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
+          onChanged: (val) {
+            if (val != null) {
+              setState(() => _selectedMonth = val);
+              _onFilterChanged();
+            }
+          },
+          items: List.generate(12, (index) => DropdownMenuItem(
+            value: index + 1,
+            child: Text(months[index]),
+          )),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownYear() {
+    final currentYear = DateTime.now().year;
+    final years = List.generate(3, (index) => currentYear - index);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: _selectedYear,
+          dropdownColor: zenNavy,
+          icon: const Icon(Icons.expand_more_rounded, color: Colors.white38),
+          isExpanded: true,
+          style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800),
+          onChanged: (val) {
+            if (val != null) {
+              setState(() => _selectedYear = val);
+              _onFilterChanged();
+            }
+          },
+          items: years.map((y) => DropdownMenuItem(
+            value: y,
+            child: Text(y.toString()),
+          )).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _headerStat(String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.03),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
+        child: Column(
+          children: [
+            Text(value, style: GoogleFonts.outfit(color: color, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -1)),
+            const SizedBox(height: 4),
+            Text(label.toUpperCase(), style: GoogleFonts.outfit(color: Colors.white30, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+          ],
+        ),
+      ),
     );
   }
 
@@ -42,185 +279,137 @@ class HistoryPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.history_toggle_off, color: Colors.grey, size: 64),
-          const SizedBox(height: 16),
-          const Text('Belum ada riwayat absensi', style: TextStyle(color: Colors.grey)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAttendanceCard(BuildContext context, AttendanceRecord r) {
-    final statusColor = _getStatusColor(r.checkInStatus);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0D1F38),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      child: InkWell(
-        onTap: () => _showRecordDetails(context, r),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(DateFormat('EEEE, d MMMM yyyy', 'id').format(r.date), 
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                    Text(r.shift, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
-                  child: Text(r.checkInStatus, style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-            const Divider(color: Colors.white10, height: 24),
-            Row(
-              children: [
-                _timeInfo('Masuk', r.checkIn ?? '--:--'),
-                const SizedBox(width: 40),
-                _timeInfo('Pulang', r.checkOut ?? '--:--'),
-                const Spacer(),
-                const Text('Detail →', style: TextStyle(color: Colors.blue, fontSize: 12)),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _timeInfo(String label, String time) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-        Text(time, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-      ],
-    );
-  }
-
-  Color _getStatusColor(String status) {
-    if (status.contains('Tepat')) return Colors.green;
-    if (status.contains('Lambat')) return Colors.orange;
-    if (status.contains('Lembur')) return Colors.blue;
-    return Colors.red;
-  }
-
-  void _showRecordDetails(BuildContext context, AttendanceRecord r) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF0D1F38),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Detail Kehadiran', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            _detailRow('Tanggal', DateFormat('dd MMMM yyyy', 'id').format(r.date)),
-            _detailRow('Lokasi', r.location),
-            _detailRow('Status', r.checkInStatus),
-            if (r.photoUrl != null) ...[
-              const SizedBox(height: 16),
-              const Text('Foto Absensi', style: TextStyle(color: Colors.grey, fontSize: 12)),
-              const SizedBox(height: 8),
-              Container(
-                height: 150, width: double.infinity,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black26),
-                child: const Center(child: Icon(Icons.image, color: Colors.white24)),
-              ),
-            ],
-            const SizedBox(height: 32),
-            const Text('❌ Data absensi TIDAK BISA diedit sendiri', 
-              style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: () => _showEditRequestForm(context, r),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-              child: const Text('AJUKAN KOREKSI DATA'),
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _detailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-
-  void _showEditRequestForm(BuildContext context, AttendanceRecord r) {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF162440),
-        title: const Text('Ajukan Koreksi', style: TextStyle(color: Colors.white)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Jelaskan alasan koreksi data absensi ini:', style: TextStyle(color: Colors.grey, fontSize: 12)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: 'Contoh: Lupa absen pulang karena lembur mendadak',
-                hintStyle: TextStyle(color: Colors.white24, fontSize: 12),
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('BATAL')),
-          ElevatedButton(
-            onPressed: () {
-              Provider.of<AppProvider>(context, listen: false).submitEditRequest(r.id, controller.text, {});
-              Navigator.pop(context);
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permintaan terkirim')));
-            },
-            child: const Text('KIRIM PERMINTAAN'),
+          Icon(Icons.inventory_2_outlined, color: zenSlate.withValues(alpha: 0.2), size: 64),
+          const SizedBox(height: 20),
+          Text(
+            'NO REGISTRY RECORDS FOUND', 
+            style: GoogleFonts.outfit(color: zenSlate.withValues(alpha: 0.4), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
           ),
         ],
       ),
     );
   }
 
-  void _showHelp(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF162440),
-        title: const Text('Bantuan', style: TextStyle(color: Colors.white)),
-        content: const Text('Data absensi bersifat permanen. Jika terdapat kesalahan, silakan gunakan fitur "Ajukan Koreksi" untuk mendapatkan persetujuan dari HR Admin.',
-          style: TextStyle(color: Colors.grey, fontSize: 13)),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('MENGERTI'))],
-      ),
-    );
-  }
+  Widget _buildAttendanceCard(BuildContext context, AttendanceRecord r) {
+    final date = DateTime.tryParse(r.date) ?? DateTime.now();
+    
+    bool isLate = r.status == 'late';
+    bool isAbsent = r.status == 'absent';
+    bool isLeave = r.status == 'leave';
+    
+    Color statusColor = zenEmerald;
+    String statusLabel = 'SYNCED';
+    
+    if (isLate) { statusColor = zenRose; statusLabel = 'DELAYED'; }
+    if (isAbsent) { statusColor = zenRose; statusLabel = 'OFFLINE'; }
+    if (isLeave) { statusColor = zenIndigo; statusLabel = 'AUTHORIZED'; }
+
+    String checkInTime = r.checkIn?.time != null ? DateFormat('HH:mm').format(r.checkIn!.time!) : '--:--';
+    String checkOutTime = r.checkOut?.time != null ? DateFormat('HH:mm').format(r.checkOut!.time!) : '--:--';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(40),
+        border: Border.all(color: zenNavy.withValues(alpha: 0.03)),
+        boxShadow: [
+          BoxShadow(
+                color: zenNavy.withValues(alpha: 0.02), 
+                blurRadius: 30, 
+                offset: const Offset(0, 15)
+              )
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        DateFormat('EEEE, d MMM yyyy').format(date).toUpperCase(),
+                        style: GoogleFonts.outfit(color: zenNavy, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: -0.2),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Container(width: 6, height: 6, decoration: const BoxDecoration(color: zenIndigo, shape: BoxShape.circle)),
+                          const SizedBox(width: 8),
+                          Text(
+                            'SECTOR: MARTAPURA HUB',
+                            style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: GoogleFonts.outfit(color: statusColor, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                    ),
+                  ),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Divider(color: zenOffWhite, thickness: 2, height: 1),
+              ),
+              Row(
+                children: [
+                  _timeBox('ENTRY SIGNAL', checkInTime, Icons.sensors_rounded, zenCyan),
+                  const Spacer(),
+                  _timeBox('EXIT SIGNAL', checkOutTime, Icons.sensors_off_rounded, zenIndigo),
+                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: zenNavy.withValues(alpha: 0.03),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.chevron_right_rounded, color: zenSlate, size: 18),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      }
+
+      Widget _timeBox(String label, String time, IconData icon, Color color) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 14, color: color.withValues(alpha: 0.6)),
+                const SizedBox(width: 8),
+                Text(
+                  label, 
+                  style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5)
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              time,
+              style: GoogleFonts.outfit(
+                color: zenNavy, 
+                fontSize: 20, 
+                fontWeight: FontWeight.w900, 
+                fontFeatures: [const FontFeature.tabularFigures()]
+              ),
+            ),
+          ],
+        );
+      }
 }

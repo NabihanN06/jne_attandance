@@ -1,0 +1,1 @@
+{"schema":["admin\\dataconnect\\.dataconnect\\**\\*.gql","admin\\dataconnect\\schema\\**\\*.gql"],"document":["admin\\dataconnect\\example\\**\\*.gql"]}

@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.jneattendance_mobile"
-        minSdkVersion 21
+        minSdkVersion flutter.minSdkVersion
         targetSdkVersion 34
         versionCode flutter.versionCode
         versionName flutter.versionName
@@ -32,6 +32,9 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.debug
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
