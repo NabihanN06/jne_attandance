@@ -84,9 +84,14 @@ class ChatProvider extends ChangeNotifier {
   bool _otherUserTyping = false;
   bool get otherUserTyping => _otherUserTyping;
 
+  // Track which messages we've already marked as read to prevent
+  // snapshot → markAsRead → new snapshot → markAsRead infinite loop
+  final Set<String> _markedAsReadIds = {};
+
   void listenToMessages(String chatId) {
     _messageSubscription?.cancel();
     _typingSubscription?.cancel();
+    _markedAsReadIds.clear();
     _isLoading = true;
     notifyListeners();
 
@@ -101,9 +106,12 @@ class ChatProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
 
-      // Mark messages as read
+      // Mark messages as read (only once per message to avoid loop)
       for (var msg in _messages) {
-        if (msg.status != MessageStatus.read && msg.senderId != _auth.currentUser?.uid) {
+        if (msg.status != MessageStatus.read &&
+            msg.senderId != _auth.currentUser?.uid &&
+            !_markedAsReadIds.contains(msg.id)) {
+          _markedAsReadIds.add(msg.id);
           _markAsRead(msg.id);
         }
       }
@@ -134,11 +142,24 @@ class ChatProvider extends ChangeNotifier {
     });
   }
 
-  Future<void> updateTyping(String chatId, bool typing) async {
+  Timer? _typingDebounce;
+  bool _lastTypingState = false;
+
+  void updateTyping(String chatId, bool typing) {
     if (_auth.currentUser == null) return;
-    await _db.collection('chats').doc(chatId).collection('typing').doc('status').set({
-      _auth.currentUser!.uid: typing,
-    }, SetOptions(merge: true));
+    if (typing == _lastTypingState) return;
+    _lastTypingState = typing;
+
+    _typingDebounce?.cancel();
+    _typingDebounce = Timer(const Duration(milliseconds: 250), () {
+      _db
+          .collection('chats')
+          .doc(chatId)
+          .collection('typing')
+          .doc('status')
+          .set({_auth.currentUser!.uid: typing}, SetOptions(merge: true))
+          .catchError((e) => debugPrint('Typing indicator write failed: $e'));
+    });
   }
 
   /// NEW: Enhanced send with status tracking
@@ -209,6 +230,7 @@ class ChatProvider extends ChangeNotifier {
   void dispose() {
     _messageSubscription?.cancel();
     _typingSubscription?.cancel();
+    _typingDebounce?.cancel();
     super.dispose();
   }
 }

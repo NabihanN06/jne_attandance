@@ -26,6 +26,7 @@ class _ChatPageState extends State<ChatPage> {
   String? _chatId;
   bool _isSending = false;
   int _prevMessageCount = 0;
+  ChatProvider? _chatRef;
 
   @override
   void initState() {
@@ -37,10 +38,20 @@ class _ChatPageState extends State<ChatPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final chat = context.read<ChatProvider>();
-    // Auto-scroll when message count changes
-    if (chat.messages.length != _prevMessageCount) {
-      _prevMessageCount = chat.messages.length;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    if (!identical(_chatRef, chat)) {
+      _chatRef?.removeListener(_onChatChanged);
+      _chatRef = chat;
+      _chatRef!.addListener(_onChatChanged);
+    }
+  }
+
+  void _onChatChanged() {
+    if (!mounted || _chatRef == null) return;
+    if (_chatRef!.messages.length != _prevMessageCount) {
+      _prevMessageCount = _chatRef!.messages.length;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToBottom();
+      });
     }
   }
 
@@ -128,12 +139,6 @@ class _ChatPageState extends State<ChatPage> {
     final chat = context.watch<ChatProvider>();
     final app  = context.watch<AppProvider>();
     final isDark = app.isDarkMode;
-
-    // Auto scroll when new messages arrive
-    if (chat.messages.length != _prevMessageCount) {
-      _prevMessageCount = chat.messages.length;
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-    }
 
     // Palette
     final bg         = isDark ? const Color(0xFF0B1120) : const Color(0xFFF0F4F8);
@@ -492,8 +497,9 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void dispose() {
     if (_chatId != null) {
-      context.read<ChatProvider>().updateTyping(_chatId!, false);
+      _chatRef?.updateTyping(_chatId!, false);
     }
+    _chatRef?.removeListener(_onChatChanged);
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
