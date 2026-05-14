@@ -119,6 +119,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   StreamSubscription? _attendanceSub;
   StreamSubscription? _leaveSub;
   StreamSubscription? _presenceSub;
+  StreamSubscription? _selfUserSub;
 
   // Timers
   Timer? _heartbeatTimer;
@@ -182,11 +183,26 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     if (_isFetchingUser) return;
     _isFetchingUser = true;
     try {
+      // Initial fetch so we have data immediately (for login_page to read
+      // passwordChanged synchronously after login resolves).
       final doc = await _db.collection('users').doc(uid).get();
       if (doc.exists) {
         _currentUser = UserModel.fromFirestore(doc);
         _listenToMyData();
       }
+
+      // Real-time listener for the current user's own profile doc. When
+      // admin edits the user's name / role / department / isActive from
+      // the admin panel, mobile picks it up immediately without a relogin.
+      _selfUserSub?.cancel();
+      _selfUserSub = _db.collection('users').doc(uid).snapshots().listen(
+        (snap) {
+          if (!snap.exists) return;
+          _currentUser = UserModel.fromFirestore(snap);
+          notifyListeners();
+        },
+        onError: (e) => debugPrint('Self-user listener error: $e'),
+      );
     } catch (e) {
       debugPrint('Error fetching user: $e');
     } finally {
@@ -267,6 +283,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     _attendanceSub?.cancel();
     _leaveSub?.cancel();
     _presenceSub?.cancel();
+    _selfUserSub?.cancel();
     _syncRetryTimer?.cancel();
   }
 
