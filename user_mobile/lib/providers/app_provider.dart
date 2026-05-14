@@ -22,6 +22,8 @@ import '../utils/presence_service.dart';
 class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final Connectivity _connectivity = Connectivity();
+  late final ConnectivityService _connectivityService;
 
   UserModel? _currentUser;
   UserModel? get currentUser => _currentUser;
@@ -123,12 +125,13 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   Timer? _syncRetryTimer;
 
   AppProvider(ConnectivityService connectivityService) {
+    _connectivityService = connectivityService;
     _init();
     _loadThemePreference();
     WidgetsBinding.instance.addObserver(this);
     
-    connectivityService.addListener(() {
-      if (connectivityService.isOnline && isLoggedIn) {
+    _connectivityService.addListener(() {
+      if (_connectivityService.isOnline && isLoggedIn) {
         syncPendingRecords();
         _startHeartbeat();
       } else {
@@ -136,6 +139,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       }
     });
   }
+
+  bool get isOnline => _connectivityService.isOnline;
+  bool get isOffline => !isOnline;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -349,8 +355,22 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       }
       _updatePresence(true);
       _startHeartbeat();
+    } on FirebaseAuthException catch (e) {
+      // Map Firebase error codes to messages users can actually act on
+      final msg = switch (e.code) {
+        'invalid-email'         => 'Format email tidak valid.',
+        'user-disabled'         => 'Akun dinonaktifkan. Hubungi admin.',
+        'user-not-found'        => 'Akun tidak ditemukan. Cek email kembali.',
+        'wrong-password'        => 'Password salah.',
+        'invalid-credential'    => 'Email atau password salah.',
+        'too-many-requests'     => 'Terlalu banyak percobaan. Tunggu beberapa menit.',
+        'network-request-failed'=> 'Tidak ada koneksi internet. Cek jaringan kamu.',
+        _                       => 'Gagal masuk (${e.code}). Coba lagi.',
+      };
+      throw Exception(msg);
     } catch (e) {
-      throw Exception('Email atau password salah atau gangguan server. Coba cek kembali ya.');
+      // Non-auth failure (network during fetchCurrentUser, etc.)
+      throw Exception('Gangguan koneksi. Cek internet kamu lalu coba lagi.');
     } finally {
       _isProcessing = false;
       _fortressStatus = '';
@@ -422,10 +442,35 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  void logout() async {
+  Future<void> logout() async {
+    // 1. Unregister FCM token for THIS device so the next user who logs in here
+    // doesn't keep receiving the previous user's notifications. Best-effort:
+    // if it fails (offline), the next saveFCMToken on new login will overwrite
+    // the doc with the new userId anyway.
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await _db.collection('fcm_tokens').doc(token).delete();
+      }
+    } catch (e) {
+      debugPrint('FCM token cleanup failed: $e');
+    }
+
+    // 2. Stop background work BEFORE signOut so listeners don't see a half-gone
+    // auth state and write garbage.
     _stopHeartbeat();
+    _stopPresence();
     _cancelAllSubscriptions();
-    await _auth.signOut();
+
+    // 3. SignOut — this will also fire the authStateChanges listener which
+    // does its own cleanup, but those calls are idempotent.
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      debugPrint('Logout signOut error: $e');
+    }
+
+    // 4. Clear local caches so a re-login on same device starts fresh.
     _currentUser = null;
     _attendanceRecords.clear();
     _monthlyRecords.clear();
@@ -433,6 +478,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     _personalNotifs.clear();
     _broadcastNotifs.clear();
     _events.clear();
+    _hasPendingAttendance = false;
     notifyListeners();
   }
 
@@ -466,7 +512,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
   // ── Attendance Logic ──
   bool get hasClockedInToday {
-    return _attendanceRecords.any((r) => r.checkIn != null && r.checkOut == null);
+    final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    return _attendanceRecords.any((r) => r.date == todayStr && r.checkIn != null && r.checkOut == null);
   }
 
   Future<void> addAttendanceCheckIn(String status, {String? localImagePath, double lat = 0, double lng = 0}) async {
@@ -515,7 +562,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           if (snapshot.exists) {
             final existingData = snapshot.data();
             if (existingData != null && existingData['checkIn'] != null) {
-              throw 'ALREADY_CLOCKED_IN';
+              throw Exception('ALREADY_CLOCKED_IN');
             }
           }
           transaction.set(docRef, data);
@@ -582,7 +629,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       }
     } catch (e) {
       debugPrint('Attendance error: $e');
-      if (e == 'ALREADY_CLOCKED_IN') {
+      if (e.toString().contains('ALREADY_CLOCKED_IN')) {
         throw Exception('Anda sudah melakukan absensi masuk hari ini.');
       }
       throw Exception('Gagal mengirim absensi. Pastikan koneksi stabil atau coba lagi.');
@@ -593,10 +640,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   }
 
   Future<bool> _checkConnectivity() async {
-    // Prefer using the injected service if available, otherwise check directly
-    // but without re-instantiating Connectivity class inside a tight loop if possible.
     try {
-      final res = await Connectivity().checkConnectivity();
+      final res = await _connectivity.checkConnectivity();
       return !res.contains(ConnectivityResult.none);
     } catch (_) {
       return false;
@@ -954,6 +999,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         'employeeName': _currentUser!.name,
         'employeeId': _currentUser!.employeeId,
         'department': _currentUser!.department,
+        'date': DateFormat('yyyy-MM-dd').format(date),
         'attendanceDate': DateFormat('yyyy-MM-dd').format(date),
         'status': 'overtime',
         'overtimeMinutes': durationMinutes,
