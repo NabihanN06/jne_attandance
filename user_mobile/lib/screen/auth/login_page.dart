@@ -17,7 +17,6 @@ class _LoginPageState extends State<LoginPage>
   // ── PALETTE ──
   static const Color _navy = Color(0xFF081F3F); // Deep Blue Theme
   static const Color _blue = Color(0xFF2563EB);
-  static const Color _blueDark = Color(0xFF1D4ED8);
   static const Color _cyan = Color(0xFF0EA5E9);
   static const Color _textDark = Color(0xFF1E293B);
   static const Color _textMuted = Color(0xFF64748B);
@@ -306,15 +305,14 @@ class _LoginPageState extends State<LoginPage>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final topPadding = MediaQuery.of(context).padding.top;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
         backgroundColor: _navy,
-        resizeToAvoidBottomInset: false, // Handle manual layout adjustments
+        // Let Scaffold shrink the body when the keyboard shows — far cheaper
+        // than rebuilding the whole page on every viewInsets tick, and the
+        // SingleChildScrollView below makes the form scrollable above it.
+        resizeToAvoidBottomInset: true,
         body: Stack(
           children: [
             // ── Background Gradient ──
@@ -344,42 +342,24 @@ class _LoginPageState extends State<LoginPage>
 
             // ── Main Layout ──
             SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return AnimatedPadding(
-                    duration: const Duration(milliseconds: 300),
-                    padding: EdgeInsets.only(bottom: bottomInset > 0 ? 20 : 0),
-                    child: FadeTransition(
-                      opacity: _fadeAnim,
-                      child: SlideTransition(
-                        position: _slideAnim,
-                        child: Column(
-                          children: [
-                            // Branding Section
-                            if (bottomInset == 0) ...[
-                              SizedBox(height: constraints.maxHeight * 0.08),
-                              _buildBranding(),
-                              const Spacer(),
-                            ] else ...[
-                              const SizedBox(height: 20),
-                            ],
-
-                            // Login Form Card
-                            _buildLoginCard(constraints, bottomInset),
-
-                            if (bottomInset == 0) ...[
-                              const Spacer(),
-                              _buildFooter(),
-                              const SizedBox(height: 20),
-                            ] else ...[
-                              const SizedBox(height: 20),
-                            ],
-                          ],
-                        ),
-                      ),
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: SlideTransition(
+                  position: _slideAnim,
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Column(
+                      children: [
+                        _buildBranding(),
+                        const SizedBox(height: 32),
+                        _buildLoginCard(),
+                        const SizedBox(height: 24),
+                        _buildFooter(),
+                      ],
                     ),
-                  );
-                }
+                  ),
+                ),
               ),
             ),
           ],
@@ -422,7 +402,7 @@ class _LoginPageState extends State<LoginPage>
           child: Image.asset(
             'assets/images/jne.png',
             fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => const Icon(
+            errorBuilder: (context, error, stackTrace) => const Icon(
               Icons.local_shipping_rounded,
               color: _navy,
               size: 40,
@@ -461,7 +441,7 @@ class _LoginPageState extends State<LoginPage>
     );
   }
 
-  Widget _buildLoginCard(BoxConstraints constraints, double bottomInset) {
+  Widget _buildLoginCard() {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -553,22 +533,20 @@ class _LoginPageState extends State<LoginPage>
           // Login Button
           _buildLoginButton(),
 
-          if (bottomInset == 0) ...[
-            const SizedBox(height: 20),
-            Center(
-              child: TextButton(
-                onPressed: () {},
-                child: Text(
-                  'Lupa password? Hubungi IT Support',
-                  style: GoogleFonts.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _navy,
-                  ),
+          const SizedBox(height: 20),
+          Center(
+            child: TextButton(
+              onPressed: () {},
+              child: Text(
+                'Lupa password? Hubungi IT Support',
+                style: GoogleFonts.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: _navy,
                 ),
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -683,6 +661,4 @@ class _LoginPageState extends State<LoginPage>
       ),
     );
   }
-}
-
 }
