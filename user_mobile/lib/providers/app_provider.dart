@@ -670,8 +670,15 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           debugPrint('Audit log failed: $e');
         }
 
-        // Mark as synced immediately since we wrote directly
-        await _db.collection('attendance').doc(docId).update({'syncStatus': 'synced'});
+        // Mark as synced immediately since we wrote directly. Non-blocking —
+        // if this update fails (e.g. transient network blip after the
+        // transaction succeeded), the doc is still in Firestore and the
+        // admin still sees it. We don't want a false "Gagal absen" toast.
+        try {
+          await _db.collection('attendance').doc(docId).update({'syncStatus': 'synced'});
+        } catch (e) {
+          debugPrint('syncStatus update failed (non-fatal): $e');
+        }
       } else {
         final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
         final data = {
@@ -703,12 +710,26 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         await OfflineService.savePendingAttendance(data);
         _hasPendingAttendance = true;
       }
+    } on FirebaseException catch (e) {
+      debugPrint('Attendance Firebase error: code=${e.code} msg=${e.message}');
+      if (e.code == 'permission-denied') {
+        throw Exception('Akun belum diizinkan absen. Hubungi admin untuk aktifkan akses.');
+      }
+      if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw Exception('Koneksi tidak stabil. Coba lagi sebentar.');
+      }
+      if (e.code == 'already-exists') {
+        throw Exception('Anda sudah melakukan absensi masuk hari ini.');
+      }
+      throw Exception('Gagal absen (${e.code}). Coba lagi.');
     } catch (e) {
       debugPrint('Attendance error: $e');
       if (e.toString().contains('ALREADY_CLOCKED_IN')) {
         throw Exception('Anda sudah melakukan absensi masuk hari ini.');
       }
-      throw Exception('Gagal mengirim absensi. Pastikan koneksi stabil atau coba lagi.');
+      // Surface the real reason instead of a generic "Gagal mengirim".
+      final raw = e.toString().replaceFirst('Exception: ', '').replaceFirst('Error: ', '');
+      throw Exception(raw.length > 140 ? '${raw.substring(0, 140)}...' : raw);
     } finally {
       _isProcessing = false;
       notifyListeners();
@@ -896,9 +917,19 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         await OfflineService.savePendingAttendance(offlineData);
         _hasPendingAttendance = true;
       }
+    } on FirebaseException catch (e) {
+      debugPrint('Check-out Firebase error: code=${e.code} msg=${e.message}');
+      if (e.code == 'permission-denied') {
+        throw Exception('Akun belum diizinkan absen keluar. Hubungi admin.');
+      }
+      if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw Exception('Koneksi tidak stabil. Coba lagi sebentar.');
+      }
+      throw Exception('Gagal absen keluar (${e.code}). Coba lagi.');
     } catch (e) {
       debugPrint('Check-out error: $e');
-      throw Exception('Gagal melakukan absen keluar: $e');
+      final raw = e.toString().replaceFirst('Exception: ', '').replaceFirst('Error: ', '');
+      throw Exception(raw.length > 140 ? '${raw.substring(0, 140)}...' : raw);
     } finally {
       _isProcessing = false;
       notifyListeners();
