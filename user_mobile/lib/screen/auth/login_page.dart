@@ -23,9 +23,13 @@ class _LoginPageState extends State<LoginPage>
   static const Color _fieldBg = Color(0xFFF8FAFC);
   static const Color _fieldBorder = Color(0xFFE2E8F0);
 
+  static const String _emailDomain = '@jne.mtp.com';
+
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _confirmPassCtrl = TextEditingController();
   bool _obscurePass = true;
+  bool _obscureConfirm = true;
   bool _isLoading = false;
 
   late AnimationController _animController;
@@ -49,21 +53,28 @@ class _LoginPageState extends State<LoginPage>
   void dispose() {
     _emailCtrl.dispose();
     _passCtrl.dispose();
+    _confirmPassCtrl.dispose();
     _animController.dispose();
     super.dispose();
   }
 
   Future<void> _doLogin() async {
-    String email = _emailCtrl.text.trim();
+    // The email field renders @jne.mtp.com as a fixed suffix, so the user
+    // only types the username prefix. Be defensive: if they paste a full
+    // address, strip everything from the @ onward and re-attach our domain.
+    final raw = _emailCtrl.text.trim();
+    final prefix = raw.contains('@') ? raw.split('@').first : raw;
+    final email = prefix.isEmpty ? '' : '$prefix$_emailDomain';
     final password = _passCtrl.text;
+    final confirm = _confirmPassCtrl.text;
 
-    // Handle both username (no @) and full email
-    if (email.isNotEmpty && !email.contains('@')) {
-      email = '$email@jne.mtp.com';
+    if (prefix.isEmpty || password.isEmpty || confirm.isEmpty) {
+      _showSnack('Username, password, dan konfirmasi wajib diisi', isError: true);
+      return;
     }
 
-    if (email.isEmpty || password.isEmpty) {
-      _showSnack('Email dan password wajib diisi', isError: true);
+    if (password != confirm) {
+      _showSnack('Konfirmasi password tidak cocok dengan password', isError: true);
       return;
     }
 
@@ -481,14 +492,15 @@ class _LoginPageState extends State<LoginPage>
           ),
           const SizedBox(height: 32),
 
-          // Email Field
-          _buildLabel('Username / Email'),
+          // Email Field — domain @jne.mtp.com pinned as a fixed suffix
+          _buildLabel('Username'),
           const SizedBox(height: 8),
           _buildTextField(
             controller: _emailCtrl,
-            hint: 'Contoh: pariz.ops',
+            hint: 'arka',
             icon: Icons.person_outline_rounded,
-            keyboard: TextInputType.emailAddress,
+            keyboard: TextInputType.text,
+            suffixText: _emailDomain,
           ),
           const SizedBox(height: 8),
           Row(
@@ -497,7 +509,7 @@ class _LoginPageState extends State<LoginPage>
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  'Gunakan username tanpa @jne.mtp.com',
+                  'Ketik bagian sebelum $_emailDomain saja',
                   style: GoogleFonts.outfit(
                     color: _textMuted,
                     fontSize: 11,
@@ -525,6 +537,26 @@ class _LoginPageState extends State<LoginPage>
                 size: 20,
               ),
               onPressed: () => setState(() => _obscurePass = !_obscurePass),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Confirm Password Field
+          _buildLabel('Konfirmasi Password'),
+          const SizedBox(height: 8),
+          _buildTextField(
+            controller: _confirmPassCtrl,
+            hint: 'Ulangi password',
+            icon: Icons.lock_outline_rounded,
+            obscure: _obscureConfirm,
+            suffix: IconButton(
+              icon: Icon(
+                _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                color: _textMuted,
+                size: 20,
+              ),
+              onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
             ),
           ),
 
@@ -629,6 +661,7 @@ class _LoginPageState extends State<LoginPage>
     required IconData icon,
     bool obscure = false,
     Widget? suffix,
+    String? suffixText,
     TextInputType keyboard = TextInputType.text,
   }) {
     return Container(
@@ -655,6 +688,12 @@ class _LoginPageState extends State<LoginPage>
           ),
           prefixIcon: Icon(icon, color: _navy.withValues(alpha: 0.5), size: 20),
           suffixIcon: suffix,
+          suffixText: suffixText,
+          suffixStyle: GoogleFonts.outfit(
+            color: _textMuted,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         ),
