@@ -336,22 +336,80 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
 
   // ── Auth Methods ──
+
+  /// Default password set by admin when creating a new employee account
+  /// (mirrored from admin/src/hooks/useAddEmployeeLogic.ts). The mobile login
+  /// transparently uses this for first-time login so the user only ever has
+  /// to invent + remember their own password.
+  static const String _adminDefaultPassword = 'JNE123!';
+
+  /// Login flow:
+  ///   1. Try Firebase Auth with the password the user typed.
+  ///   2. If that fails with wrong-password / invalid-credential, fall back
+  ///      to the admin-provisioned default. If the default works, this is
+  ///      a first-login (or admin reset) — promote the user's typed password
+  ///      via updatePassword() and mark passwordChanged so we don't try the
+  ///      default next time.
+  ///   3. If both fail, surface the original auth error message.
   Future<void> login(String email, String password) async {
     _isProcessing = true;
     _fortressStatus = 'Menghubungkan ke server...';
     notifyListeners();
     try {
-      await FortressUtils.wrapWithRetry(
-        () => _auth.signInWithEmailAndPassword(email: email, password: password),
-        taskName: 'Login',
-        onStatusUpdate: (msg) {
-          _fortressStatus = msg;
-          notifyListeners();
-        },
-      );
+      try {
+        // Step 1: try the user's password.
+        await FortressUtils.wrapWithRetry(
+          () => _auth.signInWithEmailAndPassword(email: email, password: password),
+          taskName: 'Login',
+          onStatusUpdate: (msg) {
+            _fortressStatus = msg;
+            notifyListeners();
+          },
+        );
+      } on FirebaseAuthException catch (e) {
+        if (e.code != 'wrong-password' &&
+            e.code != 'invalid-credential') {
+          rethrow;
+        }
+        // Step 2: maybe first login. Try the admin-provisioned default.
+        _fortressStatus = 'Menyiapkan akun pertama kali...';
+        notifyListeners();
+
+        try {
+          await _auth.signInWithEmailAndPassword(
+            email: email,
+            password: _adminDefaultPassword,
+          );
+        } on FirebaseAuthException {
+          // Default also rejected → real wrong password. Re-throw the
+          // original error so the user sees "Password salah" not
+          // "first login failed".
+          throw e;
+        }
+
+        // Default worked → swap to the password the user actually typed.
+        if (password != _adminDefaultPassword) {
+          try {
+            await _auth.currentUser?.updatePassword(password);
+          } on FirebaseAuthException {
+            // The user is signed in with the default password but their
+            // chosen password was rejected (most often weak-password).
+            // Sign them out so they aren't stranded in a session whose
+            // password they don't actually know, then re-throw.
+            await _auth.signOut();
+            rethrow;
+          }
+        }
+      }
+
       // Fetch user data immediately so login_page can read passwordChanged
       if (_auth.currentUser != null) {
         await _fetchCurrentUser(_auth.currentUser!.uid);
+        // Mark account as no-longer-on-default so we don't retry the
+        // bridge on the next login.
+        if (_currentUser != null && !_currentUser!.passwordChanged) {
+          await markPasswordChanged();
+        }
       }
       _updatePresence(true);
       _startHeartbeat();
@@ -365,6 +423,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         'invalid-credential'    => 'Email atau password salah.',
         'too-many-requests'     => 'Terlalu banyak percobaan. Tunggu beberapa menit.',
         'network-request-failed'=> 'Tidak ada koneksi internet. Cek jaringan kamu.',
+        'weak-password'         => 'Password terlalu lemah. Minimal 6 karakter.',
         _                       => 'Gagal masuk (${e.code}). Coba lagi.',
       };
       throw Exception(msg);
