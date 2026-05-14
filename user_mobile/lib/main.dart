@@ -57,38 +57,30 @@ void _handleNotificationNavigation(Map<String, dynamic>? data) {
   navigatorKey.currentState?.pushNamed(route);
 }
 
+/// Android notification channel — wajib dibuat duluan di Android 8+,
+/// kalau enggak, notifikasi auto di-drop diam-diam.
+const AndroidNotificationChannel _kHighImportanceChannel = AndroidNotificationChannel(
+  'high_importance_channel',
+  'High Importance Notifications',
+  description: 'Notifikasi penting JNE Attendance.',
+  importance: Importance.high,
+);
+
 Future<void> _setupFCM() async {
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  // 1. Daftarkan channel Android dulu — wajib sebelum show notification
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(_kHighImportanceChannel);
 
-  await messaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-
-  // Get and save FCM token (will be saved again after login)
-  String? token = await messaging.getToken();
-  debugPrint('FCM Token: $token');
-
-  // Listen for token refresh
-  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-    debugPrint('FCM Token refreshed: $newToken');
-    // Token will be saved after login via AppProvider._saveFCMToken()
-  });
-
-  // Initialize local notifications
+  // 2. Init local notifications plugin
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
-
   const DarwinInitializationSettings initializationSettingsDarwin =
       DarwinInitializationSettings();
-
   const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
     iOS: initializationSettingsDarwin,
   );
-
-  // Handle tap pada local notification (saat app foreground/background)
   await flutterLocalNotificationsPlugin.initialize(
     initializationSettings,
     onDidReceiveNotificationResponse: (NotificationResponse response) {
@@ -96,68 +88,79 @@ Future<void> _setupFCM() async {
     },
   );
 
-  // App dibuka dari notifikasi saat app TERMINATED
+  // 3. Minta izin notifikasi (non-blocking — kalau user reject, app tetap jalan)
+  await FirebaseMessaging.instance.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  // 4. Pasang listener token refresh (async, gak nunggu network)
+  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+    debugPrint('FCM Token refreshed: ${newToken.substring(0, 20)}...');
+  });
+
+  // 5. Initial message dari notif yang buka app saat terminated
   final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
   if (initialMessage != null) {
-    // Delay sedikit biar navigator sudah siap
     Future.delayed(const Duration(milliseconds: 500), () {
       _handleNotificationNavigation(initialMessage.data);
     });
   }
 
-  // App dibuka dari notifikasi saat app BACKGROUND (tidak terminated)
+  // 6. Handler kalau user tap notif saat app di background
   FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
     _handleNotificationNavigation(message.data);
   });
 
-  // Foreground message handler
+  // 7. Handler pesan foreground — tampilkan ke local notifications
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    debugPrint('Got foreground message: ${message.notification?.title}');
+    final notification = message.notification;
+    if (notification == null) return;
 
-    RemoteNotification? notification = message.notification;
-    AndroidNotification? android = message.notification?.android;
-
-    if (notification != null && android != null) {
-      flutterLocalNotificationsPlugin.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            'high_importance_channel',
-            'High Importance Notifications',
-            channelDescription: 'This channel is used for important notifications.',
-            importance: Importance.high,
-            priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
-          ),
-          iOS: const DarwinNotificationDetails(),
+    flutterLocalNotificationsPlugin.show(
+      notification.hashCode,
+      notification.title,
+      notification.body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _kHighImportanceChannel.id,
+          _kHighImportanceChannel.name,
+          channelDescription: _kHighImportanceChannel.description,
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
         ),
-        // Kirim type sebagai payload agar bisa dipakai saat tap
-        payload: message.data['type'],
-      );
-    }
+        iOS: const DarwinNotificationDetails(),
+      ),
+      payload: message.data['type'],
+    );
   });
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Hanya yang BENAR-BENAR dibutuhkan sebelum runApp di-blocking await.
+  // Firebase + date formatting wajib karena provider langsung pakai.
   await Firebase.initializeApp();
   await initializeDateFormatting('id', null);
 
-  // Setup FCM
-  await _setupFCM();
-
-  // Background message handler
+  // Background message handler — cukup register, gak perlu await.
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+  // Orientation lock — sync API, cepat.
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
     systemNavigationBarColor: Colors.white,
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
+
+  // FCM setup di-defer ke background — request permission, getToken, dan
+  // channel creation gak boleh blocking splash. Kalau gagal, app tetap jalan.
+  _setupFCM().catchError((e) => debugPrint('FCM setup failed: $e'));
    runApp(
      MultiProvider(
        providers: [
@@ -263,45 +266,52 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppProvider>(
-      builder: (context, appProvider, _) {
+    // FIXED: Use Selector instead of Consumer to only rebuild MaterialApp
+    // when isDarkMode actually changes. Consumer caused the entire widget tree
+    // (including all routes, Navigators, and TextFields) to rebuild on EVERY
+    // notifyListeners() call — which happens every 30s from heartbeat + 5+
+    // Firestore stream listeners. This destroyed TextField focus and prevented
+    // users from typing.
+    return Selector<AppProvider, bool>(
+      selector: (_, app) => app.isDarkMode,
+      builder: (context, isDarkMode, child) {
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: appProvider.isDarkMode ? Brightness.light : Brightness.dark,
-          systemNavigationBarColor: appProvider.isDarkMode ? const Color(0xFF0B1120) : Colors.white,
-          systemNavigationBarIconBrightness: appProvider.isDarkMode ? Brightness.light : Brightness.dark,
+          statusBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
+          systemNavigationBarColor: isDarkMode ? const Color(0xFF0B1120) : Colors.white,
+          systemNavigationBarIconBrightness: isDarkMode ? Brightness.light : Brightness.dark,
         ));
         return MaterialApp(
-      title: 'JNE Attendance',
-      debugShowCheckedModeBanner: false,
-      navigatorKey: navigatorKey,
-      theme: _lightTheme(),
-      darkTheme: _darkTheme(),
-      themeMode: appProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      initialRoute: '/',
-      routes: {
-        '/': (ctx) => const SplashScreen(),
-        '/login': (ctx) => const LoginPage(),
-        '/onboarding': (ctx) => const OnboardingScreen(),
-        '/permission/location': (ctx) => const LocationPermissionPage(),
-        '/permission/camera': (ctx) => const CameraPermissionPage(),
-        '/welcome': (ctx) => const WelcomePage(),
-        '/enroll': (ctx) => const EnrollPage(),
-        '/succeed': (ctx) => const SucceedPage(),
-        '/home': (ctx) => const HomeScreen(),
-        '/option': (ctx) => const OptionPage(),
-        '/attendance': (ctx) => const AttendancePage(),
-        '/leave': (ctx) => const LeavePage(),
-        '/statistic': (ctx) => const StatisticPage(),
-        '/history': (ctx) => const HistoryPage(),
-        '/profile': (ctx) => const ProfilePage(),
-        '/profile/id_card': (ctx) => const IDCardPage(),
-        '/notification': (ctx) => const NotificationPage(),
-        '/settings': (ctx) => const SettingsPage(),
-        '/overtime': (ctx) => const OvertimePage(),
-        '/chat': (ctx) => const ChatPage(),
-        '/calendar': (ctx) => const CalendarPage(),
-      },
+          title: 'JNE Attendance',
+          debugShowCheckedModeBanner: false,
+          navigatorKey: navigatorKey,
+          theme: _lightTheme(),
+          darkTheme: _darkTheme(),
+          themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          initialRoute: '/',
+          routes: {
+            '/': (ctx) => const SplashScreen(),
+            '/login': (ctx) => const LoginPage(),
+            '/onboarding': (ctx) => const OnboardingScreen(),
+            '/permission/location': (ctx) => const LocationPermissionPage(),
+            '/permission/camera': (ctx) => const CameraPermissionPage(),
+            '/welcome': (ctx) => const WelcomePage(),
+            '/enroll': (ctx) => const EnrollPage(),
+            '/succeed': (ctx) => const SucceedPage(),
+            '/home': (ctx) => const HomeScreen(),
+            '/option': (ctx) => const OptionPage(),
+            '/attendance': (ctx) => const AttendancePage(),
+            '/leave': (ctx) => const LeavePage(),
+            '/statistic': (ctx) => const StatisticPage(),
+            '/history': (ctx) => const HistoryPage(),
+            '/profile': (ctx) => const ProfilePage(),
+            '/profile/id_card': (ctx) => const IDCardPage(),
+            '/notification': (ctx) => const NotificationPage(),
+            '/settings': (ctx) => const SettingsPage(),
+            '/overtime': (ctx) => const OvertimePage(),
+            '/chat': (ctx) => const ChatPage(),
+            '/calendar': (ctx) => const CalendarPage(),
+          },
         );
       },
     );

@@ -43,11 +43,6 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
 
   bool _isCapturing = false;
 
-  // Real-time clock
-  late Timer _clockTimer;
-  String _currentTime = '';
-  String _currentDate = '';
-
   @override
   void initState() {
     super.initState();
@@ -66,18 +61,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       CurvedAnimation(parent: _pulseAnimController, curve: Curves.easeInOut),
     );
 
-    _updateClock();
-    _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) => _updateClock());
-
     _initCamera();
-  }
-
-  void _updateClock() {
-    final now = DateTime.now();
-    setState(() {
-      _currentTime = DateFormat('HH:mm:ss').format(now);
-      _currentDate = DateFormat('EEEE, d MMMM yyyy', 'id').format(now);
-    });
   }
 
   Future<void> _initCamera() async {
@@ -197,7 +181,12 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
         }
       }
     } catch (e) {
-      _showFeedback('GANGGUAN SISTEM: $e', zenRose);
+      final msg = e.toString();
+      if (msg.contains('ALREADY_CLOCKED_IN')) {
+        _showFeedback('SUDAH ABSEN MASUK HARI INI', zenNavy);
+      } else {
+        _showFeedback('GANGGUAN SISTEM: $msg', zenRose);
+      }
     } finally {
       if (mounted) setState(() => _isCapturing = false);
     }
@@ -220,7 +209,6 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   void dispose() {
     _scanAnimController.dispose();
     _pulseAnimController.dispose();
-    _clockTimer.cancel();
     _cameraController?.dispose();
     _faceDetector.close();
     super.dispose();
@@ -407,7 +395,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     return Stack(
       children: [
         _buildScannerOverlay(),
-        _buildTopBar(isCheckOut),
+        _buildTopBar(isCheckOut, app),
         _buildGeofenceStatus(geo, app),
         _buildBottomArea(geo, app, isCheckOut),
       ],
@@ -415,7 +403,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   }
 
   // ── TOP BAR ──
-  Widget _buildTopBar(bool isCheckOut) {
+  Widget _buildTopBar(bool isCheckOut, AppProvider app) {
     return Positioned(
       top: 0, left: 0, right: 0,
       child: Container(
@@ -492,27 +480,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
               ],
             ),
             const SizedBox(height: 16),
-            // Clock
-            Text(
-              _currentTime,
-              style: GoogleFonts.outfit(
-                color: Colors.white,
-                fontSize: 36,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -1,
-                fontFeatures: [const FontFeature.tabularFigures()],
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _currentDate,
-              style: GoogleFonts.outfit(
-                color: Colors.white54,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.3,
-              ),
-            ),
+            const _LiveClock(),
           ],
         ),
       ),
@@ -817,4 +785,63 @@ class ScannerPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(ScannerPainter old) => true;
+}
+
+/// Isolated 1Hz clock so the parent page (with camera, face detector, and
+/// animations) doesn't rebuild every second. Only this widget's RenderObject
+/// repaints — cheap.
+class _LiveClock extends StatefulWidget {
+  const _LiveClock();
+
+  @override
+  State<_LiveClock> createState() => _LiveClockState();
+}
+
+class _LiveClockState extends State<_LiveClock> {
+  late Timer _timer;
+  late DateTime _now;
+
+  @override
+  void initState() {
+    super.initState();
+    _now = DateTime.now();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() => _now = DateTime.now());
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          DateFormat('HH:mm:ss').format(_now),
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontSize: 36,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          DateFormat('EEEE, d MMMM yyyy', 'id').format(_now),
+          style: GoogleFonts.outfit(
+            color: Colors.white54,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
+    );
+  }
 }
