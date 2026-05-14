@@ -106,16 +106,23 @@ class ChatProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
 
-      // Mark messages as read (only once per message to avoid loop)
+      // For each incoming message from the other party:
+      // - If still 'sent' → flip to 'delivered' (this device received it).
+      // - If we have the chat open → also flip to 'read'.
+      // Track which we've touched so we don't infinite-loop on snapshot echoes.
       for (var msg in _messages) {
-        if (msg.status != MessageStatus.read &&
-            msg.senderId != _auth.currentUser?.uid &&
-            !_markedAsReadIds.contains(msg.id)) {
-          _markedAsReadIds.add(msg.id);
+        if (msg.senderId == _auth.currentUser?.uid) continue;
+        if (_markedAsReadIds.contains(msg.id)) continue;
+        _markedAsReadIds.add(msg.id);
+
+        if (msg.status == MessageStatus.sent) {
+          markAsDelivered(msg.id);
+        }
+        if (msg.status != MessageStatus.read) {
           _markAsRead(msg.id);
         }
       }
-    });
+    }, onError: (e) => debugPrint('Chat messages listener error: $e'));
 
     _typingSubscription = _db
         .collection('chats')
@@ -162,7 +169,11 @@ class ChatProvider extends ChangeNotifier {
     });
   }
 
-  /// NEW: Enhanced send with status tracking
+  /// Send a message. Status stays 'sent' until the receiver's listener flips it
+  /// to 'delivered' and then 'read'. Doing the flip from the sender side
+  /// (the previous behavior) was both semantically wrong AND a foot-gun: the
+  /// second update could fail and surface as "send failed" even though the
+  /// message was already on Firestore.
   Future<void> sendMessage({
     required String receiverId,
     required String receiverRole,
@@ -170,13 +181,14 @@ class ChatProvider extends ChangeNotifier {
     String? imageUrl,
     Map<String, dynamic>? senderInfo,
   }) async {
-    if (_auth.currentUser == null) return;
-
+    if (_auth.currentUser == null) {
+      throw Exception('Belum login.');
+    }
     if (text.trim().isEmpty && imageUrl == null) return;
 
     final chatId = getChatId(_auth.currentUser!.uid, receiverId);
 
-    final messageData = {
+    await _db.collection('messages').add({
       'text': text,
       'senderId': _auth.currentUser!.uid,
       'senderName': senderInfo?['name'] ?? 'Unknown',
@@ -190,12 +202,7 @@ class ChatProvider extends ChangeNotifier {
       'deliveredAt': null,
       'imageUrl': imageUrl,
       'isDeleted': false,
-    };
-
-    final docRef = await _db.collection('messages').add(messageData);
-
-    // Mark as delivered immediately (optimistic)
-    await docRef.update({'status': 'delivered', 'deliveredAt': FieldValue.serverTimestamp()});
+    });
   }
 
   /// NEW: Mark message as delivered when received on device

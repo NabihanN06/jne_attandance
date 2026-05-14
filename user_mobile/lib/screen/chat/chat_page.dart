@@ -136,9 +136,15 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    // context.watch<AppProvider>() previously re-built the whole chat page
+    // (including the TextField) every time AppProvider notified — which
+    // happens on the 30s heartbeat plus every attendance / leaves / settings /
+    // presence stream tick. Result: typing felt jumpy, focus dropped, and
+    // sometimes the keyboard refused to appear at all. Subscribe to just the
+    // two values we actually read in build.
+    final isDark = context.select<AppProvider, bool>((a) => a.isDarkMode);
+    final currentUid = context.select<AppProvider, String?>((a) => a.currentUser?.uid);
     final chat = context.watch<ChatProvider>();
-    final app  = context.watch<AppProvider>();
-    final isDark = app.isDarkMode;
 
     // Palette
     final bg         = isDark ? const Color(0xFF0B1120) : const Color(0xFFF0F4F8);
@@ -215,7 +221,7 @@ class _ChatPageState extends State<ChatPage> {
                         itemBuilder: (context, index) {
                           if (index == chat.messages.length) return _buildTypingIndicator(theirBubble, mutedColor, isDark);
                           final msg  = chat.messages[index];
-                          final isMe = msg.senderId == app.currentUser?.uid;
+                          final isMe = msg.senderId == currentUid;
                           return _buildBubble(msg, isMe, chat, myBubble, theirBubble, theirText, mutedColor, shadowColor);
                         },
                       ),
