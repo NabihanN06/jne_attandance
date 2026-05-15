@@ -432,8 +432,7 @@ class AdminNotification {
       isRead: data['isRead'] ?? false,
     );
   }
-<<<<<<< Updated upstream
-=======
+
 }
 
 // ── Overtime Request Model ────────────────────────────────────
@@ -593,5 +592,5 @@ class DisputeRequest {
       updatedAt: us is Timestamp ? us.toDate() : DateTime.now(),
     );
   }
->>>>>>> Stashed changes
+
 }

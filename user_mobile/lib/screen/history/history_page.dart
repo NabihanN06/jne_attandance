@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
 import '../../widgets/package_loading.dart';
+import '../attendance/dispute_submission_screen.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -307,6 +308,8 @@ class _HistoryPageState extends State<HistoryPage> {
     String checkInTime = r.checkIn?.time != null ? DateFormat('HH:mm').format(r.checkIn!.time!) : '--:--';
     String checkOutTime = r.checkOut?.time != null ? DateFormat('HH:mm').format(r.checkOut!.time!) : '--:--';
 
+    final dispute = context.watch<AppProvider>().disputes.where((d) => d.relatedAttendanceId == r.id).firstOrNull;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(28),
@@ -370,16 +373,102 @@ class _HistoryPageState extends State<HistoryPage> {
                   const Spacer(),
                   _timeBox('EXIT SIGNAL', checkOutTime, Icons.sensors_off_rounded, zenIndigo),
                   const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: zenNavy.withValues(alpha: 0.03),
-                      shape: BoxShape.circle,
+                  if (dispute == null && (isLate || isAbsent))
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => DisputeSubmissionScreen(record: r)),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: zenRose,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(color: zenRose.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 5))
+                          ],
+                        ),
+                        child: Text(
+                          'REPORT',
+                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+                        ),
+                      ),
+                    )
+                  else
+                    GestureDetector(
+                      onTap: () {
+                        if (dispute == null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => DisputeSubmissionScreen(record: r)),
+                          );
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: dispute != null 
+                              ? (dispute.status == 'resolved' ? zenEmerald : (dispute.status == 'rejected' ? zenRose : Colors.amber)).withValues(alpha: 0.1)
+                              : zenNavy.withValues(alpha: 0.03),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          dispute != null 
+                              ? (dispute.status == 'resolved' ? Icons.check_circle_rounded : (dispute.status == 'rejected' ? Icons.cancel_rounded : Icons.pending_rounded))
+                              : Icons.chevron_right_rounded, 
+                          color: dispute != null 
+                              ? (dispute.status == 'resolved' ? zenEmerald : (dispute.status == 'rejected' ? zenRose : Colors.amber))
+                              : zenSlate, 
+                          size: 18
+                        ),
+                      ),
                     ),
-                    child: const Icon(Icons.chevron_right_rounded, color: zenSlate, size: 18),
-                  ),
                 ],
               ),
+              if (dispute != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: zenOffWhite,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            dispute.status == 'resolved' ? Icons.check_circle_rounded : dispute.status == 'rejected' ? Icons.cancel_rounded : Icons.report_problem_rounded, 
+                            size: 12, 
+                            color: dispute.status == 'resolved' ? zenEmerald : (dispute.status == 'rejected' ? zenRose : Colors.amber.shade700)
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'COMPLAINT STATUS: ${dispute.status.toUpperCase()}',
+                            style: GoogleFonts.outfit(
+                              color: dispute.status == 'resolved' ? zenEmerald : (dispute.status == 'rejected' ? zenRose : Colors.amber.shade900), 
+                              fontSize: 9, 
+                              fontWeight: FontWeight.w900, 
+                              letterSpacing: 1
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (dispute.adminReason != null && dispute.adminReason!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          'Feedback Admin: ${dispute.adminReason}',
+                          style: GoogleFonts.plusJakartaSans(color: zenNavy.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.w600, height: 1.4),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         );

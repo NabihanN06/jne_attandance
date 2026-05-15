@@ -129,6 +129,84 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ),
 
+                // ── LEAVE BALANCE VISUALIZER ──
+                _buildSectionHeader('Operational Quota'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+                  child: Container(
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: zenNavy,
+                      borderRadius: BorderRadius.circular(32),
+                      boxShadow: [
+                        BoxShadow(color: zenNavy.withValues(alpha: 0.2), blurRadius: 30, offset: const Offset(0, 15))
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'ANNUAL LEAVE BALANCE',
+                                  style: GoogleFonts.outfit(color: zenCyan, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 2),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      '${provider.leaveBalance.remainingAnnual}',
+                                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 6, left: 4),
+                                      child: Text(
+                                        '/ ${provider.leaveBalance.annualQuota} DAYS',
+                                        style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w700),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), shape: BoxShape.circle),
+                              child: const Icon(Icons.event_available_rounded, color: Colors.white, size: 28),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(100),
+                          child: LinearProgressIndicator(
+                            value: provider.leaveBalance.usagePercent,
+                            backgroundColor: Colors.white10,
+                            color: zenCyan,
+                            minHeight: 8,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildMiniStat('USED', '${provider.leaveBalance.usedAnnual}d'),
+                            _buildMiniStat('SICK', '${provider.leaveBalance.usedSick}d'),
+                            _buildMiniStat('PERM', '${provider.leaveBalance.usedPermission}d'),
+                            _buildMiniStat('PENDING', '${provider.leaveBalance.pendingDays}d', color: Colors.amber),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
                 // ── OPERATIONAL TELEMETRY ──
                 _buildSectionHeader('Operational Telemetry'),
                 _buildCardWrapper([
@@ -137,6 +215,14 @@ class ProfilePage extends StatelessWidget {
                   _buildInfoItem(Icons.phone_iphone_rounded, 'Signal Frequency', user.phone.isEmpty ? '+62 000-000-0000' : user.phone),
                   _buildDivider(),
                   _buildInfoItem(Icons.fingerprint_rounded, 'Registry Serial', user.employeeId),
+                ]),
+
+                // ── OPERATIONAL SUPPORT ──
+                _buildSectionHeader('Operational Support'),
+                _buildCardWrapper([
+                  _buildActionItem(context, Icons.analytics_outlined, 'Request Center', 'Track leaves & complaints', () => Navigator.pushNamed(context, '/my_requests')),
+                  _buildDivider(),
+                  _buildActionItem(context, Icons.support_agent_rounded, 'Command Center Chat', 'Direct sync with admin', () => Navigator.pushNamed(context, '/chat')),
                 ]),
 
                 const SizedBox(height: 32),
@@ -194,6 +280,17 @@ class ProfilePage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMiniStat(String label, String value, {Color? color}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.outfit(color: Colors.white38, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1)),
+        const SizedBox(height: 4),
+        Text(value, style: GoogleFonts.outfit(color: color ?? Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
+      ],
     );
   }
 

@@ -266,65 +266,65 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildRecentFeedback(AppProvider p) {
     final latestRequest = p.myLeaveRequests.isNotEmpty ? p.myLeaveRequests.first : null;
-    if (latestRequest == null) return const SizedBox.shrink();
-
-    Color statusColor = latestRequest.status == 'approved' ? const Color(0xFF10B981) : 
-                        latestRequest.status == 'rejected' ? Colors.redAccent : jneOrange;
     
     return FadeInUp(
       duration: const Duration(milliseconds: 800),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
-          boxShadow: [
-            BoxShadow(color: zenNavy.withValues(alpha: 0.03), blurRadius: 40, offset: const Offset(0, 10)),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'SISTEM FEEDBACK',
-                  style: GoogleFonts.outfit(
-                    color: slate400,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2,
+      child: GestureDetector(
+        onTap: () => Navigator.pushNamed(context, '/my_requests'),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+            boxShadow: [
+              BoxShadow(color: zenNavy.withValues(alpha: 0.03), blurRadius: 40, offset: const Offset(0, 10)),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'REQUEST CENTER',
+                    style: GoogleFonts.outfit(
+                      color: slate400,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                    ),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(100),
-                    border: Border.all(color: statusColor.withValues(alpha: 0.1)),
-                  ),
-                  child: Text(
-                    latestRequest.status.toUpperCase(),
-                    style: GoogleFonts.outfit(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Pengajuan ${latestRequest.type.toUpperCase()} Anda telah ${latestRequest.status == 'approved' ? 'DISETUJUI' : latestRequest.status == 'rejected' ? 'DITOLAK' : 'DIPROSES'} oleh departemen terkait.',
-              style: GoogleFonts.plusJakartaSans(
-                color: zenNavy,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                height: 1.6,
-                letterSpacing: -0.2,
+                  const Icon(Icons.arrow_forward_rounded, color: zenIndigo, size: 18),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              if (latestRequest != null)
+                Text(
+                  'Pengajuan ${latestRequest.type.toUpperCase()} Anda sedang dalam status ${latestRequest.status.toUpperCase()}. Ketuk untuk detail lainnya.',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: zenNavy,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    height: 1.5,
+                    letterSpacing: -0.2,
+                  ),
+                )
+              else
+                Text(
+                  'Belum ada pengajuan aktif. Pantau status izin, lembur, atau komplain Anda di sini.',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: zenNavy,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    height: 1.5,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

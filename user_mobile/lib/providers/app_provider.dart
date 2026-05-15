@@ -60,10 +60,6 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   List<LeaveRequest> _leaveRequests = [];
   List<LeaveRequest> get myLeaveRequests => _leaveRequests;
 
-<<<<<<< Updated upstream
-  final List<AdminNotification> _notifications = [];
-  List<AdminNotification> get notifications => List.unmodifiable(_notifications);
-=======
   List<OvertimeRequest> _overtimeRequests = [];
   List<OvertimeRequest> get myOvertimeRequests => _overtimeRequests;
 
@@ -72,6 +68,24 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
   // Admin-set leave balance from Firestore (null = not yet loaded)
   LeaveBalance? _firestoreLeaveBalance;
+
+  /// Returns admin-set quota if available, otherwise computes from leave history.
+  LeaveBalance get leaveBalance {
+    if (_firestoreLeaveBalance != null) {
+      final now = DateTime.now();
+      final pending = _leaveRequests.where((l) =>
+          l.status == 'pending' &&
+          (l.startDate.year == now.year || l.endDate.year == now.year));
+      return LeaveBalance(
+        annualQuota: _firestoreLeaveBalance!.annualQuota,
+        usedAnnual: _firestoreLeaveBalance!.usedAnnual,
+        usedSick: _firestoreLeaveBalance!.usedSick,
+        usedPermission: _firestoreLeaveBalance!.usedPermission,
+        pendingDays: pending.fold(0, (s, l) => s + l.totalDays),
+        updatedBy: _firestoreLeaveBalance!.updatedBy,
+        updatedAt: _firestoreLeaveBalance!.updatedAt,
+      );
+    }
     const quota = 12;
     final now = DateTime.now();
     final thisYear = now.year;
@@ -129,7 +143,6 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       debugPrint('markAllNotificationsRead error: $e');
     }
   }
->>>>>>> Stashed changes
 
   List<CalendarEvent> _events = [];
   List<CalendarEvent> get events => _events;
@@ -153,12 +166,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   StreamSubscription? _eventSub;
   StreamSubscription? _attendanceSub;
   StreamSubscription? _leaveSub;
-<<<<<<< Updated upstream
-=======
   StreamSubscription? _overtimeSub;
   StreamSubscription? _disputeSub;
   StreamSubscription? _leaveBalanceSub;
->>>>>>> Stashed changes
   StreamSubscription? _presenceSub;
 
   // Timers
@@ -251,8 +261,6 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       notifyListeners();
     });
 
-<<<<<<< Updated upstream
-=======
     _overtimeSub = _db.collection('overtime')
         .where('userId', isEqualTo: _currentUser!.uid)
         .orderBy('createdAt', descending: true)
@@ -282,8 +290,6 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       _firestoreLeaveBalance = snap.exists ? LeaveBalance.fromFirestore(snap) : null;
       notifyListeners();
     }, onError: (e) => debugPrint('LeaveBalance listener error: $e'));
-
->>>>>>> Stashed changes
     _notifSub = _db.collection('userNotifications')
         .where('userId', isEqualTo: _currentUser!.uid)
         .orderBy('createdAt', descending: true)
@@ -332,12 +338,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     _eventSub?.cancel();
     _attendanceSub?.cancel();
     _leaveSub?.cancel();
-<<<<<<< Updated upstream
-=======
     _overtimeSub?.cancel();
     _disputeSub?.cancel();
     _leaveBalanceSub?.cancel();
->>>>>>> Stashed changes
     _presenceSub?.cancel();
     _syncRetryTimer?.cancel();
   }
@@ -1006,6 +1009,67 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     } finally {
       _isLoadingFace = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> submitDispute({
+    required String category,
+    required String title,
+    required String description,
+    String? relatedAttendanceId,
+  }) async {
+    if (_currentUser == null) return;
+    _isProcessing = true;
+    _fortressStatus = 'Mengirim komplain...';
+    notifyListeners();
+
+    try {
+      await _db.collection('disputes').add({
+        'userId': _currentUser!.uid,
+        'employeeName': _currentUser!.name,
+        'employeeId': _currentUser!.employeeId,
+        'department': _currentUser!.department,
+        'category': category,
+        'title': title,
+        'description': description,
+        'relatedAttendanceId': relatedAttendanceId,
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      
+      // Notify Admin
+      await _db.collection('adminNotifications').add({
+        'title': '🚨 Komplain Baru: ${_currentUser!.name}',
+        'message': '$title ($category)',
+        'type': 'dispute',
+        'employeeId': _currentUser!.uid,
+        'employeeName': _currentUser!.name,
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Gagal mengirim komplain: $e');
+    } finally {
+      _isProcessing = false;
+      _fortressStatus = '';
+      notifyListeners();
+    }
+  }
+
+  Future<void> cancelLeaveRequest(String requestId) async {
+    try {
+      await _db.collection('leaves').doc(requestId).delete();
+    } catch (e) {
+      throw Exception('Gagal membatalkan izin: $e');
+    }
+  }
+
+  Future<void> cancelOvertimeRequest(String requestId) async {
+    try {
+      await _db.collection('overtime').doc(requestId).delete();
+    } catch (e) {
+      throw Exception('Gagal membatalkan lembur: $e');
     }
   }
 

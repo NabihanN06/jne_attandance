@@ -31,6 +31,7 @@ import 'screen/settings/settings_page.dart';
 import 'screen/overtime/overtime_page.dart';
 import 'screen/chat/chat_page.dart';
 import 'screen/calendar/calendar_page.dart';
+import 'screen/history/my_requests_page.dart';
 
 /// Initialize local notifications
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -188,6 +189,7 @@ class MyApp extends StatelessWidget {
         '/overtime': (ctx) => const OvertimePage(),
         '/chat': (ctx) => const ChatPage(),
         '/calendar': (ctx) => const CalendarPage(),
+        '/my_requests': (ctx) => const MyRequestsPage(),
       },
     );
   }
