@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/app_provider.dart';
 import '../../utils/connectivity_service.dart';
+import '../notifications/notification_screen.dart';
 import '../auth/login_page.dart';
 import '../enroll/enroll_page.dart';
 import 'id_card_page.dart';
@@ -17,6 +18,68 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   bool _isUploadingPhoto = false;
+
+  Future<void> _editPhone() async {
+    final user = context.read<AppProvider>().currentUser;
+    if (user == null) return;
+    final ctrl = TextEditingController(text: user.phone);
+    final newValue = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        bool saving = false;
+        return StatefulBuilder(
+          builder: (ctx, setLocal) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text('Ubah Nomor Telepon',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 16)),
+            content: TextField(
+              controller: ctrl,
+              keyboardType: TextInputType.phone,
+              autofocus: true,
+              enabled: !saving,
+              decoration: InputDecoration(
+                hintText: '0812xxxxxxxx',
+                prefixIcon: const Icon(Icons.phone_outlined, size: 18),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              style: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+            ),
+            actions: [
+              TextButton(
+                onPressed: saving ? null : () => Navigator.pop(ctx),
+                child: Text('BATAL',
+                    style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontWeight: FontWeight.w700)),
+              ),
+              TextButton(
+                onPressed: saving
+                    ? null
+                    : () {
+                        setLocal(() => saving = true);
+                        Navigator.pop(ctx, ctrl.text.trim());
+                      },
+                child: Text('SIMPAN',
+                    style: GoogleFonts.outfit(color: const Color(0xFF005596), fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (newValue == null || !mounted) return;
+    try {
+      await context.read<AppProvider>().updateMyProfile(phone: newValue);
+      if (mounted) {
+        _showToast(context, 'Nomor diperbarui', 'Nomor telepon Anda telah disimpan.',
+            Icons.check_circle_rounded, const Color(0xFF10B981));
+      }
+    } catch (e) {
+      if (mounted) {
+        _showToast(context, 'Gagal Simpan', e.toString().replaceAll('Exception: ', ''),
+            Icons.error_outline_rounded, const Color(0xFFEF4444));
+      }
+    }
+  }
 
   Future<void> _changeProfilePhoto() async {
     final picker = ImagePicker();
@@ -320,9 +383,25 @@ class _ProfilePageState extends State<ProfilePage> {
                     _infoRow(Icons.alternate_email_rounded, 'Email', user.email,
                         primary, titleColor, mutedColor),
                     Divider(height: 1, thickness: 1, color: divider, indent: 16, endIndent: 16),
-                    _infoRow(Icons.phone_outlined, 'Telepon',
-                        user.phone.isEmpty ? '-' : user.phone,
-                        primary, titleColor, mutedColor),
+                    InkWell(
+                      onTap: _editPhone,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Stack(
+                        children: [
+                          _infoRow(Icons.phone_outlined, 'Telepon',
+                              user.phone.isEmpty ? 'Tap untuk isi' : user.phone,
+                              primary, titleColor, mutedColor),
+                          Positioned(
+                            right: 16,
+                            top: 0,
+                            bottom: 0,
+                            child: Center(
+                              child: Icon(Icons.edit_outlined, size: 14, color: mutedColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     Divider(height: 1, thickness: 1, color: divider, indent: 16, endIndent: 16),
                     _infoRow(Icons.badge_outlined, 'ID Karyawan',
                         user.employeeId, primary, titleColor, mutedColor),
@@ -382,6 +461,23 @@ class _ProfilePageState extends State<ProfilePage> {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const EnrollPage()),
+                      ),
+                    ),
+                    Divider(height: 1, thickness: 1, color: divider, indent: 16, endIndent: 16),
+                    _actionRow(
+                      context,
+                      icon: Icons.notifications_none_rounded,
+                      iconColor: const Color(0xFF6366F1),
+                      iconBg: isDark
+                          ? const Color(0xFF1E1E4D)
+                          : const Color(0xFFEEF2FF),
+                      title: 'Notifikasi',
+                      subtitle: 'Pusat pemberitahuan dan info',
+                      titleColor: titleColor,
+                      mutedColor: mutedColor,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const NotificationScreen()),
                       ),
                     ),
                     Divider(height: 1, thickness: 1, color: divider, indent: 16, endIndent: 16),
@@ -884,8 +980,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        provider.logout();
+                      onPressed: () async {
+                        await provider.logout();
+                        if (!context.mounted) return;
                         Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(

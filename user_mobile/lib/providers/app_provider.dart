@@ -1209,6 +1209,39 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     return url;
   }
 
+  /// Lets the user update their own profile fields (phone & display name).
+  /// Firestore rules only allow self-updates that DON'T touch role,
+  /// employeeId, department, email, or uid — so we whitelist explicitly to
+  /// avoid sending anything that would trip permission-denied.
+  Future<void> updateMyProfile({String? name, String? phone}) async {
+    if (_currentUser == null) throw Exception('Belum login');
+    final uid = _currentUser!.uid;
+
+    final patch = <String, dynamic>{};
+    if (name != null && name.trim().isNotEmpty && name.trim() != _currentUser!.name) {
+      patch['name'] = name.trim();
+    }
+    if (phone != null && phone.trim() != _currentUser!.phone) {
+      patch['phone'] = phone.trim();
+    }
+    if (patch.isEmpty) return;
+
+    patch['updatedAt'] = FieldValue.serverTimestamp();
+    try {
+      await _db.collection('users').doc(uid).update(patch);
+      _currentUser = _currentUser!.copyWith(
+        name: patch['name'] ?? _currentUser!.name,
+        phone: patch['phone'] ?? _currentUser!.phone,
+      );
+      notifyListeners();
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw Exception('Tidak punya izin mengubah data ini.');
+      }
+      throw Exception('Gagal menyimpan (${e.code}). Coba lagi.');
+    }
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
