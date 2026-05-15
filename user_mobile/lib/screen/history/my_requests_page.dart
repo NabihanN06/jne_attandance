@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
-import '../../widgets/package_loading.dart';
 
 class MyRequestsPage extends StatefulWidget {
   const MyRequestsPage({super.key});
@@ -19,10 +18,8 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
   late TabController _tabController;
 
   static const Color zenNavy = Color(0xFF121826);
-  static const Color zenIndigo = Color(0xFF4F46E5);
   static const Color zenCyan = Color(0xFF22D3EE);
   static const Color zenRose = Color(0xFFF43F5E);
-  static const Color zenEmerald = Color(0xFF10B981);
   static const Color zenOffWhite = Color(0xFFF8FAFC);
   static const Color zenSlate = Color(0xFF94A3B8);
 
@@ -186,7 +183,7 @@ class _RequestCard<T> extends StatelessWidget {
       title = 'Overtime';
       subtitle = req.reason;
       status = req.status;
-      dateStr = DateFormat('EEEE, dd MMM yyyy').format(req.date);
+      dateStr = DateFormat('EEEE, dd MMM yyyy').format(DateTime.tryParse(req.date) ?? DateTime.now());
     } else if (item is DisputeRequest) {
       final req = item as DisputeRequest;
       title = 'Complaint / Dispute';

@@ -92,9 +92,9 @@ class _LoginPageState extends State<LoginPage> {
                 child: Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: zenNavy.withOpacity(0.03),
+                    color: zenNavy.withValues(alpha: 0.03),
                     borderRadius: BorderRadius.circular(40),
-                    border: Border.all(color: zenNavy.withOpacity(0.02)),
+                    border: Border.all(color: zenNavy.withValues(alpha: 0.02)),
                   ),
                   child: Image.asset(
                     'assets/images/jne_logo.png', 
@@ -146,7 +146,7 @@ class _LoginPageState extends State<LoginPage> {
                 obscure: _obscurePass,
                 icon: Icons.shield_outlined,
                 suffix: IconButton(
-                  icon: Icon(_obscurePass ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: zenSlate.withOpacity(0.4), size: 18),
+                  icon: Icon(_obscurePass ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: zenSlate.withValues(alpha: 0.4), size: 18),
                   onPressed: () => setState(() => _obscurePass = !_obscurePass),
                 ),
               ),
@@ -201,7 +201,7 @@ class _LoginPageState extends State<LoginPage> {
       decoration: BoxDecoration(
         color: zenOffWhite,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: zenNavy.withOpacity(0.04)),
+        border: Border.all(color: zenNavy.withValues(alpha: 0.04)),
       ),
       child: TextField(
         controller: ctrl,
@@ -210,7 +210,7 @@ class _LoginPageState extends State<LoginPage> {
         style: GoogleFonts.outfit(color: zenNavy, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: -0.2),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: GoogleFonts.outfit(color: zenSlate.withOpacity(0.3), fontSize: 14, fontWeight: FontWeight.w600),
+          hintStyle: GoogleFonts.outfit(color: zenSlate.withValues(alpha: 0.3), fontSize: 14, fontWeight: FontWeight.w600),
           prefixIcon: icon != null ? Icon(icon, color: zenIndigo, size: 20) : null,
           suffixIcon: suffix,
           border: InputBorder.none,
