@@ -47,9 +47,9 @@ class ChatMessage {
       senderRole: data['senderRole'] ?? 'employee',
       receiverId: data['receiverId'] ?? '',
       receiverRole: data['receiverRole'] ?? 'admin',
-      timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      timestamp: (data['createdAt'] as Timestamp?)?.toDate() ?? (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
       status: MessageStatus.values.firstWhere(
-        (e) => e.toString() == 'MessageStatus.${data['status'] ?? 'sent'}',
+        (e) => e.name == (data['status'] ?? 'sent'),
         orElse: () => MessageStatus.sent,
       ),
       readAt: (data['readAt'] as Timestamp?)?.toDate(),
@@ -84,9 +84,14 @@ class ChatProvider extends ChangeNotifier {
   bool _otherUserTyping = false;
   bool get otherUserTyping => _otherUserTyping;
 
+  // Track which messages we've already marked as read to prevent
+  // snapshot → markAsRead → new snapshot → markAsRead infinite loop
+  final Set<String> _markedAsReadIds = {};
+
   void listenToMessages(String chatId) {
     _messageSubscription?.cancel();
     _typingSubscription?.cancel();
+    _markedAsReadIds.clear();
     _isLoading = true;
     notifyListeners();
 
@@ -94,20 +99,30 @@ class ChatProvider extends ChangeNotifier {
     _messageSubscription = _db
         .collection('messages')
         .where('chatId', isEqualTo: chatId)
-        .orderBy('createdAt', descending: false)
         .snapshots()
         .listen((snapshot) {
-      _messages = snapshot.docs.map((doc) => ChatMessage.fromFirestore(doc)).toList();
+      _messages = snapshot.docs.map((doc) => ChatMessage.fromFirestore(doc)).toList()
+        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
       _isLoading = false;
       notifyListeners();
 
-      // Mark messages as read
+      // For each incoming message from the other party:
+      // - If still 'sent' → flip to 'delivered' (this device received it).
+      // - If we have the chat open → also flip to 'read'.
+      // Track which we've touched so we don't infinite-loop on snapshot echoes.
       for (var msg in _messages) {
-        if (msg.status != MessageStatus.read && msg.senderId != _auth.currentUser?.uid) {
+        if (msg.senderId == _auth.currentUser?.uid) continue;
+        if (_markedAsReadIds.contains(msg.id)) continue;
+        _markedAsReadIds.add(msg.id);
+
+        if (msg.status == MessageStatus.sent) {
+          markAsDelivered(msg.id);
+        }
+        if (msg.status != MessageStatus.read) {
           _markAsRead(msg.id);
         }
       }
-    });
+    }, onError: (e) => debugPrint('Chat messages listener error: $e'));
 
     _typingSubscription = _db
         .collection('chats')
@@ -134,14 +149,31 @@ class ChatProvider extends ChangeNotifier {
     });
   }
 
-  Future<void> updateTyping(String chatId, bool typing) async {
+  Timer? _typingDebounce;
+  bool _lastTypingState = false;
+
+  void updateTyping(String chatId, bool typing) {
     if (_auth.currentUser == null) return;
-    await _db.collection('chats').doc(chatId).collection('typing').doc('status').set({
-      _auth.currentUser!.uid: typing,
-    }, SetOptions(merge: true));
+    if (typing == _lastTypingState) return;
+    _lastTypingState = typing;
+
+    _typingDebounce?.cancel();
+    _typingDebounce = Timer(const Duration(milliseconds: 250), () {
+      _db
+          .collection('chats')
+          .doc(chatId)
+          .collection('typing')
+          .doc('status')
+          .set({_auth.currentUser!.uid: typing}, SetOptions(merge: true))
+          .catchError((e) => debugPrint('Typing indicator write failed: $e'));
+    });
   }
 
-  /// NEW: Enhanced send with status tracking
+  /// Send a message. Status stays 'sent' until the receiver's listener flips it
+  /// to 'delivered' and then 'read'. Doing the flip from the sender side
+  /// (the previous behavior) was both semantically wrong AND a foot-gun: the
+  /// second update could fail and surface as "send failed" even though the
+  /// message was already on Firestore.
   Future<void> sendMessage({
     required String receiverId,
     required String receiverRole,
@@ -149,13 +181,14 @@ class ChatProvider extends ChangeNotifier {
     String? imageUrl,
     Map<String, dynamic>? senderInfo,
   }) async {
-    if (_auth.currentUser == null) return;
-
+    if (_auth.currentUser == null) {
+      throw Exception('Belum login.');
+    }
     if (text.trim().isEmpty && imageUrl == null) return;
 
     final chatId = getChatId(_auth.currentUser!.uid, receiverId);
 
-    final messageData = {
+    await _db.collection('messages').add({
       'text': text,
       'senderId': _auth.currentUser!.uid,
       'senderName': senderInfo?['name'] ?? 'Unknown',
@@ -169,12 +202,7 @@ class ChatProvider extends ChangeNotifier {
       'deliveredAt': null,
       'imageUrl': imageUrl,
       'isDeleted': false,
-    };
-
-    final docRef = await _db.collection('messages').add(messageData);
-
-    // Mark as delivered immediately (optimistic)
-    await docRef.update({'status': 'delivered', 'deliveredAt': FieldValue.serverTimestamp()});
+    });
   }
 
   /// NEW: Mark message as delivered when received on device
@@ -209,6 +237,7 @@ class ChatProvider extends ChangeNotifier {
   void dispose() {
     _messageSubscription?.cancel();
     _typingSubscription?.cancel();
+    _typingDebounce?.cancel();
     super.dispose();
   }
 }

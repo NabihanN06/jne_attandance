@@ -14,29 +14,46 @@ class CalendarPage extends StatefulWidget {
 }
 
 class _CalendarPageState extends State<CalendarPage> {
-  DateTime _focusedDay = DateTime.now();
+  DateTime _focusedDay  = DateTime.now();
   DateTime _selectedDay = DateTime.now();
 
-  static const Color jneBlue = Color(0xFF005596);
-  static const Color jneRed = Color(0xFFE31E24);
-  static const Color slate950 = Color(0xFF0F172A);
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  Color _categoryColor(String cat) {
+    switch (cat) {
+      case 'meeting':  return const Color(0xFF3B9EE8);
+      case 'training': return const Color(0xFF8B5CF6);
+      case 'deadline': return const Color(0xFFF43F5E);
+      case 'social':   return const Color(0xFFF59E0B);
+      default:         return const Color(0xFF10B981);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
-    final user = provider.currentUser;
-    
-    // Filter events based on user department or if they are invited
+    final isDark   = provider.isDarkMode;
+    final user     = provider.currentUser;
+
     final events = provider.events.where((e) {
       final matchDept = e.departments?.contains(user?.department) ?? false;
       final matchUser = e.attendees.contains(user?.uid ?? '');
       return matchDept || matchUser;
     }).toList();
 
+    // Palette
+    final headerBg   = isDark ? const Color(0xFF0D1829) : const Color(0xFF0F172A);
+    final bg         = isDark ? const Color(0xFF0B1120) : const Color(0xFFF8FAFC);
+    final cardBg     = isDark ? const Color(0xFF131D2E) : Colors.white;
+    final titleColor = isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+    final mutedColor = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+    final shadowColor= isDark ? Colors.black.withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.04);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: slate950,
+        backgroundColor: headerBg,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
@@ -44,105 +61,134 @@ class _CalendarPageState extends State<CalendarPage> {
         ),
         title: Text(
           'SMART CALENDAR',
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1.5),
+          style: GoogleFonts.outfit(
+            color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 2,
+          ),
         ),
         centerTitle: true,
       ),
       body: Column(
         children: [
-          // ── Calendar Grid ──
+          // ── CALENDAR HEADER ──
           Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: slate950,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(40),
-                bottomRight: Radius.circular(40),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            decoration: BoxDecoration(
+              color: headerBg,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(36),
+                bottomRight: Radius.circular(36),
               ),
             ),
             child: Column(
               children: [
-                _buildMonthSelector(),
-                const SizedBox(height: 20),
-                _buildDaysOfWeek(),
-                const SizedBox(height: 10),
-                _buildCalendarGrid(events),
+                _buildMonthNav(),
+                const SizedBox(height: 16),
+                _buildWeekHeader(),
+                const SizedBox(height: 8),
+                _buildGrid(events),
               ],
             ),
           ),
 
-          // ── Events for Selected Day ──
-          Expanded(
-            child: _buildEventList(events),
-          ),
+          // ── EVENT LIST ──
+          Expanded(child: _buildEventSection(events, cardBg, titleColor, mutedColor, shadowColor, bg)),
         ],
       ),
     );
   }
 
-  Widget _buildMonthSelector() {
+  Widget _buildMonthNav() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        IconButton(
-          icon: const Icon(Icons.chevron_left_rounded, color: Colors.white),
-          onPressed: () => setState(() => _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1)),
+        _navBtn(Icons.chevron_left_rounded, () {
+          setState(() => _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1));
+        }),
+        Column(
+          children: [
+            Text(
+              DateFormat('MMMM', 'id').format(_focusedDay).toUpperCase(),
+              style: GoogleFonts.outfit(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1),
+            ),
+            Text(
+              _focusedDay.year.toString(),
+              style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+          ],
         ),
-        Text(
-          DateFormat('MMMM yyyy', 'id').format(_focusedDay).toUpperCase(),
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1),
-        ),
-        IconButton(
-          icon: const Icon(Icons.chevron_right_rounded, color: Colors.white),
-          onPressed: () => setState(() => _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1)),
-        ),
+        _navBtn(Icons.chevron_right_rounded, () {
+          setState(() => _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1));
+        }),
       ],
     );
   }
 
-  Widget _buildDaysOfWeek() {
-    final days = ['S', 'S', 'R', 'K', 'J', 'S', 'M'];
+  Widget _navBtn(IconData icon, VoidCallback onTap) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      width: 40, height: 40,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, color: Colors.white70, size: 24),
+    ),
+  );
+
+  Widget _buildWeekHeader() {
+    const days = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: days.map((d) => Text(
-        d,
-        style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w800),
+      children: days.map((d) => SizedBox(
+        width: 36,
+        child: Text(
+          d,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.outfit(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.w700),
+        ),
       )).toList(),
     );
   }
 
-  Widget _buildCalendarGrid(List<CalendarEvent> events) {
-    final daysInMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0).day;
-    final firstDayOffset = DateTime(_focusedDay.year, _focusedDay.month, 1).weekday - 1;
-    
+  Widget _buildGrid(List<CalendarEvent> events) {
+    final daysInMonth   = DateTime(_focusedDay.year, _focusedDay.month + 1, 0).day;
+    final firstOffset   = DateTime(_focusedDay.year, _focusedDay.month, 1).weekday - 1;
+    final totalCells    = daysInMonth + firstOffset;
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 4,
+        childAspectRatio: 1,
       ),
-      itemCount: daysInMonth + firstDayOffset,
+      itemCount: totalCells,
       itemBuilder: (context, index) {
-        if (index < firstDayOffset) return const SizedBox();
-        
-        final day = index - firstDayOffset + 1;
-        final date = DateTime(_focusedDay.year, _focusedDay.month, day);
-        final isSelected = _selectedDay.day == day && _selectedDay.month == _focusedDay.month && _selectedDay.year == _focusedDay.year;
-        final isToday = DateTime.now().day == day && DateTime.now().month == _focusedDay.month && DateTime.now().year == _focusedDay.year;
-        
-        // Check for events on this day
-        final hasEvents = events.any((e) => isSameDay(e.startDate, date));
+        if (index < firstOffset) return const SizedBox();
+
+        final day      = index - firstOffset + 1;
+        final date     = DateTime(_focusedDay.year, _focusedDay.month, day);
+        final isSelected = _isSameDay(date, _selectedDay);
+        final isToday    = _isSameDay(date, DateTime.now());
+        final dayEvents  = events.where((e) => _isSameDay(e.startDate, date)).toList();
+        final hasEvents  = dayEvents.isNotEmpty;
 
         return GestureDetector(
           onTap: () => setState(() => _selectedDay = date),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
+            duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: isSelected ? jneRed : isToday ? Colors.white12 : Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
-              border: isToday ? Border.all(color: jneRed.withValues(alpha: 0.5), width: 1) : null,
+              color: isSelected
+                  ? const Color(0xFFE31E24)
+                  : isToday
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: isToday && !isSelected
+                  ? Border.all(color: const Color(0xFFE31E24).withValues(alpha: 0.6), width: 1.5)
+                  : null,
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -150,18 +196,28 @@ class _CalendarPageState extends State<CalendarPage> {
                 Text(
                   day.toString(),
                   style: GoogleFonts.outfit(
-                    color: isSelected ? Colors.white : Colors.white70,
-                    fontSize: 14,
-                    fontWeight: isSelected || isToday ? FontWeight.w900 : FontWeight.w600,
+                    color: isSelected
+                        ? Colors.white
+                        : isToday
+                            ? Colors.white
+                            : Colors.white70,
+                    fontSize: 13,
+                    fontWeight: isSelected || isToday ? FontWeight.w900 : FontWeight.w500,
                   ),
                 ),
                 if (hasEvents && !isSelected)
                   Positioned(
-                    bottom: 6,
-                    child: Container(
-                      width: 4,
-                      height: 4,
-                      decoration: const BoxDecoration(color: jneRed, shape: BoxShape.circle),
+                    bottom: 4,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: dayEvents.take(3).map((e) => Container(
+                        width: 4, height: 4,
+                        margin: const EdgeInsets.symmetric(horizontal: 1),
+                        decoration: BoxDecoration(
+                          color: _categoryColor(e.category),
+                          shape: BoxShape.circle,
+                        ),
+                      )).toList(),
                     ),
                   ),
               ],
@@ -172,153 +228,216 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  Widget _buildEventList(List<CalendarEvent> events) {
-    final dayEvents = events.where((e) => isSameDay(e.startDate, _selectedDay)).toList();
+  Widget _buildEventSection(
+    List<CalendarEvent> events,
+    Color cardBg,
+    Color titleColor,
+    Color mutedColor,
+    Color shadowColor,
+    Color bg,
+  ) {
+    final dayEvents = events.where((e) => _isSameDay(e.startDate, _selectedDay)).toList();
+    final isToday   = _isSameDay(_selectedDay, DateTime.now());
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+        // ── Day header ──
+        Container(
+          color: bg,
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                DateFormat('EEEE, d MMMM', 'id').format(_selectedDay),
-                style: GoogleFonts.outfit(color: slate950, fontSize: 18, fontWeight: FontWeight.w900),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      DateFormat('EEEE', 'id').format(_selectedDay),
+                      style: GoogleFonts.outfit(color: mutedColor, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                    ),
+                    Text(
+                      DateFormat('d MMMM yyyy', 'id').format(_selectedDay),
+                      style: GoogleFonts.outfit(color: titleColor, fontSize: 18, fontWeight: FontWeight.w900),
+                    ),
+                  ],
+                ),
               ),
+              if (isToday)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE31E24).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'HARI INI',
+                    style: GoogleFonts.outfit(color: const Color(0xFFE31E24), fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1),
+                  ),
+                ),
+              const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: jneBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF005596).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Text(
                   '${dayEvents.length} ACARA',
-                  style: GoogleFonts.outfit(color: jneBlue, fontSize: 10, fontWeight: FontWeight.w900),
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFF005596), fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1,
+                  ),
                 ),
               ),
             ],
           ),
         ),
+
+        // ── Event list ──
         Expanded(
           child: dayEvents.isEmpty
-            ? _buildEmptyState()
-            : ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                itemCount: dayEvents.length,
-                itemBuilder: (context, index) {
-                  final e = dayEvents[index];
-                  return FadeInUp(
-                    delay: Duration(milliseconds: index * 100),
-                    child: _buildEventCard(e),
-                  );
-                },
-              ),
+              ? _buildEmptyState(mutedColor)
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: dayEvents.length,
+                  itemBuilder: (context, i) => FadeInUp(
+                    delay: Duration(milliseconds: i * 80),
+                    duration: const Duration(milliseconds: 300),
+                    child: _buildEventCard(dayEvents[i], cardBg, titleColor, mutedColor, shadowColor),
+                  ),
+                ),
         ),
       ],
     );
   }
 
-  Widget _buildEventCard(CalendarEvent e) {
+  Widget _buildEventCard(
+    CalendarEvent e,
+    Color cardBg,
+    Color titleColor,
+    Color mutedColor,
+    Color shadowColor,
+  ) {
+    final color = _categoryColor(e.category);
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 10))],
+        color: cardBg,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: shadowColor, blurRadius: 14, offset: const Offset(0, 4))],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getCategoryColor(e.category).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  e.category.toUpperCase(),
-                  style: GoogleFonts.outfit(color: _getCategoryColor(e.category), fontSize: 9, fontWeight: FontWeight.w900),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                DateFormat('HH:mm').format(e.startDate),
-                style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w800),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            e.title,
-            style: GoogleFonts.outfit(color: slate950, fontSize: 16, fontWeight: FontWeight.w900, height: 1.2),
-          ),
-          if (e.description.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              e.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500),
-            ),
-          ],
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFF94A3B8)),
-              const SizedBox(width: 6),
+              // Left accent bar
+              Container(width: 4, color: color),
               Expanded(
-                child: Text(
-                  e.location ?? 'Hub Martapura',
-                  style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w700),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              e.category.toUpperCase(),
+                              style: GoogleFonts.outfit(color: color, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.8),
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: mutedColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.access_time_rounded, size: 10, color: mutedColor),
+                                const SizedBox(width: 4),
+                                Text(
+                                  DateFormat('HH:mm').format(e.startDate),
+                                  style: GoogleFonts.outfit(color: mutedColor, fontSize: 10, fontWeight: FontWeight.w700),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        e.title,
+                        style: GoogleFonts.outfit(color: titleColor, fontSize: 15, fontWeight: FontWeight.w800, height: 1.2, letterSpacing: 0.1),
+                      ),
+                      if (e.description.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          e.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.outfit(color: mutedColor, fontSize: 12, fontWeight: FontWeight.w500, height: 1.45),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Icon(Icons.location_on_rounded, size: 12, color: mutedColor.withValues(alpha: 0.7)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              e.location ?? 'Hub Martapura',
+                              style: GoogleFonts.outfit(color: mutedColor, fontSize: 11, fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Icon(Icons.people_rounded, size: 12, color: mutedColor.withValues(alpha: 0.7)),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${e.attendees.length + (e.departments?.length ?? 0)} Diundang',
+                            style: GoogleFonts.outfit(color: mutedColor, fontSize: 11, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              const Icon(Icons.people_rounded, size: 14, color: Color(0xFF94A3B8)),
-              const SizedBox(width: 6),
-              Text(
-                '${e.attendees.length + (e.departments?.length ?? 0)} Diundang',
-                style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w700),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(Color mutedColor) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.calendar_today_rounded, color: const Color(0xFFCBD5E1), size: 48),
-          const SizedBox(height: 16),
+          Icon(Icons.event_available_rounded, color: mutedColor.withValues(alpha: 0.3), size: 52),
+          const SizedBox(height: 14),
           Text(
-            'Tidak ada acara terjadwal',
-            style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w700),
+            'Tidak ada acara hari ini',
+            style: GoogleFonts.outfit(color: mutedColor, fontSize: 14, fontWeight: FontWeight.w700),
           ),
+          const SizedBox(height: 4),
           Text(
             'Pilih tanggal lain atau hubungi Admin',
-            style: GoogleFonts.outfit(color: const Color(0xFFCBD5E1), fontSize: 12, fontWeight: FontWeight.w500),
+            style: GoogleFonts.outfit(color: mutedColor.withValues(alpha: 0.6), fontSize: 12, fontWeight: FontWeight.w500),
           ),
         ],
       ),
     );
-  }
-
-  Color _getCategoryColor(String cat) {
-    switch (cat) {
-      case 'meeting': return jneBlue;
-      case 'training': return Colors.purple;
-      case 'deadline': return jneRed;
-      case 'social': return Colors.orange;
-      default: return const Color(0xFF64748B);
-    }
-  }
-
-  bool isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 }

@@ -17,7 +17,7 @@ class PackageLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double iconSize = size * 0.5;
-    final Color mainColor = isLight ? Colors.white : const Color(0xFF0891B2);
+    final Color mainColor = isLight ? Colors.white : const Color(0xFFE31E24);
     final Color textColor = isLight ? Colors.white70 : const Color(0xFF64748B);
 
     return Center(

@@ -10,7 +10,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:intl/intl.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_models.dart';
 import '../utils/offline_service.dart';
 import '../utils/connectivity_service.dart';
@@ -20,6 +22,8 @@ import '../utils/presence_service.dart';
 class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final Connectivity _connectivity = Connectivity();
+  late final ConnectivityService _connectivityService;
 
   UserModel? _currentUser;
   UserModel? get currentUser => _currentUser;
@@ -48,9 +52,31 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   bool _isDarkMode = false;
   bool get isDarkMode => _isDarkMode;
 
-  void toggleTheme() {
+  bool _isNotificationsEnabled = true;
+  bool get isNotificationsEnabled => _isNotificationsEnabled;
+
+  Future<void> _loadThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    _isDarkMode = prefs.getBool('setting_dark_mode') ?? false;
+    _isNotificationsEnabled = prefs.getBool('setting_notifications') ?? true;
+    notifyListeners();
+  }
+
+  Future<void> _savePref(String key, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
+  }
+
+  Future<void> toggleTheme() async {
     _isDarkMode = !_isDarkMode;
     notifyListeners();
+    await _savePref('setting_dark_mode', _isDarkMode);
+  }
+
+  Future<void> toggleNotifications() async {
+    _isNotificationsEnabled = !_isNotificationsEnabled;
+    notifyListeners();
+    await _savePref('setting_notifications', _isNotificationsEnabled);
   }
 
   // Data Lists
@@ -60,8 +86,15 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   List<LeaveRequest> _leaveRequests = [];
   List<LeaveRequest> get myLeaveRequests => _leaveRequests;
 
-  final List<AdminNotification> _notifications = [];
-  List<AdminNotification> get notifications => List.unmodifiable(_notifications);
+  // Dipisah agar tidak ada race condition saat kedua snapshot tiba bersamaan
+  final List<AdminNotification> _personalNotifs = [];
+  final List<AdminNotification> _broadcastNotifs = [];
+
+  List<AdminNotification> get notifications {
+    final merged = [..._personalNotifs, ..._broadcastNotifs];
+    merged.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return List.unmodifiable(merged);
+  }
 
   List<CalendarEvent> _events = [];
   List<CalendarEvent> get events => _events;
@@ -86,17 +119,20 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   StreamSubscription? _attendanceSub;
   StreamSubscription? _leaveSub;
   StreamSubscription? _presenceSub;
+  StreamSubscription? _selfUserSub;
 
   // Timers
   Timer? _heartbeatTimer;
   Timer? _syncRetryTimer;
 
   AppProvider(ConnectivityService connectivityService) {
+    _connectivityService = connectivityService;
     _init();
+    _loadThemePreference();
     WidgetsBinding.instance.addObserver(this);
     
-    connectivityService.addListener(() {
-      if (connectivityService.isOnline && isLoggedIn) {
+    _connectivityService.addListener(() {
+      if (_connectivityService.isOnline && isLoggedIn) {
         syncPendingRecords();
         _startHeartbeat();
       } else {
@@ -104,6 +140,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       }
     });
   }
+
+  bool get isOnline => _connectivityService.isOnline;
+  bool get isOffline => !isOnline;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -125,7 +164,6 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         _listenToSettings();
         _startHeartbeat();
         _saveFCMToken();
-        _listenToLeaves();
         _schedulePeriodicSync();
         syncPendingRecords();
       } else {
@@ -139,16 +177,36 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     });
   }
 
+  bool _isFetchingUser = false;
+
   Future<void> _fetchCurrentUser(String uid) async {
+    if (_isFetchingUser) return;
+    _isFetchingUser = true;
     try {
+      // Initial fetch so we have data immediately (for login_page to read
+      // passwordChanged synchronously after login resolves).
       final doc = await _db.collection('users').doc(uid).get();
       if (doc.exists) {
         _currentUser = UserModel.fromFirestore(doc);
         _listenToMyData();
       }
+
+      // Real-time listener for the current user's own profile doc. When
+      // admin edits the user's name / role / department / isActive from
+      // the admin panel, mobile picks it up immediately without a relogin.
+      _selfUserSub?.cancel();
+      _selfUserSub = _db.collection('users').doc(uid).snapshots().listen(
+        (snap) {
+          if (!snap.exists) return;
+          _currentUser = UserModel.fromFirestore(snap);
+          notifyListeners();
+        },
+        onError: (e) => debugPrint('Self-user listener error: $e'),
+      );
     } catch (e) {
       debugPrint('Error fetching user: $e');
     } finally {
+      _isFetchingUser = false;
       _isInitialized = true;
       notifyListeners();
     }
@@ -205,16 +263,15 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
   void _updateNotifications(QuerySnapshot snap, {required bool isBroadcast}) {
     final newNotifs = snap.docs.map((doc) => AdminNotification.fromFirestore(doc)).toList();
-    
     if (isBroadcast) {
-      _notifications.removeWhere((n) => n.type == 'broadcast');
-      _notifications.addAll(newNotifs);
+      _broadcastNotifs
+        ..clear()
+        ..addAll(newNotifs);
     } else {
-      _notifications.removeWhere((n) => n.type != 'broadcast');
-      _notifications.addAll(newNotifs);
+      _personalNotifs
+        ..clear()
+        ..addAll(newNotifs);
     }
-    
-    _notifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     notifyListeners();
   }
 
@@ -226,6 +283,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     _attendanceSub?.cancel();
     _leaveSub?.cancel();
     _presenceSub?.cancel();
+    _selfUserSub?.cancel();
     _syncRetryTimer?.cancel();
   }
 
@@ -293,41 +351,120 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  void _listenToLeaves() {
-    if (_currentUser == null) return;
-    _leaveSub = _db
-        .collection('leaves')
-        .where('userId', isEqualTo: _currentUser!.uid)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .listen((snap) {
-      _leaveRequests = snap.docs.map((doc) => LeaveRequest.fromFirestore(doc)).toList();
-      notifyListeners();
-    });
-  }
 
   // ── Auth Methods ──
+
+  /// Default password set by admin when creating a new employee account
+  /// (mirrored from admin/src/hooks/useAddEmployeeLogic.ts). The mobile login
+  /// transparently uses this for first-time login so the user only ever has
+  /// to invent + remember their own password.
+  static const String _adminDefaultPassword = 'JNE123!';
+
+  /// Login flow:
+  ///   1. Try Firebase Auth with the password the user typed.
+  ///   2. If that fails with wrong-password / invalid-credential, fall back
+  ///      to the admin-provisioned default. If the default works, this is
+  ///      a first-login (or admin reset) — promote the user's typed password
+  ///      via updatePassword() and mark passwordChanged so we don't try the
+  ///      default next time.
+  ///   3. If both fail, surface the original auth error message.
   Future<void> login(String email, String password) async {
     _isProcessing = true;
     _fortressStatus = 'Menghubungkan ke server...';
     notifyListeners();
     try {
-      await FortressUtils.wrapWithRetry(
-        () => _auth.signInWithEmailAndPassword(email: email, password: password),
-        taskName: 'Login',
-        onStatusUpdate: (msg) {
-          _fortressStatus = msg;
-          notifyListeners();
-        },
-      );
+      try {
+        // Step 1: try the user's password.
+        await FortressUtils.wrapWithRetry(
+          () => _auth.signInWithEmailAndPassword(email: email, password: password),
+          taskName: 'Login',
+          onStatusUpdate: (msg) {
+            _fortressStatus = msg;
+            notifyListeners();
+          },
+        );
+      } on FirebaseAuthException catch (e) {
+        if (e.code != 'wrong-password' &&
+            e.code != 'invalid-credential') {
+          rethrow;
+        }
+        // Step 2: maybe first login. Try the admin-provisioned default.
+        _fortressStatus = 'Menyiapkan akun pertama kali...';
+        notifyListeners();
+
+        try {
+          await _auth.signInWithEmailAndPassword(
+            email: email,
+            password: _adminDefaultPassword,
+          );
+        } on FirebaseAuthException {
+          // Default also rejected → real wrong password. Re-throw the
+          // original error so the user sees "Password salah" not
+          // "first login failed".
+          throw e;
+        }
+
+        // Default worked → swap to the password the user actually typed.
+        if (password != _adminDefaultPassword) {
+          try {
+            await _auth.currentUser?.updatePassword(password);
+          } on FirebaseAuthException {
+            // The user is signed in with the default password but their
+            // chosen password was rejected (most often weak-password).
+            // Sign them out so they aren't stranded in a session whose
+            // password they don't actually know, then re-throw.
+            await _auth.signOut();
+            rethrow;
+          }
+        }
+      }
+
+      // Fetch user data immediately so login_page can read passwordChanged
+      if (_auth.currentUser != null) {
+        await _fetchCurrentUser(_auth.currentUser!.uid);
+        // Mark account as no-longer-on-default so we don't retry the
+        // bridge on the next login.
+        if (_currentUser != null && !_currentUser!.passwordChanged) {
+          await markPasswordChanged();
+        }
+      }
       _updatePresence(true);
       _startHeartbeat();
+    } on FirebaseAuthException catch (e) {
+      // Map Firebase error codes to messages users can actually act on
+      final msg = switch (e.code) {
+        'invalid-email'         => 'Format email tidak valid.',
+        'user-disabled'         => 'Akun dinonaktifkan. Hubungi admin.',
+        'user-not-found'        => 'Akun tidak ditemukan. Cek email kembali.',
+        'wrong-password'        => 'Password salah.',
+        'invalid-credential'    => 'Email atau password salah.',
+        'too-many-requests'     => 'Terlalu banyak percobaan. Tunggu beberapa menit.',
+        'network-request-failed'=> 'Tidak ada koneksi internet. Cek jaringan kamu.',
+        'weak-password'         => 'Password terlalu lemah. Minimal 6 karakter.',
+        _                       => 'Gagal masuk (${e.code}). Coba lagi.',
+      };
+      throw Exception(msg);
     } catch (e) {
-      throw Exception('Email atau password salah atau gangguan server. Coba cek kembali ya.');
+      // Non-auth failure (network during fetchCurrentUser, etc.)
+      throw Exception('Gangguan koneksi. Cek internet kamu lalu coba lagi.');
     } finally {
       _isProcessing = false;
       _fortressStatus = '';
       notifyListeners();
+    }
+  }
+
+  Future<void> markPasswordChanged() async {
+    if (_currentUser == null) return;
+    try {
+      await _db.collection('users').doc(_currentUser!.uid).update({
+        'passwordChanged': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      _currentUser = _currentUser!.copyWith(passwordChanged: true);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('markPasswordChanged error: $e');
     }
   }
 
@@ -345,16 +482,79 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  void logout() async {
+  /// Re-authenticate with old password then change to new password.
+  /// Required by Firebase for sensitive operations after session has aged.
+  Future<void> reauthAndChangePassword(String oldPassword, String newPassword) async {
+    _isProcessing = true;
+    notifyListeners();
+    try {
+      final user = _auth.currentUser;
+      if (user == null || user.email == null) {
+        throw Exception('Sesi tidak valid. Silakan login ulang.');
+      }
+      // Re-authenticate
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: oldPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+      // Change password
+      await user.updatePassword(newPassword);
+    } on FirebaseAuthException catch (e) {
+      debugPrint('reauthAndChangePassword error: ${e.code}');
+      if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        throw Exception('Password lama salah. Periksa kembali.');
+      }
+      if (e.code == 'weak-password') {
+        throw Exception('Password baru terlalu lemah.');
+      }
+      throw Exception('Gagal mengubah password: ${e.message}');
+    } catch (e) {
+      debugPrint('reauthAndChangePassword error: $e');
+      throw Exception('Gagal mengubah password. Coba login ulang terlebih dahulu.');
+    } finally {
+      _isProcessing = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> logout() async {
+    // 1. Unregister FCM token for THIS device so the next user who logs in here
+    // doesn't keep receiving the previous user's notifications. Best-effort:
+    // if it fails (offline), the next saveFCMToken on new login will overwrite
+    // the doc with the new userId anyway.
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await _db.collection('fcm_tokens').doc(token).delete();
+      }
+    } catch (e) {
+      debugPrint('FCM token cleanup failed: $e');
+    }
+
+    // 2. Stop background work BEFORE signOut so listeners don't see a half-gone
+    // auth state and write garbage.
     _stopHeartbeat();
+    _stopPresence();
     _cancelAllSubscriptions();
-    await _auth.signOut();
+
+    // 3. SignOut — this will also fire the authStateChanges listener which
+    // does its own cleanup, but those calls are idempotent.
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      debugPrint('Logout signOut error: $e');
+    }
+
+    // 4. Clear local caches so a re-login on same device starts fresh.
     _currentUser = null;
     _attendanceRecords.clear();
     _monthlyRecords.clear();
     _leaveRequests.clear();
-    _notifications.clear();
+    _personalNotifs.clear();
+    _broadcastNotifs.clear();
     _events.clear();
+    _hasPendingAttendance = false;
     notifyListeners();
   }
 
@@ -388,7 +588,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
   // ── Attendance Logic ──
   bool get hasClockedInToday {
-    return _attendanceRecords.any((r) => r.checkIn != null && r.checkOut == null);
+    final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    return _attendanceRecords.any((r) => r.date == todayStr && r.checkIn != null && r.checkOut == null);
   }
 
   Future<void> addAttendanceCheckIn(String status, {String? localImagePath, double lat = 0, double lng = 0}) async {
@@ -408,6 +609,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           'employeeName': _currentUser!.name,
           'employeeId': _currentUser!.employeeId,
           'department': _currentUser!.department,
+          'role': _currentUser!.role,
+          'date': dateStr,
           'attendanceDate': dateStr,
           'status': _mapMobileStatusToAdmin(status),
           'checkIn': {
@@ -415,13 +618,13 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
             'latitude': lat,
             'longitude': lng,
             'distance': Geolocator.distanceBetween(lat, lng, _officeLat, _officeLng).round(),
-            'photoUrl': localImagePath,
+            'photoUrl': null,
           },
           'checkInTime': FieldValue.serverTimestamp(),
           'checkInLatitude': lat,
           'checkInLongitude': lng,
           'checkInDistance': Geolocator.distanceBetween(lat, lng, _officeLat, _officeLng).round(),
-          'checkInPhotoUrl': localImagePath,
+          'checkInPhotoUrl': null,
           'syncStatus': 'pending',
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
@@ -433,13 +636,18 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         await _db.runTransaction((transaction) async {
           final snapshot = await transaction.get(docRef);
           if (snapshot.exists) {
-            throw Exception('Anda sudah melakukan absensi masuk hari ini.');
+            final existingData = snapshot.data();
+            if (existingData != null && existingData['checkIn'] != null) {
+              throw Exception('ALREADY_CLOCKED_IN');
+            }
           }
           transaction.set(docRef, data);
-          if (localImagePath != null) {
-            _uploadAttendancePhoto(docId, localImagePath);
-          }
         });
+
+        // Upload photo after transaction completes (not inside it)
+        if (localImagePath != null) {
+          _uploadAttendancePhoto(docId, localImagePath);
+        }
 
         // Audit log (non-blocking)
         try {
@@ -462,8 +670,15 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           debugPrint('Audit log failed: $e');
         }
 
-        // Mark as synced immediately since we wrote directly
-        await _db.collection('attendance').doc(docId).update({'syncStatus': 'synced'});
+        // Mark as synced immediately since we wrote directly. Non-blocking —
+        // if this update fails (e.g. transient network blip after the
+        // transaction succeeded), the doc is still in Firestore and the
+        // admin still sees it. We don't want a false "Gagal absen" toast.
+        try {
+          await _db.collection('attendance').doc(docId).update({'syncStatus': 'synced'});
+        } catch (e) {
+          debugPrint('syncStatus update failed (non-fatal): $e');
+        }
       } else {
         final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
         final data = {
@@ -471,6 +686,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           'employeeName': _currentUser!.name,
           'employeeId': _currentUser!.employeeId,
           'department': _currentUser!.department,
+          'role': _currentUser!.role,
+          'date': dateStr,
           'attendanceDate': dateStr,
           'status': _mapMobileStatusToAdmin(status),
           'checkIn': {
@@ -493,9 +710,26 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         await OfflineService.savePendingAttendance(data);
         _hasPendingAttendance = true;
       }
+    } on FirebaseException catch (e) {
+      debugPrint('Attendance Firebase error: code=${e.code} msg=${e.message}');
+      if (e.code == 'permission-denied') {
+        throw Exception('Akun belum diizinkan absen. Hubungi admin untuk aktifkan akses.');
+      }
+      if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw Exception('Koneksi tidak stabil. Coba lagi sebentar.');
+      }
+      if (e.code == 'already-exists') {
+        throw Exception('Anda sudah melakukan absensi masuk hari ini.');
+      }
+      throw Exception('Gagal absen (${e.code}). Coba lagi.');
     } catch (e) {
       debugPrint('Attendance error: $e');
-      throw Exception('Gagal mengirim absensi. Data akan disimpan secara otomatis jika offline.');
+      if (e.toString().contains('ALREADY_CLOCKED_IN')) {
+        throw Exception('Anda sudah melakukan absensi masuk hari ini.');
+      }
+      // Surface the real reason instead of a generic "Gagal mengirim".
+      final raw = e.toString().replaceFirst('Exception: ', '').replaceFirst('Error: ', '');
+      throw Exception(raw.length > 140 ? '${raw.substring(0, 140)}...' : raw);
     } finally {
       _isProcessing = false;
       notifyListeners();
@@ -504,14 +738,15 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
   Future<bool> _checkConnectivity() async {
     try {
-      final result = await InternetAddress.lookup('google.com').timeout(const Duration(seconds: 3));
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+      final res = await _connectivity.checkConnectivity();
+      return !res.contains(ConnectivityResult.none);
     } catch (_) {
       return false;
     }
   }
 
   Future<void> syncPendingRecords() async {
+    if (_currentUser == null) return;
     final pending = await OfflineService.getPendingAttendance();
     if (pending.isEmpty) return;
 
@@ -519,34 +754,57 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     int failures = 0;
     List<Map<String, dynamic>> stillPending = [];
 
-    for (var record in pending) {
+     for (var record in pending) {
       try {
-        // Use server time to determine the attendance date (prevent device clock manipulation)
-        final serverNow = await FortressUtils.getServerTime();
-        final dateStr = DateFormat('yyyy-MM-dd').format(serverNow);
-        final docId = '${_currentUser!.uid}_$dateStr';
-        
+         final firestoreData = Map<String, dynamic>.from(record);
+         
+         // PRESERVE the original offline time if it exists
+         final originalTime = record['checkIn']?['time'] ?? record['checkOut']?['time'];
+         final DateTime offlineTime = originalTime != null 
+             ? (originalTime is String ? DateTime.parse(originalTime) : DateTime.now())
+             : await FortressUtils.getServerTime();
+         
+         final actualDateStr = DateFormat('yyyy-MM-dd').format(offlineTime);
+         final docId = '${_currentUser!.uid}_$actualDateStr';
+         
          await _db.runTransaction((transaction) async {
            final docRef = _db.collection('attendance').doc(docId);
            final snapshot = await transaction.get(docRef);
+           
            if (snapshot.exists) {
-             return; // Already exists
+             final existingData = snapshot.data();
+             final isCheckIn = record['checkIn'] != null;
+             
+             if (isCheckIn && existingData?['checkIn'] != null) return;
+             if (!isCheckIn && existingData?['checkOut'] != null) return;
+             
+             if (!isCheckIn) {
+               transaction.update(docRef, {
+                 'checkOut': {
+                   ...record['checkOut'],
+                   'time': Timestamp.fromDate(offlineTime),
+                 },
+                 'updatedAt': FieldValue.serverTimestamp(),
+               });
+               return;
+             }
            }
-           final firestoreData = Map<String, dynamic>.from(record);
-           final now = FieldValue.serverTimestamp();
 
-           // Override with server timestamp for all time fields
-           firestoreData['attendanceDate'] = dateStr;
-           firestoreData['checkIn']['time'] = now;
-           firestoreData['checkInTime'] = now;
-           firestoreData['createdAt'] = now;
-           firestoreData['updatedAt'] = now;
-           firestoreData['syncStatus'] = 'syncing';
+           firestoreData['date'] = actualDateStr;
+           firestoreData['attendanceDate'] = actualDateStr;
+           
+           if (firestoreData['checkIn'] != null) {
+             firestoreData['checkIn']['time'] = Timestamp.fromDate(offlineTime);
+           }
+           if (firestoreData['checkOut'] != null) {
+             firestoreData['checkOut']['time'] = Timestamp.fromDate(offlineTime);
+           }
+           
+           firestoreData['createdAt'] = FieldValue.serverTimestamp();
+           firestoreData['updatedAt'] = FieldValue.serverTimestamp();
+           firestoreData['syncStatus'] = 'synced';
 
-           firestoreData['checkIn']['photoUrl'] = 'uploading...';
-           firestoreData['checkInPhotoUrl'] = 'uploading...';
-
-           transaction.set(docRef, firestoreData);
+           transaction.set(docRef, firestoreData, SetOptions(merge: true));
          });
 
         final localPath = record['checkIn']['photoUrl'];
@@ -643,8 +901,35 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           debugPrint('Audit log failed: $e');
         }
       } else {
-        throw Exception('Koneksi internet diperlukan untuk absen keluar.');
+        // OFFLINE CHECK-OUT SUPPORT
+        final offlineData = {
+          'checkOut': {
+            ...checkOutData,
+            'time': DateTime.now().toIso8601String(),
+          },
+          'id': record.id,
+          'userId': _currentUser!.uid,
+          'attendanceDate': record.date,
+          'syncStatus': 'pending',
+          'updatedAt': DateTime.now().toIso8601String(),
+        };
+
+        await OfflineService.savePendingAttendance(offlineData);
+        _hasPendingAttendance = true;
       }
+    } on FirebaseException catch (e) {
+      debugPrint('Check-out Firebase error: code=${e.code} msg=${e.message}');
+      if (e.code == 'permission-denied') {
+        throw Exception('Akun belum diizinkan absen keluar. Hubungi admin.');
+      }
+      if (e.code == 'unavailable' || e.code == 'deadline-exceeded') {
+        throw Exception('Koneksi tidak stabil. Coba lagi sebentar.');
+      }
+      throw Exception('Gagal absen keluar (${e.code}). Coba lagi.');
+    } catch (e) {
+      debugPrint('Check-out error: $e');
+      final raw = e.toString().replaceFirst('Exception: ', '').replaceFirst('Error: ', '');
+      throw Exception(raw.length > 140 ? '${raw.substring(0, 140)}...' : raw);
     } finally {
       _isProcessing = false;
       notifyListeners();
@@ -821,6 +1106,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         'employeeName': _currentUser!.name,
         'employeeId': _currentUser!.employeeId,
         'department': _currentUser!.department,
+        'date': DateFormat('yyyy-MM-dd').format(date),
         'attendanceDate': DateFormat('yyyy-MM-dd').format(date),
         'status': 'overtime',
         'overtimeMinutes': durationMinutes,
@@ -843,7 +1129,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   Future<UserModel?> getFirstAdmin() async {
     try {
       final snap = await _db.collection('users')
-          .where('role', whereIn: ['admin', 'moderator'])
+          .where('role', whereIn: ['admin', 'superadmin'])
           .limit(1)
           .get();
       if (snap.docs.isNotEmpty) {
@@ -881,18 +1167,78 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
     try {
       if (_currentUser != null) {
-        await Future.delayed(const Duration(seconds: 2));
-        await _db.collection('users').doc(_currentUser!.uid).update({
+        final uid = _currentUser!.uid;
+        final storageRef = FirebaseStorage.instance
+            .ref('face_photos/$uid/face_${DateTime.now().millisecondsSinceEpoch}.jpg');
+        final uploadTask = await storageRef.putFile(
+          File(localPath),
+          SettableMetadata(contentType: 'image/jpeg'),
+        );
+        final faceUrl = await uploadTask.ref.getDownloadURL();
+
+        await _db.collection('users').doc(uid).update({
           'faceRegistered': true,
+          'facePhotoUrl': faceUrl,
           'updatedAt': FieldValue.serverTimestamp(),
         });
         _currentUser = _currentUser!.copyWith(faceRegistered: true);
       }
     } catch (e) {
       debugPrint("Error registering face: $e");
+      rethrow;
     } finally {
       _isLoadingFace = false;
       notifyListeners();
+    }
+  }
+
+  Future<String> uploadProfilePhoto(String localPath) async {
+    if (_currentUser == null) throw Exception('Belum login');
+    final uid = _currentUser!.uid;
+    final ref = FirebaseStorage.instance
+        .ref()
+        .child('profile_photos/$uid.jpg');
+    await ref.putFile(File(localPath));
+    final url = await ref.getDownloadURL();
+    await _db.collection('users').doc(uid).update({
+      'photoUrl': url,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    _currentUser = _currentUser!.copyWith(photoUrl: url);
+    notifyListeners();
+    return url;
+  }
+
+  /// Lets the user update their own profile fields (phone & display name).
+  /// Firestore rules only allow self-updates that DON'T touch role,
+  /// employeeId, department, email, or uid — so we whitelist explicitly to
+  /// avoid sending anything that would trip permission-denied.
+  Future<void> updateMyProfile({String? name, String? phone}) async {
+    if (_currentUser == null) throw Exception('Belum login');
+    final uid = _currentUser!.uid;
+
+    final patch = <String, dynamic>{};
+    if (name != null && name.trim().isNotEmpty && name.trim() != _currentUser!.name) {
+      patch['name'] = name.trim();
+    }
+    if (phone != null && phone.trim() != _currentUser!.phone) {
+      patch['phone'] = phone.trim();
+    }
+    if (patch.isEmpty) return;
+
+    patch['updatedAt'] = FieldValue.serverTimestamp();
+    try {
+      await _db.collection('users').doc(uid).update(patch);
+      _currentUser = _currentUser!.copyWith(
+        name: patch['name'] ?? _currentUser!.name,
+        phone: patch['phone'] ?? _currentUser!.phone,
+      );
+      notifyListeners();
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        throw Exception('Tidak punya izin mengubah data ini.');
+      }
+      throw Exception('Gagal menyimpan (${e.code}). Coba lagi.');
     }
   }
 
