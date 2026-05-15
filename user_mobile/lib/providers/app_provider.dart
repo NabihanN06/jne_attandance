@@ -60,8 +60,76 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   List<LeaveRequest> _leaveRequests = [];
   List<LeaveRequest> get myLeaveRequests => _leaveRequests;
 
+<<<<<<< Updated upstream
   final List<AdminNotification> _notifications = [];
   List<AdminNotification> get notifications => List.unmodifiable(_notifications);
+=======
+  List<OvertimeRequest> _overtimeRequests = [];
+  List<OvertimeRequest> get myOvertimeRequests => _overtimeRequests;
+
+  List<DisputeRequest> _disputeRequests = [];
+  List<DisputeRequest> get myDisputeRequests => _disputeRequests;
+
+  // Admin-set leave balance from Firestore (null = not yet loaded)
+  LeaveBalance? _firestoreLeaveBalance;
+    const quota = 12;
+    final now = DateTime.now();
+    final thisYear = now.year;
+    final yearLeaves = _leaveRequests.where((l) {
+      return l.startDate.year == thisYear || l.endDate.year == thisYear;
+    });
+    final approved = yearLeaves.where((l) => l.status == 'approved');
+    final pending  = yearLeaves.where((l) => l.status == 'pending');
+    return LeaveBalance(
+      annualQuota: quota,
+      usedAnnual:     approved.where((l) => l.type == 'annual').fold(0, (s, l) => s + l.totalDays),
+      usedSick:       approved.where((l) => l.type == 'sick').fold(0, (s, l) => s + l.totalDays),
+      usedPermission: approved.where((l) => l.type != 'annual' && l.type != 'sick').fold(0, (s, l) => s + l.totalDays),
+      pendingDays:    pending.fold(0, (s, l) => s + l.totalDays),
+    );
+  }
+
+  // Dipisah agar tidak ada race condition saat kedua snapshot tiba bersamaan
+  final List<AdminNotification> _personalNotifs = [];
+  final List<AdminNotification> _broadcastNotifs = [];
+
+  List<AdminNotification> get notifications {
+    final merged = [..._personalNotifs, ..._broadcastNotifs];
+    merged.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return List.unmodifiable(merged);
+  }
+
+  int get unreadNotificationCount {
+    return [..._personalNotifs, ..._broadcastNotifs].where((n) => !n.isRead).length;
+  }
+
+  Future<void> markNotificationAsRead(String notifId) async {
+    try {
+      // Try userNotifications first, then broadcasts
+      try {
+        await _db.collection('userNotifications').doc(notifId).update({'isRead': true});
+      } catch (_) {
+        try {
+          await _db.collection('broadcasts').doc(notifId).update({'isRead': true});
+        } catch (_) {}
+      }
+    } catch (e) {
+      debugPrint('markNotificationAsRead error: $e');
+    }
+  }
+
+  Future<void> markAllNotificationsRead() async {
+    try {
+      final batch = _db.batch();
+      for (final n in _personalNotifs.where((n) => !n.isRead)) {
+        batch.update(_db.collection('userNotifications').doc(n.id), {'isRead': true});
+      }
+      await batch.commit();
+    } catch (e) {
+      debugPrint('markAllNotificationsRead error: $e');
+    }
+  }
+>>>>>>> Stashed changes
 
   List<CalendarEvent> _events = [];
   List<CalendarEvent> get events => _events;
@@ -85,6 +153,12 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   StreamSubscription? _eventSub;
   StreamSubscription? _attendanceSub;
   StreamSubscription? _leaveSub;
+<<<<<<< Updated upstream
+=======
+  StreamSubscription? _overtimeSub;
+  StreamSubscription? _disputeSub;
+  StreamSubscription? _leaveBalanceSub;
+>>>>>>> Stashed changes
   StreamSubscription? _presenceSub;
 
   // Timers
@@ -177,6 +251,39 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       notifyListeners();
     });
 
+<<<<<<< Updated upstream
+=======
+    _overtimeSub = _db.collection('overtime')
+        .where('userId', isEqualTo: _currentUser!.uid)
+        .orderBy('createdAt', descending: true)
+        .limit(20)
+        .snapshots()
+        .listen((snap) {
+      _overtimeRequests = snap.docs.map((doc) => OvertimeRequest.fromFirestore(doc)).toList();
+      notifyListeners();
+    });
+
+    // Disputes
+    _disputeSub = _db.collection('disputes')
+        .where('userId', isEqualTo: _currentUser!.uid)
+        .orderBy('createdAt', descending: true)
+        .limit(20)
+        .snapshots()
+        .listen((snap) {
+      _disputeRequests = snap.docs.map((doc) => DisputeRequest.fromFirestore(doc)).toList();
+      notifyListeners();
+    }, onError: (e) => debugPrint('Dispute listener error: $e'));
+
+    // Leave balance from admin (collection: leave_balances/{uid})
+    _leaveBalanceSub = _db.collection('leave_balances')
+        .doc(_currentUser!.uid)
+        .snapshots()
+        .listen((snap) {
+      _firestoreLeaveBalance = snap.exists ? LeaveBalance.fromFirestore(snap) : null;
+      notifyListeners();
+    }, onError: (e) => debugPrint('LeaveBalance listener error: $e'));
+
+>>>>>>> Stashed changes
     _notifSub = _db.collection('userNotifications')
         .where('userId', isEqualTo: _currentUser!.uid)
         .orderBy('createdAt', descending: true)
@@ -225,6 +332,12 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     _eventSub?.cancel();
     _attendanceSub?.cancel();
     _leaveSub?.cancel();
+<<<<<<< Updated upstream
+=======
+    _overtimeSub?.cancel();
+    _disputeSub?.cancel();
+    _leaveBalanceSub?.cancel();
+>>>>>>> Stashed changes
     _presenceSub?.cancel();
     _syncRetryTimer?.cancel();
   }

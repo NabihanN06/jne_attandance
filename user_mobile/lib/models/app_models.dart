@@ -432,4 +432,166 @@ class AdminNotification {
       isRead: data['isRead'] ?? false,
     );
   }
+<<<<<<< Updated upstream
+=======
+}
+
+// ── Overtime Request Model ────────────────────────────────────
+class OvertimeRequest {
+  final String id;
+  final String userId;
+  final String employeeName;
+  final String employeeId;
+  final String department;
+  final String date;
+  final int overtimeMinutes;
+  final int overtimeHours;
+  final String status; // 'pending' | 'approved' | 'rejected'
+  final String reason;
+  final String? adminReason;
+  final String? reviewedBy;
+  final DateTime createdAt;
+
+  const OvertimeRequest({
+    required this.id,
+    required this.userId,
+    required this.employeeName,
+    required this.employeeId,
+    required this.department,
+    required this.date,
+    required this.overtimeMinutes,
+    required this.overtimeHours,
+    required this.status,
+    required this.reason,
+    this.adminReason,
+    this.reviewedBy,
+    required this.createdAt,
+  });
+
+  factory OvertimeRequest.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    final ts = data['createdAt'];
+    final minutes = data['overtimeMinutes'] as int? ?? 0;
+    return OvertimeRequest(
+      id: doc.id,
+      userId: data['userId'] ?? '',
+      employeeName: data['employeeName'] ?? '',
+      employeeId: data['employeeId'] ?? '',
+      department: data['department'] ?? '',
+      date: data['date'] ?? '',
+      overtimeMinutes: minutes,
+      overtimeHours: data['overtimeHours'] as int? ?? (minutes / 60).ceil(),
+      status: data['status'] ?? 'pending',
+      reason: data['reason'] ?? '',
+      adminReason: data['adminReason'] ?? data['rejectionReason'],
+      reviewedBy: data['reviewedBy'],
+      createdAt: ts is Timestamp ? ts.toDate() : DateTime.now(),
+    );
+  }
+}
+
+// ── Leave Balance Model ───────────────────────────────────────
+class LeaveBalance {
+  final int annualQuota;      // Total jatah cuti setahun (admin-set or default 12)
+  final int usedAnnual;       // Sudah terpakai (approved leave type=annual)
+  final int usedSick;         // Sakit terpakai
+  final int usedPermission;   // Izin mendadak terpakai
+  final int pendingDays;      // Sedang diajukan (pending)
+  final String? updatedBy;    // Admin yang terakhir set
+  final DateTime? updatedAt;  // Kapan terakhir di-update admin
+
+  const LeaveBalance({
+    this.annualQuota = 12,
+    this.usedAnnual = 0,
+    this.usedSick = 0,
+    this.usedPermission = 0,
+    this.pendingDays = 0,
+    this.updatedBy,
+    this.updatedAt,
+  });
+
+  int get remainingAnnual => (annualQuota - usedAnnual).clamp(0, annualQuota);
+  int get totalUsed => usedAnnual + usedSick + usedPermission;
+  double get usagePercent => annualQuota > 0 ? (usedAnnual / annualQuota).clamp(0.0, 1.0) : 0.0;
+
+  factory LeaveBalance.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    final ts = data['updatedAt'];
+    return LeaveBalance(
+      annualQuota: data['annualQuota'] as int? ?? 12,
+      usedAnnual: data['usedAnnual'] as int? ?? 0,
+      usedSick: data['usedSick'] as int? ?? 0,
+      usedPermission: data['usedPermission'] as int? ?? 0,
+      pendingDays: data['pendingDays'] as int? ?? 0,
+      updatedBy: data['updatedBy'],
+      updatedAt: ts is Timestamp ? ts.toDate() : null,
+    );
+  }
+}
+
+// ── Dispute / Komplain Model ──────────────────────────────────
+class DisputeRequest {
+  final String id;
+  final String userId;
+  final String employeeName;
+  final String employeeId;
+  final String department;
+  // 'attendance_error' | 'system_issue' | 'overtime_issue' | 'leave_issue' | 'other'
+  final String category;
+  final String title;
+  final String description;
+  final String? attachmentUrl;
+  final String? relatedAttendanceId;
+  // 'pending' | 'in_review' | 'resolved' | 'rejected'
+  final String status;
+  final String? adminResponse;
+  final String? resolvedBy;
+  final DateTime? resolvedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const DisputeRequest({
+    required this.id,
+    required this.userId,
+    required this.employeeName,
+    required this.employeeId,
+    required this.department,
+    required this.category,
+    required this.title,
+    required this.description,
+    this.attachmentUrl,
+    this.relatedAttendanceId,
+    required this.status,
+    this.adminResponse,
+    this.resolvedBy,
+    this.resolvedAt,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory DisputeRequest.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    final ts = data['createdAt'];
+    final us = data['updatedAt'];
+    final rs = data['resolvedAt'];
+    return DisputeRequest(
+      id: doc.id,
+      userId: data['userId'] ?? '',
+      employeeName: data['employeeName'] ?? '',
+      employeeId: data['employeeId'] ?? '',
+      department: data['department'] ?? '',
+      category: data['category'] ?? 'other',
+      title: data['title'] ?? '',
+      description: data['description'] ?? '',
+      attachmentUrl: data['attachmentUrl'],
+      relatedAttendanceId: data['relatedAttendanceId'],
+      status: data['status'] ?? 'pending',
+      adminResponse: data['adminResponse'],
+      resolvedBy: data['resolvedBy'],
+      resolvedAt: rs is Timestamp ? rs.toDate() : null,
+      createdAt: ts is Timestamp ? ts.toDate() : DateTime.now(),
+      updatedAt: us is Timestamp ? us.toDate() : DateTime.now(),
+    );
+  }
+>>>>>>> Stashed changes
 }
