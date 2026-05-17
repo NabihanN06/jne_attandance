@@ -25,16 +25,22 @@ class _CalendarPageState extends State<CalendarPage> {
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
     final user = provider.currentUser;
-    
-    // Filter events based on user department or if they are invited
+    final isDark = provider.isDarkMode;
+
+    // Filter events:
+    //  - departments null/kosong → broadcast untuk semua karyawan
+    //  - departments berisi list → hanya untuk department tertentu
+    //  - attendees berisi uid user → personal invite (selalu lolos)
     final events = provider.events.where((e) {
-      final matchDept = e.departments?.contains(user?.department) ?? false;
-      final matchUser = e.attendees.contains(user?.uid ?? '');
-      return matchDept || matchUser;
+      final depts = e.departments;
+      final isBroadcast = depts == null || depts.isEmpty;
+      final matchDept = depts != null && user?.department != null && depts.contains(user!.department);
+      final matchUser = user != null && e.attendees.contains(user.uid);
+      return isBroadcast || matchDept || matchUser;
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? const Color(0xFF0B1120) : const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: slate950,
         elevation: 0,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 
@@ -13,31 +14,97 @@ class OvertimePage extends StatefulWidget {
 class _OvertimePageState extends State<OvertimePage> {
   static const Color jneBlue = Color(0xFF005596);
   static const Color jneRed = Color(0xFFE31E24);
-  
+  // Batas wajar lembur per bulan (40 jam ≈ standar industri).
+  static const int _monthlyHourCap = 40;
+
   DateTime _selectedDate = DateTime.now();
   int _selectedHours = 1;
   final _reasonCtrl = TextEditingController();
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    _reasonCtrl.dispose();
+    super.dispose();
+  }
+
+  /// Total jam lembur yang sudah diajukan/approve untuk bulan tanggal yang dipilih.
+  int _approvedHoursThisMonth(AppProvider p) {
+    return p.myOvertimeRequests
+        .where((o) {
+          final d = DateTime.tryParse(o.date);
+          return d != null &&
+              d.year == _selectedDate.year &&
+              d.month == _selectedDate.month &&
+              o.status != 'rejected';
+        })
+        .fold(0, (sum, o) => sum + o.overtimeHours);
+  }
+
+  bool _hasRequestForSelectedDate(AppProvider p) {
+    final target = DateFormat('yyyy-MM-dd').format(_selectedDate);
+    return p.myOvertimeRequests.any((o) => o.date == target && o.status != 'rejected');
+  }
+
   Future<void> _submit() async {
-    if (_reasonCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Mohon isi alasan lembur')));
+    final provider = context.read<AppProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+
+    if (_reasonCtrl.text.trim().isEmpty) {
+      messenger.showSnackBar(SnackBar(
+        content: Text('Mohon isi alasan lembur', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+        backgroundColor: jneRed,
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+
+    if (_hasRequestForSelectedDate(provider)) {
+      messenger.showSnackBar(SnackBar(
+        content: Text(
+          'Sudah ada pengajuan lembur untuk tanggal ini.',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
+        ),
+        backgroundColor: jneRed,
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+
+    final projected = _approvedHoursThisMonth(provider) + _selectedHours;
+    if (projected > _monthlyHourCap) {
+      messenger.showSnackBar(SnackBar(
+        content: Text(
+          'Melebihi batas $_monthlyHourCap jam/bulan. Sisa: ${(_monthlyHourCap - _approvedHoursThisMonth(provider)).clamp(0, _monthlyHourCap)} jam.',
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
+        ),
+        backgroundColor: jneRed,
+        behavior: SnackBarBehavior.floating,
+      ));
       return;
     }
 
     setState(() => _isLoading = true);
     try {
-      await context.read<AppProvider>().submitOvertime(
+      await provider.submitOvertime(
         date: _selectedDate,
         durationMinutes: _selectedHours * 60,
-        reason: _reasonCtrl.text,
+        reason: _reasonCtrl.text.trim(),
       );
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pengajuan lembur berhasil dikirim!'), backgroundColor: Colors.green));
+      messenger.showSnackBar(SnackBar(
+        content: Text('Pengajuan lembur terkirim', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+        backgroundColor: const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+      ));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal: $e'), backgroundColor: jneRed));
+      messenger.showSnackBar(SnackBar(
+        content: Text('Gagal: $e', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+        backgroundColor: jneRed,
+        behavior: SnackBarBehavior.floating,
+      ));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -45,8 +112,9 @@ class _OvertimePageState extends State<OvertimePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<AppProvider>().isDarkMode;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF0B1120) : Colors.white,
       appBar: AppBar(
         backgroundColor: jneBlue,
         elevation: 0,
@@ -58,6 +126,8 @@ class _OvertimePageState extends State<OvertimePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildMonthlyUsageCard(),
+            const SizedBox(height: 24),
             _buildLabel('TANGGAL LEMBUR'),
             const SizedBox(height: 12),
             _buildDateSelector(),
@@ -73,6 +143,76 @@ class _OvertimePageState extends State<OvertimePage> {
             _buildSubmitButton(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMonthlyUsageCard() {
+    final provider = context.watch<AppProvider>();
+    final used = _approvedHoursThisMonth(provider);
+    final remaining = (_monthlyHourCap - used).clamp(0, _monthlyHourCap);
+    final ratio = (used / _monthlyHourCap).clamp(0.0, 1.0);
+    final overLimit = used >= _monthlyHourCap;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: jneBlue.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: jneBlue.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                overLimit ? Icons.warning_amber_rounded : Icons.timer_rounded,
+                color: overLimit ? jneRed : jneBlue,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'LEMBUR ${DateFormat('MMMM yyyy', 'id').format(_selectedDate).toUpperCase()}',
+                style: GoogleFonts.outfit(color: jneBlue, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.2),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '$used',
+                style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1),
+              ),
+              Text(
+                ' / $_monthlyHourCap jam',
+                style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+              const Spacer(),
+              Text(
+                overLimit ? 'BATAS TERCAPAI' : 'sisa $remaining jam',
+                style: GoogleFonts.outfit(
+                  color: overLimit ? jneRed : const Color(0xFF10B981),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: ratio,
+              minHeight: 6,
+              backgroundColor: Colors.white,
+              color: overLimit ? jneRed : jneBlue,
+            ),
+          ),
+        ],
       ),
     );
   }

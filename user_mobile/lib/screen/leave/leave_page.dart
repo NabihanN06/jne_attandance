@@ -18,6 +18,16 @@ class _LeavePageState extends State<LeavePage> {
   DateTime? _toDate;
   final _reasonCtrl = TextEditingController();
   bool _loading = false;
+  String _type = 'annual';
+
+  // Tipe izin — value harus match dengan label di admin panel.
+  static const List<({String value, String label, IconData icon, Color color})> _leaveTypes = [
+    (value: 'annual',     label: 'Cuti Tahunan',  icon: Icons.beach_access_rounded,   color: Color(0xFF0EA5E9)),
+    (value: 'sick',       label: 'Sakit',         icon: Icons.medical_services_rounded, color: Color(0xFFEF4444)),
+    (value: 'permission', label: 'Izin Mendadak', icon: Icons.flash_on_rounded,       color: Color(0xFFF59E0B)),
+    (value: 'personal',   label: 'Keperluan Pribadi', icon: Icons.person_rounded,    color: Color(0xFF8B5CF6)),
+    (value: 'urgent',     label: 'Keperluan Keluarga', icon: Icons.family_restroom_rounded, color: Color(0xFFEC4899)),
+  ];
 
   @override
   void dispose() { _reasonCtrl.dispose(); super.dispose(); }
@@ -73,7 +83,7 @@ class _LeavePageState extends State<LeavePage> {
     await Future.delayed(const Duration(milliseconds: 800));
 
     await provider.submitLeave(
-      type: 'personal', // Default type
+      type: _type,
       startDate: _fromDate!,
       endDate: _toDate!,
       totalDays: _workDays,
@@ -89,8 +99,9 @@ class _LeavePageState extends State<LeavePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<AppProvider>().isDarkMode;
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: isDark ? const Color(0xFF0B1120) : const Color(0xFF0F172A),
       body: Stack(
         children: [
           // ── Background Gradient ──
@@ -117,7 +128,7 @@ class _LeavePageState extends State<LeavePage> {
                 elevation: 0,
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(
-                    'PENGJUAN IZIN',
+                    'PENGAJUAN IZIN',
                     style: GoogleFonts.outfit(
                       color: Colors.white, 
                       fontSize: 14, 
@@ -138,6 +149,50 @@ class _LeavePageState extends State<LeavePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      _buildGlassCard(
+                        title: 'JENIS IZIN',
+                        icon: Icons.category_rounded,
+                        child: Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: _leaveTypes.map((t) {
+                            final selected = _type == t.value;
+                            return GestureDetector(
+                              onTap: () => setState(() => _type = t.value),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: selected ? t.color : Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: selected ? t.color : Colors.white.withValues(alpha: 0.15),
+                                    width: 1.2,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(t.icon, color: selected ? Colors.white : t.color, size: 16),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      t.label,
+                                      style: GoogleFonts.outfit(
+                                        color: selected ? Colors.white : Colors.white70,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
                       _buildGlassCard(
                         title: 'DURASI IZIN',
                         icon: Icons.calendar_month_rounded,

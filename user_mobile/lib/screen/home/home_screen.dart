@@ -124,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Container(width: 1, height: 16, color: Colors.white10),
                             const SizedBox(width: 16),
                             Text(
-                              'MARTAPURA HUB',
+                              p.hubName.toUpperCase(),
                               style: GoogleFonts.outfit(
                                 color: Colors.white.withValues(alpha: 0.6),
                                 fontSize: 11,
@@ -418,7 +418,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         setDialogState(() => dialogLoading = true);
                         try {
                           if (geo.currentPosition != null) {
-                            await p.sendSOS(geo.currentPosition!.latitude, geo.currentPosition!.longitude, 'Martapura Hub Area');
+                            await p.sendSOS(geo.currentPosition!.latitude, geo.currentPosition!.longitude, '${p.hubName} Area');
                           }
                           if (!ctx.mounted) return;
                           Navigator.pop(ctx);
@@ -464,7 +464,9 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildNavItem(Icons.grid_view_rounded, 'HUB', true, () {}),
+          _buildNavItem(Icons.grid_view_rounded, 'HUB', true, () {
+            // Sudah di home — no-op (haptic feedback dari _buildNavItem cukup).
+          }),
           _buildNavItem(Icons.message_rounded, 'CHAT', false, () => Navigator.pushNamed(context, '/chat')),
           _buildNavItem(Icons.notifications_rounded, 'ALERT', false, () => Navigator.pushNamed(context, '/notification')),
           _buildNavItem(Icons.person_rounded, 'SELF', false, () => Navigator.pushNamed(context, '/profile')),

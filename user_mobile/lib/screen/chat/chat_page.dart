@@ -4,6 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/app_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../models/app_models.dart';
@@ -31,6 +34,27 @@ class _ChatPageState extends State<ChatPage> {
     _initChat();
   }
 
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Upload gambar ke Firebase Storage dan return download URL.
+  Future<String?> _uploadImage(File file) async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
+      final fileName = 'chat_${uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final ref = FirebaseStorage.instance.ref().child('chat_images/$fileName');
+      await ref.putFile(file);
+      return await ref.getDownloadURL();
+    } catch (e) {
+      debugPrint('Upload chat image failed: $e');
+      return null;
+    }
+  }
+
   Future<void> _initChat() async {
     final app = context.read<AppProvider>();
     final chat = context.read<ChatProvider>();
@@ -56,13 +80,23 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
+  static const int _maxImageBytes = 5 * 1024 * 1024; // 5MB
+
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() {
-        _selectedImage = File(image.path);
-      });
+    if (image == null) return;
+    final file = File(image.path);
+    final size = await file.length();
+    if (size > _maxImageBytes) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ukuran gambar melebihi batas 5MB.')),
+      );
+      return;
     }
+    setState(() {
+      _selectedImage = file;
+    });
   }
 
   void _handleSend() async {
@@ -83,11 +117,21 @@ class _ChatPageState extends State<ChatPage> {
     });
 
     try {
+      // Kalau ada gambar, upload dulu ke Storage. Tanpa upload, penerima
+      // hanya menerima path lokal device pengirim → gambar tidak akan load.
+      String? uploadedUrl;
+      if (image != null) {
+        uploadedUrl = await _uploadImage(image);
+        if (uploadedUrl == null) {
+          throw Exception('Upload gambar gagal. Coba lagi.');
+        }
+      }
+
       await chat.sendMessage(
         receiverId: _targetAdmin!.uid,
         receiverRole: _targetAdmin!.role,
         text: text,
-        imageUrl: image?.path,
+        imageUrl: uploadedUrl,
       );
       _scrollToBottom();
     } catch (e) {
@@ -105,9 +149,10 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     final chat = context.watch<ChatProvider>();
     final app = context.watch<AppProvider>();
+    final isDark = app.isDarkMode;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: isDark ? const Color(0xFF0B1120) : const Color(0xFFF8FAFC),
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: const Color(0xFF0891B2),
@@ -257,15 +302,16 @@ class _ChatPageState extends State<ChatPage> {
               if (msg.imageUrl != null) ...[
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    msg.imageUrl!,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return const SizedBox(
-                        height: 150,
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    },
+                  child: CachedNetworkImage(
+                    imageUrl: msg.imageUrl!,
+                    placeholder: (_, _) => const SizedBox(
+                      height: 150,
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    errorWidget: (_, _, _) => const SizedBox(
+                      height: 150,
+                      child: Center(child: Icon(Icons.broken_image_rounded)),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),

@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
+import 'dispute_detail_screen.dart';
 
 class DisputeSubmissionScreen extends StatefulWidget {
   final AttendanceRecord record;
@@ -28,12 +29,22 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
   static const Color zenOffWhite = Color(0xFFF8FAFC);
   static const Color zenSlate = Color(0xFF94A3B8);
 
+  static const int _maxImageBytes = 5 * 1024 * 1024; // 5MB
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.camera, imageQuality: 50);
-    if (pickedFile != null) {
-      setState(() => _imageFile = File(pickedFile.path));
+    if (pickedFile == null) return;
+    final file = File(pickedFile.path);
+    final size = await file.length();
+    if (size > _maxImageBytes) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ukuran gambar melebihi batas 5MB.')),
+      );
+      return;
     }
+    setState(() => _imageFile = file);
   }
 
   Future<void> _handleSubmit() async {
@@ -46,16 +57,49 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
 
     setState(() => _isSubmitting = true);
     try {
-      await context.read<AppProvider>().submitDispute(
-        attendanceId: widget.record.id,
-        reason: _reasonController.text.trim(),
+      final disputeId = await context.read<AppProvider>().submitDispute(
+        category: 'attendance_error',
+        title: 'Komplain absensi ${widget.record.date}',
+        description: _reasonController.text.trim(),
+        relatedAttendanceId: widget.record.id,
         evidenceFile: _imageFile,
       );
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Complaint submitted successfully. Admin will review it soon.')),
+      if (!mounted) return;
+
+      // Cari dispute yang baru dibuat dari provider state. Jika listener belum
+      // catch up, kita buat objek minimal untuk dilempar ke detail screen.
+      final provider = context.read<AppProvider>();
+      final dispute = provider.myDisputeRequests
+              .where((d) => d.id == disputeId)
+              .firstOrNull ??
+          (disputeId == null
+              ? null
+              : DisputeRequest(
+                  id: disputeId,
+                  userId: provider.currentUser?.uid ?? '',
+                  employeeName: provider.currentUser?.name ?? '',
+                  employeeId: provider.currentUser?.employeeId ?? '',
+                  department: provider.currentUser?.department ?? '',
+                  category: 'attendance_error',
+                  title: 'Komplain absensi ${widget.record.date}',
+                  description: _reasonController.text.trim(),
+                  relatedAttendanceId: widget.record.id,
+                  status: 'pending',
+                  createdAt: DateTime.now(),
+                  updatedAt: DateTime.now(),
+                ));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Komplain terkirim. Lanjut ke percakapan dengan admin.')),
+      );
+
+      if (dispute != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => DisputeDetailScreen(dispute: dispute)),
         );
+      } else {
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -71,9 +115,10 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
   @override
   Widget build(BuildContext context) {
     final date = DateTime.tryParse(widget.record.date) ?? DateTime.now();
+    final isDark = context.watch<AppProvider>().isDarkMode;
 
     return Scaffold(
-      backgroundColor: zenOffWhite,
+      backgroundColor: isDark ? const Color(0xFF0B1120) : zenOffWhite,
       appBar: AppBar(
         backgroundColor: zenNavy,
         elevation: 0,

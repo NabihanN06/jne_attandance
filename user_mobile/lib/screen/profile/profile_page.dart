@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
 import '../auth/login_page.dart';
 import '../enroll/enroll_page.dart';
+import '../help/faq_screen.dart';
 
 class ProfilePage extends StatelessWidget {
   // ── ZEN PREMIUM PALETTE ──
@@ -21,9 +22,10 @@ class ProfilePage extends StatelessWidget {
     final provider = context.watch<AppProvider>();
     final user = provider.currentUser;
     if (user == null) return const SizedBox();
+    final isDark = provider.isDarkMode;
 
     return Scaffold(
-      backgroundColor: zenOffWhite,
+      backgroundColor: isDark ? const Color(0xFF0B1120) : zenOffWhite,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -223,6 +225,8 @@ class ProfilePage extends StatelessWidget {
                   _buildActionItem(context, Icons.analytics_outlined, 'Request Center', 'Track leaves & complaints', () => Navigator.pushNamed(context, '/my_requests')),
                   _buildDivider(),
                   _buildActionItem(context, Icons.support_agent_rounded, 'Command Center Chat', 'Direct sync with admin', () => Navigator.pushNamed(context, '/chat')),
+                  _buildDivider(),
+                  _buildActionItem(context, Icons.help_outline_rounded, 'Help & FAQ', 'Cek pertanyaan umum dulu sebelum komplain', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FaqScreen()))),
                 ]),
 
                 const SizedBox(height: 32),

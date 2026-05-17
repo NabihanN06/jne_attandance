@@ -143,7 +143,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
               jenis: isCheckOut ? 'Attendance: Exit' : 'Attendance: Entry',
               waktu: '${now.hour.toString().padLeft(2,'0')}:${now.minute.toString().padLeft(2,'0')} WITA',
               status: isCheckOut ? 'MISSION COMPLETE ✓' : (app.isLateForClockIn ? 'DELAYED SIGNAL ⚠' : 'STATION SYNCED ✓'),
-              lokasi: isRemoteAllowed ? 'EXTERNAL SECTOR' : 'MARTAPURA HUB',
+              lokasi: isRemoteAllowed ? 'EXTERNAL SECTOR' : app.hubName.toUpperCase(),
             )),
             (route) => route.isFirst,
           );
@@ -275,7 +275,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'STATION ID: HUB-MTP-01',
+                          'STATION ID: ${app.stationId}',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.outfit(color: zenCyan, fontSize: 8, fontWeight: FontWeight.w700, letterSpacing: 1.5),
                         ),
@@ -378,7 +378,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       statusText = 'REMOTE SECTOR: ACTIVE';
       icon = Icons.satellite_alt_rounded;
     } else if (geo.isInRange) {
-      statusText = 'MARTAPURA HUB: CONNECTED';
+      statusText = '${app.hubName.toUpperCase()}: CONNECTED';
       icon = Icons.hub_rounded;
     } else {
       statusText = 'HUB BREACH: ${(geo.distanceFromOffice/1000).toStringAsFixed(1)} KM';

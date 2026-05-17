@@ -148,6 +148,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<AppProvider>().isDarkMode;
     return MaterialApp(
       title: 'JNE Attendance',
       debugShowCheckedModeBanner: false,
@@ -165,7 +166,7 @@ class MyApp extends StatelessWidget {
         ),
         fontFamily: GoogleFonts.outfit().fontFamily,
       ),
-      themeMode: ThemeMode.system,
+      themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
       initialRoute: '/',
       routes: {
         '/': (ctx) => const SplashScreen(),

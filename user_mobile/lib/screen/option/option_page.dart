@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../utils/geofence_service.dart';
 
 class OptionPage extends StatelessWidget {
   static const Color jneBlue = Color(0xFF005596);
@@ -12,8 +13,9 @@ class OptionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<AppProvider>().isDarkMode;
     return Scaffold(
-      backgroundColor: bgLight,
+      backgroundColor: isDark ? const Color(0xFF0B1120) : bgLight,
       appBar: AppBar(
         backgroundColor: jneBlue,
         elevation: 0,
@@ -187,9 +189,31 @@ class OptionPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              await context.read<AppProvider>().sendSOS(-3.414, 114.838, 'Martapura Street');
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('SOS Berhasil Terkirim! Admin segera merespon.'), backgroundColor: Colors.red));
+              final messenger = ScaffoldMessenger.of(context);
+              final geo = context.read<GeofenceService>();
+              final pos = geo.currentPosition;
+              if (pos == null) {
+                messenger.showSnackBar(const SnackBar(
+                  content: Text('Lokasi GPS belum siap. Aktifkan GPS lalu coba lagi.'),
+                  backgroundColor: Color(0xFFE31E24),
+                ));
+                return;
+              }
+              try {
+                await context.read<AppProvider>().sendSOS(
+                  pos.latitude,
+                  pos.longitude,
+                  'Lokasi Anda saat ini',
+                );
+                messenger.showSnackBar(const SnackBar(
+                  content: Text('SOS terkirim. Admin akan merespon segera.'),
+                  backgroundColor: Colors.red,
+                ));
+              } catch (e) {
+                messenger.showSnackBar(SnackBar(
+                  content: Text('Gagal kirim SOS: $e'),
+                  backgroundColor: const Color(0xFFE31E24),
+                ));
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE31E24), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),

@@ -9,34 +9,49 @@ class StatisticPage extends StatefulWidget {
   State<StatisticPage> createState() => _StatisticPageState();
 }
 
-class _StatisticPageState extends State<StatisticPage> with SingleTickerProviderStateMixin {
+class _StatisticPageState extends State<StatisticPage> {
   static const Color jneBlue = Color(0xFF005596);
   static const Color jneRed = Color(0xFFE31E24);
   static const Color bgLight = Color(0xFFF9F7F2);
 
-  late TabController _tab;
   int _bulan = DateTime.now().month;
   int _tahun = DateTime.now().year;
 
-  @override
-  void initState() {
-    super.initState();
-    _tab = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tab.dispose();
-    super.dispose();
-  }
-
   static const _months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+  /// % record yang check-in dalam radius kantor (distance <= officeRadius).
+  /// Return null jika belum ada data, supaya UI bisa tampilkan "—" daripada
+  /// angka palsu 100%.
+  double? _locationCompliance(AppProvider p) {
+    final monthRecords = p.myAttendance.where((r) {
+      final d = DateTime.tryParse(r.date);
+      return d != null && d.month == _bulan && d.year == _tahun && r.checkIn != null;
+    }).toList();
+    if (monthRecords.isEmpty) return null;
+    final radius = p.officeRadius;
+    final inside = monthRecords.where((r) {
+      final dist = r.checkIn?.distance;
+      return dist != null && dist <= radius;
+    }).length;
+    return inside / monthRecords.length;
+  }
+
+  /// % record dengan check-in DAN check-out (jam kerja komplit).
+  double? _hourEffectiveness(AppProvider p) {
+    final monthRecords = p.myAttendance.where((r) {
+      final d = DateTime.tryParse(r.date);
+      return d != null && d.month == _bulan && d.year == _tahun;
+    }).toList();
+    if (monthRecords.isEmpty) return null;
+    final complete = monthRecords.where((r) => r.checkIn != null && r.checkOut != null).length;
+    return complete / monthRecords.length;
+  }
 
   @override
   Widget build(BuildContext context) {
-    
+    final isDark = context.watch<AppProvider>().isDarkMode;
     return Scaffold(
-      backgroundColor: bgLight,
+      backgroundColor: isDark ? const Color(0xFF0B1120) : bgLight,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -74,52 +89,9 @@ class _StatisticPageState extends State<StatisticPage> with SingleTickerProvider
             ),
           ),
 
-          // ── Tab Bar ──
-          SliverToBoxAdapter(
-            child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: TabBar(
-                  controller: _tab,
-                  indicator: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      )
-                    ],
-                  ),
-                  dividerColor: Colors.transparent,
-                  labelColor: jneBlue,
-                  unselectedLabelColor: const Color(0xFF94A3B8),
-                  labelStyle: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1),
-                  tabs: const [
-                    Tab(text: 'BULANAN'),
-                    Tab(text: 'PEKANAN'),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
           // ── Content ──
           SliverFillRemaining(
-            child: TabBarView(
-              controller: _tab,
-              children: [
-                _buildMonthlyStats(),
-                _buildWeeklyStats(),
-              ],
-            ),
+            child: _buildMonthlyStats(),
           ),
         ],
       ),
@@ -200,25 +172,10 @@ class _StatisticPageState extends State<StatisticPage> with SingleTickerProvider
         const SizedBox(height: 32),
         
         // Performance Analysis Section
-        _buildPerformanceAnalysis(stats['punctuality']),
-      ],
-    );
-  }
-
-  Widget _buildWeeklyStats() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.query_stats_rounded, size: 64, color: jneBlue.withValues(alpha: 0.2)),
-        const SizedBox(height: 24),
-        Text(
-          'ANALISIS PEKANAN',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 2),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Modul sedang dalam pengembangan.',
-          style: GoogleFonts.plusJakartaSans(color: const Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w600),
+        _buildPerformanceAnalysis(
+          punctuality: (stats['punctuality'] as num?)?.toDouble() ?? 0.0,
+          locationCompliance: _locationCompliance(provider),
+          hourEffectiveness: _hourEffectiveness(provider),
         ),
       ],
     );
@@ -276,7 +233,11 @@ class _StatisticPageState extends State<StatisticPage> with SingleTickerProvider
     );
   }
 
-  Widget _buildPerformanceAnalysis(double punctuality) {
+  Widget _buildPerformanceAnalysis({
+    required double punctuality,
+    required double? locationCompliance,
+    required double? hourEffectiveness,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),
@@ -312,15 +273,17 @@ class _StatisticPageState extends State<StatisticPage> with SingleTickerProvider
           const SizedBox(height: 32),
           _buildAnalysisRow('Ketepatan Waktu', punctuality, const Color(0xFF10B981)),
           const SizedBox(height: 24),
-          _buildAnalysisRow('Kepatuhan Lokasi', 1.0, const Color(0xFF3B82F6)),
+          _buildAnalysisRow('Kepatuhan Lokasi', locationCompliance, const Color(0xFF3B82F6)),
           const SizedBox(height: 24),
-          _buildAnalysisRow('Efektivitas Jam', 0.92, const Color(0xFFF59E0B)),
+          _buildAnalysisRow('Efektivitas Jam', hourEffectiveness, const Color(0xFFF59E0B)),
         ],
       ),
     );
   }
 
-  Widget _buildAnalysisRow(String label, double percent, Color color) {
+  Widget _buildAnalysisRow(String label, double? percent, Color color) {
+    final hasData = percent != null;
+    final ratio = (percent ?? 0).clamp(0.0, 1.0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -336,9 +299,9 @@ class _StatisticPageState extends State<StatisticPage> with SingleTickerProvider
               ),
             ),
             Text(
-              '${(percent * 100).toInt()}%',
+              hasData ? '${(ratio * 100).toInt()}%' : '—',
               style: GoogleFonts.outfit(
-                color: Colors.white,
+                color: hasData ? Colors.white : Colors.white38,
                 fontSize: 14,
                 fontWeight: FontWeight.w900,
               ),
@@ -359,17 +322,17 @@ class _StatisticPageState extends State<StatisticPage> with SingleTickerProvider
             AnimatedContainer(
               duration: const Duration(milliseconds: 800),
               height: 6,
-              width: (MediaQuery.of(context).size.width - 112) * percent,
+              width: (MediaQuery.of(context).size.width - 112) * ratio,
               decoration: BoxDecoration(
-                color: color,
+                color: hasData ? color : Colors.white12,
                 borderRadius: BorderRadius.circular(10),
-                boxShadow: [
+                boxShadow: hasData ? [
                   BoxShadow(
                     color: color.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   )
-                ],
+                ] : null,
               ),
             ),
           ],

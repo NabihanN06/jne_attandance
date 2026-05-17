@@ -11,6 +11,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_models.dart';
 import '../utils/offline_service.dart';
 import '../utils/connectivity_service.dart';
@@ -20,6 +21,19 @@ import '../utils/presence_service.dart';
 class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  // Coalesce notifyListeners panggilan dari beberapa stream listener yang
+  // bisa fire dalam tick yang sama. Tanpa ini, 7 stream Firestore aktif
+  // bisa trigger 7 rebuild per snapshot batch — cukup berat di list panjang.
+  bool _notifyScheduled = false;
+  void _scheduleNotify() {
+    if (_notifyScheduled) return;
+    _notifyScheduled = true;
+    scheduleMicrotask(() {
+      _notifyScheduled = false;
+      notifyListeners();
+    });
+  }
 
   UserModel? _currentUser;
   UserModel? get currentUser => _currentUser;
@@ -39,18 +53,104 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   double _officeLat = -3.4150;
   double _officeLng = 114.8465;
   double _officeRadius = 500.0;
+  String _hubName = 'Martapura HUB';
+  String _stationId = 'HUB-MTP-01';
 
   double get officeLat => _officeLat;
   double get officeLng => _officeLng;
   double get officeRadius => _officeRadius;
+  String get hubName => _hubName;
+  String get stationId => _stationId;
   TimeOfDay officeStartTime = const TimeOfDay(hour: 8, minute: 0);
+
+  // ── Persisted User Preferences ──
+  static const _kDarkModeKey = 'pref_dark_mode';
+  static const _kNotifEnabledKey = 'pref_notif_enabled';
+  static const _kReminderEnabledKey = 'pref_reminder_enabled';
+  static const _kLanguageKey = 'pref_language';
 
   bool _isDarkMode = false;
   bool get isDarkMode => _isDarkMode;
 
-  void toggleTheme() {
+  bool _notificationsEnabled = true;
+  bool get notificationsEnabled => _notificationsEnabled;
+
+  bool _reminderEnabled = true;
+  bool get reminderEnabled => _reminderEnabled;
+
+  String _language = 'id';
+  String get language => _language;
+
+  Future<void> _loadPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _isDarkMode = prefs.getBool(_kDarkModeKey) ?? false;
+      _notificationsEnabled = prefs.getBool(_kNotifEnabledKey) ?? true;
+      _reminderEnabled = prefs.getBool(_kReminderEnabledKey) ?? true;
+      _language = prefs.getString(_kLanguageKey) ?? 'id';
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Load preferences error: $e');
+    }
+  }
+
+  Future<void> toggleTheme() async {
     _isDarkMode = !_isDarkMode;
     notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kDarkModeKey, _isDarkMode);
+  }
+
+  Future<void> setDarkMode(bool value) async {
+    if (_isDarkMode == value) return;
+    _isDarkMode = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kDarkModeKey, value);
+  }
+
+  /// Toggle push notifications. Saat di-enable kita request permission dari OS
+  /// dan subscribe topic broadcast; saat di-disable, unsubscribe.
+  Future<void> setNotificationsEnabled(bool value) async {
+    _notificationsEnabled = value;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_kNotifEnabledKey, value);
+
+      if (value) {
+        await FirebaseMessaging.instance.requestPermission(
+          alert: true, badge: true, sound: true,
+        );
+        await FirebaseMessaging.instance.subscribeToTopic('broadcasts');
+      } else {
+        await FirebaseMessaging.instance.unsubscribeFromTopic('broadcasts');
+      }
+    } catch (e) {
+      debugPrint('Notification toggle error: $e');
+    }
+  }
+
+  Future<void> setReminderEnabled(bool value) async {
+    _reminderEnabled = value;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_kReminderEnabledKey, value);
+    } catch (e) {
+      debugPrint('Reminder toggle error: $e');
+    }
+  }
+
+  Future<void> setLanguage(String code) async {
+    _language = code;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kLanguageKey, code);
+    } catch (e) {
+      debugPrint('Language set error: $e');
+    }
   }
 
   // Data Lists
@@ -117,6 +217,112 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     return [..._personalNotifs, ..._broadcastNotifs].where((n) => !n.isRead).length;
   }
 
+  /// Insight otomatis berdasarkan data user — tidak disimpan ke Firestore,
+  /// dihitung on-the-fly setiap UI rebuild. Selalu return list, kosong jika
+  /// tidak ada tip relevan. Tip dengan severity 'urgent' wajib ditampilkan
+  /// paling atas.
+  List<SmartTip> get smartTips {
+    final tips = <SmartTip>[];
+    final now = DateTime.now();
+    final today = DateFormat('yyyy-MM-dd').format(now);
+
+    // Tip 1: Belum absen masuk hari ini & sudah lewat jam masuk
+    final officeStart = DateTime(now.year, now.month, now.day, officeStartTime.hour, officeStartTime.minute);
+    final hasCheckInToday = _attendanceRecords.any((r) => r.date == today && r.checkIn != null);
+    if (!hasCheckInToday && now.isAfter(officeStart) && now.weekday != DateTime.saturday && now.weekday != DateTime.sunday) {
+      final lateBy = now.difference(officeStart);
+      tips.add(SmartTip(
+        id: 'clock_in_reminder',
+        title: 'Belum absen masuk',
+        message: lateBy.inMinutes > 30
+            ? 'Anda terlambat ${lateBy.inMinutes} menit. Segera absen masuk!'
+            : 'Office sudah buka. Jangan lupa absen masuk.',
+        severity: lateBy.inMinutes > 30 ? 'urgent' : 'info',
+        action: 'attendance',
+        icon: 'access_time',
+      ));
+    }
+
+    // Tip 2: Sudah check-in tapi belum check-out & sudah sore
+    final openSession = _attendanceRecords.firstWhere(
+      (r) => r.date == today && r.checkIn != null && r.checkOut == null,
+      orElse: () => AttendanceRecord(
+        id: '', userId: '', employeeName: '', employeeId: '',
+        department: '', date: '', status: '',
+      ),
+    );
+    if (openSession.id.isNotEmpty && now.hour >= 17) {
+      tips.add(SmartTip(
+        id: 'clock_out_reminder',
+        title: 'Belum absen keluar',
+        message: 'Anda sudah masuk pukul ${DateFormat('HH:mm').format(openSession.checkIn!.time!)}. Jangan lupa absen keluar.',
+        severity: now.hour >= 19 ? 'urgent' : 'info',
+        action: 'attendance',
+        icon: 'logout',
+      ));
+    }
+
+    // Tip 3: Sisa cuti tahunan menipis
+    final balance = leaveBalance;
+    if (balance.remainingAnnual <= 3 && balance.annualQuota > 0) {
+      tips.add(SmartTip(
+        id: 'leave_low',
+        title: 'Sisa cuti tinggal ${balance.remainingAnnual} hari',
+        message: 'Rencanakan cuti Anda dengan bijak. Kuota tahunan ${balance.annualQuota} hari.',
+        severity: balance.remainingAnnual == 0 ? 'urgent' : 'warning',
+        action: 'leave_balance',
+        icon: 'beach_access',
+      ));
+    }
+
+    // Tip 4: Komplain perlu konfirmasi user (admin sudah resolve, user belum acknowledge)
+    final pendingConfirm = _disputeRequests.where((d) => d.needsUserConfirmation).length;
+    if (pendingConfirm > 0) {
+      tips.add(SmartTip(
+        id: 'dispute_confirm',
+        title: '$pendingConfirm komplain menunggu konfirmasi',
+        message: 'Admin sudah menyelesaikan. Buka & konfirmasi agar tiket bisa ditutup.',
+        severity: 'warning',
+        action: 'dispute',
+        icon: 'task_alt',
+      ));
+    }
+
+    // Tip 5: Performance bulan ini — telat berkali-kali
+    final thisMonth = _attendanceRecords.where((r) {
+      final d = DateTime.tryParse(r.date);
+      return d != null && d.month == now.month && d.year == now.year;
+    }).toList();
+    final lateCount = thisMonth.where((r) => r.status == 'late').length;
+    if (lateCount >= 3) {
+      tips.add(SmartTip(
+        id: 'late_streak',
+        title: '$lateCount kali terlambat bulan ini',
+        message: 'Coba tidur lebih awal & berangkat 15 menit lebih cepat. Anda pasti bisa!',
+        severity: 'warning',
+        action: 'statistic',
+        icon: 'trending_down',
+      ));
+    }
+
+    // Tip 6: Streak hadir tepat waktu (positive reinforcement)
+    if (thisMonth.length >= 5 && lateCount == 0) {
+      tips.add(SmartTip(
+        id: 'perfect_streak',
+        title: 'Performa luar biasa! 🎉',
+        message: '${thisMonth.length} hari hadir tepat waktu bulan ini. Pertahankan!',
+        severity: 'success',
+        action: 'statistic',
+        icon: 'emoji_events',
+      ));
+    }
+
+    // Urutkan: urgent > warning > info > success
+    const order = {'urgent': 0, 'warning': 1, 'info': 2, 'success': 3};
+    tips.sort((a, b) => (order[a.severity] ?? 9).compareTo(order[b.severity] ?? 9));
+    return tips;
+  }
+
   Future<void> markNotificationAsRead(String notifId) async {
     try {
       // Try userNotifications first, then broadcasts
@@ -176,6 +382,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   Timer? _syncRetryTimer;
 
   AppProvider(ConnectivityService connectivityService) {
+    _loadPreferences();
     _init();
     WidgetsBinding.instance.addObserver(this);
     
@@ -249,8 +456,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .snapshots()
         .listen((snap) {
       _attendanceRecords = snap.docs.map((doc) => AttendanceRecord.fromFirestore(doc)).toList();
-      notifyListeners();
-    });
+      _scheduleNotify();
+    }, onError: (e) => debugPrint('Attendance listener error: $e'));
 
     _leaveSub = _db.collection('leaves')
         .where('userId', isEqualTo: _currentUser!.uid)
@@ -258,8 +465,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .snapshots()
         .listen((snap) {
       _leaveRequests = snap.docs.map((doc) => LeaveRequest.fromFirestore(doc)).toList();
-      notifyListeners();
-    });
+      _scheduleNotify();
+    }, onError: (e) => debugPrint('Leave listener error: $e'));
 
     _overtimeSub = _db.collection('overtime')
         .where('userId', isEqualTo: _currentUser!.uid)
@@ -268,8 +475,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .snapshots()
         .listen((snap) {
       _overtimeRequests = snap.docs.map((doc) => OvertimeRequest.fromFirestore(doc)).toList();
-      notifyListeners();
-    });
+      _scheduleNotify();
+    }, onError: (e) => debugPrint('Overtime listener error: $e'));
 
     // Disputes
     _disputeSub = _db.collection('disputes')
@@ -279,7 +486,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .snapshots()
         .listen((snap) {
       _disputeRequests = snap.docs.map((doc) => DisputeRequest.fromFirestore(doc)).toList();
-      notifyListeners();
+      _scheduleNotify();
     }, onError: (e) => debugPrint('Dispute listener error: $e'));
 
     // Leave balance from admin (collection: leave_balances/{uid})
@@ -288,7 +495,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .snapshots()
         .listen((snap) {
       _firestoreLeaveBalance = snap.exists ? LeaveBalance.fromFirestore(snap) : null;
-      notifyListeners();
+      _scheduleNotify();
     }, onError: (e) => debugPrint('LeaveBalance listener error: $e'));
     _notifSub = _db.collection('userNotifications')
         .where('userId', isEqualTo: _currentUser!.uid)
@@ -312,23 +519,22 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .snapshots()
         .listen((snap) {
       _events = snap.docs.map((doc) => CalendarEvent.fromFirestore(doc)).toList();
-      notifyListeners();
-    });
+      _scheduleNotify();
+    }, onError: (e) => debugPrint('Event listener error: $e'));
   }
 
   void _updateNotifications(QuerySnapshot snap, {required bool isBroadcast}) {
     final newNotifs = snap.docs.map((doc) => AdminNotification.fromFirestore(doc)).toList();
-    
+
     if (isBroadcast) {
-      _notifications.removeWhere((n) => n.type == 'broadcast');
-      _notifications.addAll(newNotifs);
+      _broadcastNotifs.clear();
+      _broadcastNotifs.addAll(newNotifs);
     } else {
-      _notifications.removeWhere((n) => n.type != 'broadcast');
-      _notifications.addAll(newNotifs);
+      _personalNotifs.clear();
+      _personalNotifs.addAll(newNotifs);
     }
-    
-    _notifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    notifyListeners();
+
+    _scheduleNotify();
   }
 
   void _cancelAllSubscriptions() {
@@ -469,7 +675,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     _attendanceRecords.clear();
     _monthlyRecords.clear();
     _leaveRequests.clear();
-    _notifications.clear();
+    _personalNotifs.clear();
+    _broadcastNotifs.clear();
     _events.clear();
     notifyListeners();
   }
@@ -516,7 +723,10 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       bool isOnline = await _checkConnectivity();
 
       if (isOnline) {
-        final serverNow = await FortressUtils.getServerTime();
+        // serverNow dari HttpDate.parse() adalah UTC. Konversi ke local time
+        // agar dateStr mengikuti hari kalender karyawan (Jakarta WIB), bukan UTC.
+        // Konsisten dengan offline path yang sudah pakai DateTime.now() (local).
+        final serverNow = (await FortressUtils.getServerTime()).toLocal();
         final dateStr = DateFormat('yyyy-MM-dd').format(serverNow);
 
         final data = {
@@ -637,9 +847,10 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
     for (var record in pending) {
       try {
-        // Use server time to determine the attendance date (prevent device clock manipulation)
-        final serverNow = await FortressUtils.getServerTime();
-        final dateStr = DateFormat('yyyy-MM-dd').format(serverNow);
+        // Preserve original local dateStr saat record dibuat offline.
+        // Recomputing pakai server time bisa shift ke hari berbeda jika
+        // sync delay-nya panjang atau melewati pergantian hari UTC.
+        final dateStr = record['attendanceDate'] as String;
         final docId = '${_currentUser!.uid}_$dateStr';
         
          await _db.runTransaction((transaction) async {
@@ -983,9 +1194,13 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       if (snap.exists) {
         final data = snap.data();
         if (data != null && data['office'] != null) {
-          _officeLat = (data['office']['latitude'] ?? -3.4150).toDouble();
-          _officeLng = (data['office']['longitude'] ?? 114.8465).toDouble();
-          _officeRadius = (data['office']['radiusMeters'] ?? 500).toDouble();
+          final office = data['office'] as Map<String, dynamic>;
+          _officeLat = (office['latitude'] ?? -3.4150).toDouble();
+          _officeLng = (office['longitude'] ?? 114.8465).toDouble();
+          _officeRadius = (office['radiusMeters'] ?? 500).toDouble();
+          _hubName = (office['name'] as String?) ?? _hubName;
+          _stationId = (office['stationId'] as String?) ?? _stationId;
+          notifyListeners();
         }
       }
     });
@@ -1012,19 +1227,29 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  Future<void> submitDispute({
+  Future<String?> submitDispute({
     required String category,
     required String title,
     required String description,
     String? relatedAttendanceId,
+    File? evidenceFile,
   }) async {
-    if (_currentUser == null) return;
+    if (_currentUser == null) return null;
     _isProcessing = true;
     _fortressStatus = 'Mengirim komplain...';
     notifyListeners();
 
     try {
-      await _db.collection('disputes').add({
+      String? attachmentUrl;
+      if (evidenceFile != null) {
+        final ext = evidenceFile.path.split('.').last;
+        final fileName = 'dispute_${_currentUser!.uid}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+        final ref = FirebaseStorage.instance.ref().child('dispute_evidence/$fileName');
+        await ref.putFile(evidenceFile);
+        attachmentUrl = await ref.getDownloadURL();
+      }
+
+      final docRef = await _db.collection('disputes').add({
         'userId': _currentUser!.uid,
         'employeeName': _currentUser!.name,
         'employeeId': _currentUser!.employeeId,
@@ -1033,11 +1258,14 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         'title': title,
         'description': description,
         'relatedAttendanceId': relatedAttendanceId,
+        'attachmentUrl': attachmentUrl,
         'status': 'pending',
+        'messageCount': 0,
+        'lastMessageBy': 'user',
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      
+
       // Notify Admin
       await _db.collection('adminNotifications').add({
         'title': '🚨 Komplain Baru: ${_currentUser!.name}',
@@ -1045,15 +1273,164 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         'type': 'dispute',
         'employeeId': _currentUser!.uid,
         'employeeName': _currentUser!.name,
+        'relatedId': docRef.id,
         'isRead': false,
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      return docRef.id;
     } catch (e) {
       throw Exception('Gagal mengirim komplain: $e');
     } finally {
       _isProcessing = false;
       _fortressStatus = '';
       notifyListeners();
+    }
+  }
+
+  // ── Dispute Thread (Two-way Problem Solving Loop) ──
+  /// Stream messages dari subkoleksi `disputes/{id}/messages` urut waktu.
+  Stream<List<DisputeMessage>> streamDisputeMessages(String disputeId) {
+    return _db
+        .collection('disputes')
+        .doc(disputeId)
+        .collection('messages')
+        .orderBy('createdAt', descending: false)
+        .snapshots()
+        .map((snap) => snap.docs.map(DisputeMessage.fromFirestore).toList());
+  }
+
+  /// User balas thread dispute. Admin akan dinotifikasi.
+  Future<void> replyToDispute({
+    required String disputeId,
+    required String text,
+    File? evidenceFile,
+  }) async {
+    if (_currentUser == null) return;
+    if (text.trim().isEmpty && evidenceFile == null) {
+      throw Exception('Pesan tidak boleh kosong.');
+    }
+
+    String? attachmentUrl;
+    if (evidenceFile != null) {
+      final ext = evidenceFile.path.split('.').last;
+      final fileName =
+          'reply_${_currentUser!.uid}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('dispute_evidence/$fileName');
+      await ref.putFile(evidenceFile);
+      attachmentUrl = await ref.getDownloadURL();
+    }
+
+    final disputeRef = _db.collection('disputes').doc(disputeId);
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(disputeRef);
+      if (!snap.exists) throw Exception('Komplain sudah tidak ada.');
+
+      final data = snap.data() ?? <String, dynamic>{};
+      final currentStatus = data['status'] ?? 'pending';
+      // Reply user otomatis re-engage status kalau sudah resolved/rejected
+      String newStatus = currentStatus;
+      if (currentStatus == 'resolved' || currentStatus == 'rejected') {
+        newStatus = 'reopened';
+      } else if (currentStatus == 'pending') {
+        newStatus = 'in_review';
+      }
+
+      final msgRef = disputeRef.collection('messages').doc();
+      tx.set(msgRef, {
+        'senderId': _currentUser!.uid,
+        'senderName': _currentUser!.name,
+        'senderRole': 'user',
+        'text': text.trim(),
+        'attachmentUrl': attachmentUrl,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      tx.update(disputeRef, {
+        'messageCount': FieldValue.increment(1),
+        'status': newStatus,
+        'lastMessageAt': FieldValue.serverTimestamp(),
+        'lastMessageBy': 'user',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
+
+    // Notify admin (non-blocking)
+    try {
+      await _db.collection('adminNotifications').add({
+        'title': '💬 Balasan Komplain: ${_currentUser!.name}',
+        'message': text.trim().isEmpty ? '(lampiran)' : text.trim(),
+        'type': 'dispute_reply',
+        'employeeId': _currentUser!.uid,
+        'employeeName': _currentUser!.name,
+        'relatedId': disputeId,
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Notify admin failed: $e');
+    }
+  }
+
+  /// User konfirmasi resolusi: 'satisfied' menutup tiket, 'reopened' membuka kembali.
+  Future<void> confirmDisputeResolution({
+    required String disputeId,
+    required bool satisfied,
+    int? rating,
+    String? feedback,
+  }) async {
+    if (_currentUser == null) return;
+    final disputeRef = _db.collection('disputes').doc(disputeId);
+    final now = FieldValue.serverTimestamp();
+
+    await _db.runTransaction((tx) async {
+      final snap = await tx.get(disputeRef);
+      if (!snap.exists) throw Exception('Komplain sudah tidak ada.');
+      tx.update(disputeRef, {
+        'userConfirmedResolution': satisfied,
+        'userResolutionStatus': satisfied ? 'satisfied' : 'reopened',
+        if (satisfied && rating != null) 'userRating': rating,
+        if (satisfied && feedback != null && feedback.trim().isNotEmpty)
+          'userFeedback': feedback.trim(),
+        'status': satisfied ? 'closed' : 'reopened',
+        'confirmedAt': now,
+        'updatedAt': now,
+      });
+      // Tambahkan pesan sistem ke thread
+      final msgRef = disputeRef.collection('messages').doc();
+      tx.set(msgRef, {
+        'senderId': _currentUser!.uid,
+        'senderName': _currentUser!.name,
+        'senderRole': 'user',
+        'isSystem': true,
+        'text': satisfied
+            ? (rating != null
+                ? '✅ Masalah selesai. Rating: $rating/5${(feedback ?? '').isNotEmpty ? '\n"$feedback"' : ''}'
+                : '✅ Masalah selesai.')
+            : '🔄 Tiket dibuka kembali oleh user.',
+        'createdAt': now,
+      });
+    });
+
+    // Notify admin
+    try {
+      await _db.collection('adminNotifications').add({
+        'title': satisfied
+            ? '⭐ Komplain Ditutup: ${_currentUser!.name}'
+            : '🔄 Komplain Dibuka Ulang: ${_currentUser!.name}',
+        'message': satisfied
+            ? 'Rating ${rating ?? "-"}/5${(feedback ?? '').isNotEmpty ? ' • $feedback' : ''}'
+            : 'User belum puas dengan resolusi.',
+        'type': satisfied ? 'dispute_closed' : 'dispute_reopened',
+        'employeeId': _currentUser!.uid,
+        'employeeName': _currentUser!.name,
+        'relatedId': disputeId,
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Notify admin failed: $e');
     }
   }
 

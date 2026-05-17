@@ -8,6 +8,7 @@ import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
 import '../../widgets/package_loading.dart';
 import '../attendance/dispute_submission_screen.dart';
+import '../attendance/dispute_detail_screen.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -47,13 +48,14 @@ class _HistoryPageState extends State<HistoryPage> {
     final provider = context.watch<AppProvider>();
     final records = provider.monthlyAttendance;
     final isLoading = provider.isLoadingHistory;
+    final isDark = provider.isDarkMode;
 
     final presentCount = records.where((r) => r.status == 'present').length;
     final leaveCount = records.where((r) => r.status == 'leave').length;
     final lateCount = records.where((r) => r.status == 'late').length;
 
     return Scaffold(
-      backgroundColor: zenOffWhite,
+      backgroundColor: isDark ? const Color(0xFF0B1120) : zenOffWhite,
       appBar: AppBar(
         backgroundColor: zenNavy,
         elevation: 0,
@@ -308,7 +310,7 @@ class _HistoryPageState extends State<HistoryPage> {
     String checkInTime = r.checkIn?.time != null ? DateFormat('HH:mm').format(r.checkIn!.time!) : '--:--';
     String checkOutTime = r.checkOut?.time != null ? DateFormat('HH:mm').format(r.checkOut!.time!) : '--:--';
 
-    final dispute = context.watch<AppProvider>().disputes.where((d) => d.relatedAttendanceId == r.id).firstOrNull;
+    final dispute = context.watch<AppProvider>().myDisputeRequests.where((d) => d.relatedAttendanceId == r.id).firstOrNull;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -399,7 +401,12 @@ class _HistoryPageState extends State<HistoryPage> {
                   else
                     GestureDetector(
                       onTap: () {
-                        if (dispute == null) {
+                        if (dispute != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => DisputeDetailScreen(dispute: dispute)),
+                          );
+                        } else {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (_) => DisputeSubmissionScreen(record: r)),
@@ -409,18 +416,18 @@ class _HistoryPageState extends State<HistoryPage> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: dispute != null 
+                          color: dispute != null
                               ? (dispute.status == 'resolved' ? zenEmerald : (dispute.status == 'rejected' ? zenRose : Colors.amber)).withValues(alpha: 0.1)
                               : zenNavy.withValues(alpha: 0.03),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          dispute != null 
+                          dispute != null
                               ? (dispute.status == 'resolved' ? Icons.check_circle_rounded : (dispute.status == 'rejected' ? Icons.cancel_rounded : Icons.pending_rounded))
-                              : Icons.chevron_right_rounded, 
-                          color: dispute != null 
+                              : Icons.chevron_right_rounded,
+                          color: dispute != null
                               ? (dispute.status == 'resolved' ? zenEmerald : (dispute.status == 'rejected' ? zenRose : Colors.amber))
-                              : zenSlate, 
+                              : zenSlate,
                           size: 18
                         ),
                       ),
@@ -429,43 +436,65 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
               if (dispute != null) ...[
                 const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: zenOffWhite,
-                    borderRadius: BorderRadius.circular(16),
+                GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => DisputeDetailScreen(dispute: dispute)),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            dispute.status == 'resolved' ? Icons.check_circle_rounded : dispute.status == 'rejected' ? Icons.cancel_rounded : Icons.report_problem_rounded, 
-                            size: 12, 
-                            color: dispute.status == 'resolved' ? zenEmerald : (dispute.status == 'rejected' ? zenRose : Colors.amber.shade700)
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'COMPLAINT STATUS: ${dispute.status.toUpperCase()}',
-                            style: GoogleFonts.outfit(
-                              color: dispute.status == 'resolved' ? zenEmerald : (dispute.status == 'rejected' ? zenRose : Colors.amber.shade900), 
-                              fontSize: 9, 
-                              fontWeight: FontWeight.w900, 
-                              letterSpacing: 1
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: zenOffWhite,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              dispute.status == 'resolved' ? Icons.check_circle_rounded : dispute.status == 'rejected' ? Icons.cancel_rounded : Icons.report_problem_rounded,
+                              size: 12,
+                              color: dispute.status == 'resolved' ? zenEmerald : (dispute.status == 'rejected' ? zenRose : Colors.amber.shade700)
                             ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'COMPLAINT STATUS: ${dispute.status.toUpperCase()}',
+                                style: GoogleFonts.outfit(
+                                  color: dispute.status == 'resolved' ? zenEmerald : (dispute.status == 'rejected' ? zenRose : Colors.amber.shade900),
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1
+                                ),
+                              ),
+                            ),
+                            if (dispute.needsUserConfirmation)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: zenEmerald,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'KONFIRMASI',
+                                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900, letterSpacing: 1),
+                                ),
+                              ),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.chevron_right_rounded, size: 14, color: zenSlate),
+                          ],
+                        ),
+                        if (dispute.adminResponse != null && dispute.adminResponse!.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            'Tap untuk buka percakapan dengan admin',
+                            style: GoogleFonts.plusJakartaSans(color: zenNavy.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.w600, height: 1.4),
                           ),
                         ],
-                      ),
-                      if (dispute.adminReason != null && dispute.adminReason!.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          'Feedback Admin: ${dispute.adminReason}',
-                          style: GoogleFonts.plusJakartaSans(color: zenNavy.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.w600, height: 1.4),
-                        ),
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ],

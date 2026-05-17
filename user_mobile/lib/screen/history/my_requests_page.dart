@@ -38,9 +38,10 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     final p = context.watch<AppProvider>();
+    final isDark = p.isDarkMode;
 
     return Scaffold(
-      backgroundColor: zenOffWhite,
+      backgroundColor: isDark ? const Color(0xFF0B1120) : zenOffWhite,
       appBar: AppBar(
         backgroundColor: zenNavy,
         elevation: 0,
@@ -158,6 +159,17 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
   }
 }
 
+String _leaveTypeLabel(String type) {
+  switch (type) {
+    case 'annual': return 'Cuti Tahunan';
+    case 'sick': return 'Sakit';
+    case 'permission': return 'Izin Mendadak';
+    case 'personal': return 'Keperluan Pribadi';
+    case 'urgent': return 'Keperluan Keluarga';
+    default: return type.toUpperCase();
+  }
+}
+
 class _RequestCard<T> extends StatelessWidget {
   final T item;
   final VoidCallback? onCancel;
@@ -172,24 +184,31 @@ class _RequestCard<T> extends StatelessWidget {
     String dateStr = '';
     Color statusColor = Colors.amber;
 
+    // Format konsisten: 'dd MMM yyyy' (rentang untuk leave).
+    const fmt = 'dd MMM yyyy';
     if (item is LeaveRequest) {
       final req = item as LeaveRequest;
-      title = 'Leave: ${req.type.toUpperCase()}';
+      title = 'Izin: ${_leaveTypeLabel(req.type)}';
       subtitle = req.reason;
       status = req.status;
-      dateStr = '${DateFormat('dd MMM').format(req.startDate)} - ${DateFormat('dd MMM yyyy').format(req.endDate)}';
+      final sameDay = req.startDate.year == req.endDate.year &&
+          req.startDate.month == req.endDate.month &&
+          req.startDate.day == req.endDate.day;
+      dateStr = sameDay
+          ? DateFormat(fmt).format(req.startDate)
+          : '${DateFormat('dd MMM').format(req.startDate)} – ${DateFormat(fmt).format(req.endDate)}';
     } else if (item is OvertimeRequest) {
       final req = item as OvertimeRequest;
-      title = 'Overtime';
+      title = 'Lembur';
       subtitle = req.reason;
       status = req.status;
-      dateStr = DateFormat('EEEE, dd MMM yyyy').format(DateTime.tryParse(req.date) ?? DateTime.now());
+      dateStr = DateFormat(fmt).format(DateTime.tryParse(req.date) ?? DateTime.now());
     } else if (item is DisputeRequest) {
       final req = item as DisputeRequest;
-      title = 'Complaint / Dispute';
+      title = 'Komplain';
       subtitle = req.description;
       status = req.status;
-      dateStr = DateFormat('dd MMM yyyy HH:mm').format(req.createdAt);
+      dateStr = DateFormat(fmt).format(req.createdAt);
     }
 
     statusColor = status == 'approved' || status == 'resolved' ? const Color(0xFF10B981) : 

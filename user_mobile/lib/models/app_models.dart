@@ -10,7 +10,7 @@ class UserModel {
   final String email;
   final String phone;
   final String employeeId;
-  final String role; 
+  final String role;    
   final String department;
   final String position;
   final bool faceRegistered;
@@ -18,12 +18,14 @@ class UserModel {
   final bool allowRemoteAttendance;
   final String? jamKerjaId;
   final bool isOnline;
+  final bool passwordChanged;
+  final String? facePhotoUrl;
 
   const UserModel({
     required this.uid,
     required this.name,
     required this.email,
-    required this.phone,
+    required this.phone,  
     required this.employeeId,
     required this.role,
     required this.department,
@@ -33,12 +35,14 @@ class UserModel {
     this.allowRemoteAttendance = false,
     this.jamKerjaId,
     this.isOnline = false,
+    this.passwordChanged = false,
+    this.facePhotoUrl,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
     return UserModel(
-      uid: data['uid'] ?? doc.id,
+      uid: doc.id, // Always use Firestore doc ID = Firebase Auth UID
       name: data['name'] ?? '',
       email: data['email'] ?? '',
       phone: data['phone'] ?? '',
@@ -51,6 +55,8 @@ class UserModel {
       allowRemoteAttendance: data['allowRemoteAttendance'] ?? false,
       jamKerjaId: data['jamKerjaId'],
       isOnline: data['isOnline'] ?? false,
+      passwordChanged: data['passwordChanged'] ?? false,
+      facePhotoUrl: data['facePhotoUrl'],
     );
   }
 
@@ -68,6 +74,7 @@ class UserModel {
       'photoUrl': photoUrl,
       'allowRemoteAttendance': allowRemoteAttendance,
       'jamKerjaId': jamKerjaId,
+      'facePhotoUrl': facePhotoUrl,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -85,6 +92,8 @@ class UserModel {
     bool? allowRemoteAttendance,
     String? jamKerjaId,
     bool? isOnline,
+    bool? passwordChanged,
+    String? facePhotoUrl,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -100,6 +109,8 @@ class UserModel {
       allowRemoteAttendance: allowRemoteAttendance ?? this.allowRemoteAttendance,
       jamKerjaId: jamKerjaId ?? this.jamKerjaId,
       isOnline: isOnline ?? this.isOnline,
+      passwordChanged: passwordChanged ?? this.passwordChanged,
+      facePhotoUrl: facePhotoUrl ?? this.facePhotoUrl,
     );
   }
 }
@@ -136,7 +147,7 @@ class AttendanceRecord {
   });
 
   factory AttendanceRecord.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
     
     // Support both nested (old) and flat (new Data Connect style) formats
     AttendanceCheck? checkIn;
@@ -297,6 +308,9 @@ class LeaveRequest {
   final int totalDays;
   final String reason;
   final String? documentUrl;
+  final String? rejectionReason;
+  final String? adminReason;
+  final String? reviewedBy;
 
   const LeaveRequest({
     required this.id,
@@ -311,10 +325,15 @@ class LeaveRequest {
     required this.totalDays,
     required this.reason,
     this.documentUrl,
+    this.rejectionReason,
+    this.adminReason,
+    this.reviewedBy,
   });
 
   factory LeaveRequest.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
+    final sD = data['startDate'];
+    final eD = data['endDate'];
     return LeaveRequest(
       id: doc.id,
       userId: data['userId'] ?? '',
@@ -323,11 +342,14 @@ class LeaveRequest {
       department: data['department'] ?? '',
       type: data['type'] ?? 'personal',
       status: data['status'] ?? 'pending',
-      startDate: (data['startDate'] as Timestamp).toDate(),
-      endDate: (data['endDate'] as Timestamp).toDate(),
+      startDate: sD is Timestamp ? sD.toDate() : (sD is String ? DateTime.tryParse(sD) ?? DateTime.now() : DateTime.now()),
+      endDate: eD is Timestamp ? eD.toDate() : (eD is String ? DateTime.tryParse(eD) ?? DateTime.now() : DateTime.now()),
       totalDays: data['totalDays'] ?? 1,
       reason: data['reason'] ?? '',
       documentUrl: data['documentUrl'],
+      rejectionReason: data['rejectionReason'] ?? data['adminReason'],
+      adminReason: data['adminReason'] ?? data['rejectionReason'],
+      reviewedBy: data['reviewedBy'],
     );
   }
 }
@@ -348,7 +370,7 @@ class JamKerja {
   });
 
   factory JamKerja.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
     return JamKerja(
       id: doc.id,
       name: data['name'] ?? '',
@@ -387,13 +409,15 @@ class CalendarEvent {
   });
 
   factory CalendarEvent.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
+    final sD = data['startDate'];
+    final eD = data['endDate'];
     return CalendarEvent(
       id: doc.id,
       title: data['title'] ?? '',
       description: data['description'] ?? '',
-      startDate: (data['startDate'] as Timestamp).toDate(),
-      endDate: (data['endDate'] as Timestamp).toDate(),
+      startDate: sD is Timestamp ? sD.toDate() : (sD is String ? DateTime.tryParse(sD) ?? DateTime.now() : DateTime.now()),
+      endDate: eD is Timestamp ? eD.toDate() : (eD is String ? DateTime.tryParse(eD) ?? DateTime.now() : DateTime.now()),
       type: data['type'] ?? 'event',
       category: data['category'] ?? 'social',
       location: data['location'],
@@ -422,17 +446,18 @@ class AdminNotification {
   });
 
   factory AdminNotification.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
+    final ts = data['createdAt'];
+    final createdAt = ts is Timestamp ? ts.toDate() : DateTime.now();
     return AdminNotification(
       id: doc.id,
       title: data['title'] ?? '',
       message: data['message'] ?? '',
       type: data['type'] ?? 'info',
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: createdAt,
       isRead: data['isRead'] ?? false,
     );
   }
-
 }
 
 // ── Overtime Request Model ────────────────────────────────────
@@ -468,7 +493,7 @@ class OvertimeRequest {
   });
 
   factory OvertimeRequest.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
     final ts = data['createdAt'];
     final minutes = data['overtimeMinutes'] as int? ?? 0;
     return OvertimeRequest(
@@ -514,7 +539,7 @@ class LeaveBalance {
   double get usagePercent => annualQuota > 0 ? (usedAnnual / annualQuota).clamp(0.0, 1.0) : 0.0;
 
   factory LeaveBalance.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
     final ts = data['updatedAt'];
     return LeaveBalance(
       annualQuota: data['annualQuota'] as int? ?? 12,
@@ -541,13 +566,20 @@ class DisputeRequest {
   final String description;
   final String? attachmentUrl;
   final String? relatedAttendanceId;
-  // 'pending' | 'in_review' | 'resolved' | 'rejected'
+  // 'pending' | 'in_review' | 'resolved' | 'rejected' | 'reopened' | 'closed'
   final String status;
   final String? adminResponse;
   final String? resolvedBy;
   final DateTime? resolvedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
+  // Two-way resolution loop
+  final bool userConfirmedResolution;
+  final String? userResolutionStatus; // 'satisfied' | 'reopened'
+  final int? userRating;              // 1..5
+  final String? userFeedback;
+  final DateTime? confirmedAt;
+  final int messageCount;
 
   const DisputeRequest({
     required this.id,
@@ -566,13 +598,28 @@ class DisputeRequest {
     this.resolvedAt,
     required this.createdAt,
     required this.updatedAt,
+    this.userConfirmedResolution = false,
+    this.userResolutionStatus,
+    this.userRating,
+    this.userFeedback,
+    this.confirmedAt,
+    this.messageCount = 0,
   });
 
+  bool get needsUserConfirmation =>
+      status == 'resolved' && !userConfirmedResolution;
+
+  bool get isClosed =>
+      status == 'closed' ||
+      status == 'rejected' ||
+      (status == 'resolved' && userConfirmedResolution && userResolutionStatus == 'satisfied');
+
   factory DisputeRequest.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
     final ts = data['createdAt'];
     final us = data['updatedAt'];
     final rs = data['resolvedAt'];
+    final cf = data['confirmedAt'];
     return DisputeRequest(
       id: doc.id,
       userId: data['userId'] ?? '',
@@ -585,12 +632,77 @@ class DisputeRequest {
       attachmentUrl: data['attachmentUrl'],
       relatedAttendanceId: data['relatedAttendanceId'],
       status: data['status'] ?? 'pending',
-      adminResponse: data['adminResponse'],
-      resolvedBy: data['resolvedBy'],
+      adminResponse: data['adminResponse'] ?? data['adminReason'],
+      resolvedBy: data['resolvedBy'] ?? data['reviewedBy'],
       resolvedAt: rs is Timestamp ? rs.toDate() : null,
       createdAt: ts is Timestamp ? ts.toDate() : DateTime.now(),
       updatedAt: us is Timestamp ? us.toDate() : DateTime.now(),
+      userConfirmedResolution: data['userConfirmedResolution'] == true,
+      userResolutionStatus: data['userResolutionStatus'],
+      userRating: (data['userRating'] as num?)?.toInt(),
+      userFeedback: data['userFeedback'],
+      confirmedAt: cf is Timestamp ? cf.toDate() : null,
+      messageCount: (data['messageCount'] as num?)?.toInt() ?? 0,
     );
   }
+}
 
+// ── Smart Tip (derived, tidak di Firestore) ───────────────────
+class SmartTip {
+  final String id;
+  final String title;
+  final String message;
+  // 'urgent' | 'warning' | 'info' | 'success'
+  final String severity;
+  // route-ish hint: 'attendance' | 'leave_balance' | 'dispute' | 'statistic'
+  final String action;
+  // nama icon Material: 'access_time' | 'logout' | 'beach_access' | etc
+  final String icon;
+
+  const SmartTip({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.severity,
+    required this.action,
+    required this.icon,
+  });
+}
+
+// ── Dispute Thread Message ────────────────────────────────────
+class DisputeMessage {
+  final String id;
+  final String senderId;
+  final String senderName;
+  final String senderRole; // 'user' | 'admin'
+  final String text;
+  final String? attachmentUrl;
+  final DateTime createdAt;
+  final bool isSystem;
+
+  const DisputeMessage({
+    required this.id,
+    required this.senderId,
+    required this.senderName,
+    required this.senderRole,
+    required this.text,
+    this.attachmentUrl,
+    required this.createdAt,
+    this.isSystem = false,
+  });
+
+  factory DisputeMessage.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
+    final ts = data['createdAt'];
+    return DisputeMessage(
+      id: doc.id,
+      senderId: data['senderId'] ?? '',
+      senderName: data['senderName'] ?? 'Unknown',
+      senderRole: data['senderRole'] ?? 'user',
+      text: data['text'] ?? '',
+      attachmentUrl: data['attachmentUrl'],
+      createdAt: ts is Timestamp ? ts.toDate() : DateTime.now(),
+      isSystem: data['isSystem'] == true,
+    );
+  }
 }
