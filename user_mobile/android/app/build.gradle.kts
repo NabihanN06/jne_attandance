@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -7,7 +10,17 @@ plugins {
     id("com.google.firebase.firebase-perf")
 }
 
+// Load release signing credentials from android/key.properties (gitignored).
+// File template: android/key.properties.example
+val keystoreProperties = Properties().apply {
+    val f = rootProject.file("key.properties")
+    if (f.exists()) load(FileInputStream(f))
+}
+val hasReleaseKeystore = keystoreProperties.getProperty("storeFile") != null
+
 android {
+    // namespace tetap "com.example.jneattendance_mobile" supaya tidak perlu pindah
+    // MainActivity.kt. applicationId yang berubah untuk Play Store identitas.
     namespace = "com.example.jneattendance_mobile"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -23,17 +36,37 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.jneattendance_mobile"
-        minSdk = 21
+        applicationId = "id.co.jne.mtp.absensi"
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            // Pakai release keystore jika key.properties ada, fallback ke debug
+            // supaya `flutter run --release` tetap jalan saat dev tanpa keystore.
+            signingConfig = if (hasReleaseKeystore) signingConfigs.getByName("release")
+                            else signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }

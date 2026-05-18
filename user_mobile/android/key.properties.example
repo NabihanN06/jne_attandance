@@ -1,0 +1,11 @@
+# Template untuk android/key.properties (REAL FILE GITIGNORED, JANGAN COMMIT).
+# 1. Copy file ini jadi `key.properties` (sejajar, di folder android/).
+# 2. Isi semua field dengan nilai keystore production kamu.
+# 3. Verifikasi `android/key.properties` muncul di .gitignore (sudah default Flutter).
+#
+# Path keystore SEBAIKNYA di luar repo, contoh: C:/Users/USER/jne-absensi-release.jks
+
+storePassword=GANTI_DENGAN_PASSWORD_KEYSTORE
+keyPassword=GANTI_DENGAN_PASSWORD_KEY
+keyAlias=jne
+storeFile=C:/Users/USER/jne-absensi-release.jks

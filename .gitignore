@@ -1,0 +1,17 @@
+# Claude Code session metadata
+.claude/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Accidental CLI redirect artifacts
+/a
+/npx
+/del
+/const

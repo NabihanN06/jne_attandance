@@ -667,6 +667,50 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
+  /// Setelah user ganti password permanen di first-login flow, set
+  /// flag `passwordChanged: true` di Firestore supaya app tidak paksa
+  /// ganti lagi di sesi berikutnya.
+  Future<void> markPasswordChanged() async {
+    if (_currentUser == null) return;
+    try {
+      await _db.collection('users').doc(_currentUser!.uid).update({
+        'passwordChanged': true,
+        'passwordChangedAt': FieldValue.serverTimestamp(),
+      });
+      _currentUser = _currentUser!.copyWith(passwordChanged: true);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Mark passwordChanged failed: $e');
+      rethrow;
+    }
+  }
+
+  /// True jika user perlu set password permanen (first login dengan
+  /// temp password yang dibuat admin).
+  bool get requiresPasswordChange =>
+      _currentUser != null && _currentUser!.passwordChanged == false;
+
+  /// Kirim laporan masalah login ke admin (tanpa perlu auth — user kan
+  /// belum bisa masuk). Dibatasi via rules + field size validation.
+  Future<void> submitLoginIssue({
+    required String name,
+    required String emailOrEmployeeId,
+    required String description,
+    String? phone,
+  }) async {
+    if (name.trim().isEmpty || emailOrEmployeeId.trim().isEmpty || description.trim().isEmpty) {
+      throw Exception('Nama, email/ID, dan deskripsi wajib diisi.');
+    }
+    await _db.collection('login_issues').add({
+      'name': name.trim(),
+      'emailOrEmployeeId': emailOrEmployeeId.trim(),
+      'description': description.trim(),
+      'phone': phone?.trim(),
+      'status': 'pending', // pending → in_progress → resolved
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   void logout() async {
     _stopHeartbeat();
     _cancelAllSubscriptions();

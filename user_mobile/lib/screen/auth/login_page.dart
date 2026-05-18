@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import '../../providers/app_provider.dart';
 import '../home/home_screen.dart';
+import 'change_password_required_screen.dart';
+import 'report_login_issue_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -48,9 +50,27 @@ class _LoginPageState extends State<LoginPage> {
     HapticFeedback.mediumImpact();
 
     try {
-      await context.read<AppProvider>().login(email, password);
+      final app = context.read<AppProvider>();
+      await app.login(email, password);
+      // Tunggu authStateChanges + _fetchCurrentUser selesai mengisi currentUser
+      // dengan field passwordChanged. Loop sederhana max 3 detik.
+      for (var i = 0; i < 30; i++) {
+        if (app.currentUser != null) break;
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
       if (!mounted) return;
-      
+
+      // First-login → paksa ganti password permanen sebelum lanjut.
+      if (app.requiresPasswordChange) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+              builder: (_) => const ChangePasswordRequiredScreen()),
+          (r) => false,
+        );
+        return;
+      }
+
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -170,13 +190,25 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
               Center(
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'SECURITY OVERRIDE? CONTACT HUB ADMIN',
-                    style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                child: TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const ReportLoginIssueScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.support_agent_rounded,
+                      color: zenSlate, size: 16),
+                  label: Text(
+                    'TIDAK BISA LOGIN? LAPOR KE ADMIN',
+                    style: GoogleFonts.outfit(
+                        color: zenSlate,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5),
                   ),
                 ),
               ),
