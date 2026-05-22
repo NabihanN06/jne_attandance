@@ -156,14 +156,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 MaterialPageRoute(builder: (_) => const FaqScreen()),
               ),
             ),
-            _divider(),
-            _tapItem(
-              icon: Icons.support_agent_rounded,
-              iconColor: zenEmerald,
-              title: 'Hubungi Admin',
-              subtitle: 'Chat langsung dengan admin HUB',
-              onTap: () => Navigator.pushNamed(context, '/chat'),
-            ),
           ]),
           const SizedBox(height: 24),
 
