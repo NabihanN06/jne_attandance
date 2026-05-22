@@ -9,11 +9,11 @@ class ChatMessage {
   final String text;
   final String senderId;
   final String senderName;
-  final String senderRole;  // 'admin' or 'employee'
+  final String senderRole; // 'admin' or 'employee'
   final String receiverId;
   final String receiverRole;
   final DateTime timestamp;
-  final MessageStatus status;  // NEW: sent, delivered, read
+  final MessageStatus status; // NEW: sent, delivered, read
   final DateTime? readAt;
   final DateTime? deliveredAt;
   final String? imageUrl;
@@ -84,7 +84,13 @@ class ChatProvider extends ChangeNotifier {
   bool _otherUserTyping = false;
   bool get otherUserTyping => _otherUserTyping;
 
+  String? _activeChatId;
+
   void listenToMessages(String chatId) {
+    // Guard biar listener tidak direset berulang saat widget rebuild.
+    if (_activeChatId == chatId && _messageSubscription != null) return;
+    _activeChatId = chatId;
+
     _messageSubscription?.cancel();
     _typingSubscription?.cancel();
     _isLoading = true;
@@ -97,17 +103,20 @@ class ChatProvider extends ChangeNotifier {
         .orderBy('createdAt', descending: false)
         .snapshots()
         .listen((snapshot) {
-      _messages = snapshot.docs.map((doc) => ChatMessage.fromFirestore(doc)).toList();
-      _isLoading = false;
-      notifyListeners();
+          _messages = snapshot.docs
+              .map((doc) => ChatMessage.fromFirestore(doc))
+              .toList();
+          _isLoading = false;
+          notifyListeners();
 
-      // Mark messages as read
-      for (var msg in _messages) {
-        if (msg.status != MessageStatus.read && msg.senderId != _auth.currentUser?.uid) {
-          _markAsRead(msg.id);
-        }
-      }
-    });
+          // Mark messages as read
+          for (var msg in _messages) {
+            if (msg.status != MessageStatus.read &&
+                msg.senderId != _auth.currentUser?.uid) {
+              _markAsRead(msg.id);
+            }
+          }
+        });
 
     _typingSubscription = _db
         .collection('chats')
@@ -116,15 +125,20 @@ class ChatProvider extends ChangeNotifier {
         .doc('status')
         .snapshots()
         .listen((doc) {
-      if (doc.exists) {
-        Map<String, dynamic> data = doc.data()!;
-        String otherUserId = chatId.split('_').firstWhere((id) => id != _auth.currentUser?.uid, orElse: () => '');
-        if (otherUserId.isNotEmpty) {
-          _otherUserTyping = data[otherUserId] ?? false;
-          notifyListeners();
-        }
-      }
-    });
+          if (doc.exists) {
+            Map<String, dynamic> data = doc.data()!;
+            String otherUserId = chatId
+                .split('_')
+                .firstWhere(
+                  (id) => id != _auth.currentUser?.uid,
+                  orElse: () => '',
+                );
+            if (otherUserId.isNotEmpty) {
+              _otherUserTyping = data[otherUserId] ?? false;
+              notifyListeners();
+            }
+          }
+        });
   }
 
   Future<void> _markAsRead(String messageId) async {
@@ -136,9 +150,12 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> updateTyping(String chatId, bool typing) async {
     if (_auth.currentUser == null) return;
-    await _db.collection('chats').doc(chatId).collection('typing').doc('status').set({
-      _auth.currentUser!.uid: typing,
-    }, SetOptions(merge: true));
+    await _db
+        .collection('chats')
+        .doc(chatId)
+        .collection('typing')
+        .doc('status')
+        .set({_auth.currentUser!.uid: typing}, SetOptions(merge: true));
   }
 
   /// NEW: Enhanced send with status tracking
@@ -173,8 +190,16 @@ class ChatProvider extends ChangeNotifier {
 
     final docRef = await _db.collection('messages').add(messageData);
 
-    // Mark as delivered immediately (optimistic)
-    await docRef.update({'status': 'delivered', 'deliveredAt': FieldValue.serverTimestamp()});
+    // Mark delivered fire-and-forget — UI sudah render pesan dari snapshot
+    // listener begitu add() commit ke cache lokal. Tidak perlu blokir caller.
+    unawaited(
+      docRef
+          .update({
+            'status': 'delivered',
+            'deliveredAt': FieldValue.serverTimestamp(),
+          })
+          .catchError((e) => debugPrint('Mark delivered failed: $e')),
+    );
   }
 
   /// NEW: Mark message as delivered when received on device
