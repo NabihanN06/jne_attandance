@@ -9,6 +9,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -376,6 +378,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   StreamSubscription? _disputeSub;
   StreamSubscription? _leaveBalanceSub;
   StreamSubscription? _presenceSub;
+  StreamSubscription? _userSub;
 
   // Timers
   Timer? _heartbeatTimer;
@@ -448,6 +451,31 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   void _listenToMyData() {
     if (_currentUser == null) return;
     _cancelAllSubscriptions();
+
+    // Listen ke users/{uid} supaya perubahan dari admin (photoUrl, role,
+    // jamKerjaId, allowRemoteAttendance, dll.) langsung tersinkron tanpa
+    // perlu logout/login. Wajib biar admin <-> app feel real-time.
+    _userSub = _db.collection('users').doc(_currentUser!.uid).snapshots().listen(
+      (doc) {
+        if (!doc.exists) return;
+        final updated = UserModel.fromFirestore(doc);
+        // Hindari notify kalau tidak ada perubahan berarti.
+        if (_currentUser?.photoUrl == updated.photoUrl &&
+            _currentUser?.name == updated.name &&
+            _currentUser?.role == updated.role &&
+            _currentUser?.department == updated.department &&
+            _currentUser?.position == updated.position &&
+            _currentUser?.phone == updated.phone &&
+            _currentUser?.jamKerjaId == updated.jamKerjaId &&
+            _currentUser?.allowRemoteAttendance == updated.allowRemoteAttendance &&
+            _currentUser?.faceRegistered == updated.faceRegistered) {
+          return;
+        }
+        _currentUser = updated;
+        _scheduleNotify();
+      },
+      onError: (e) => debugPrint('User doc listener error: $e'),
+    );
 
     _attendanceSub = _db.collection('attendance')
         .where('userId', isEqualTo: _currentUser!.uid)
@@ -548,6 +576,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     _disputeSub?.cancel();
     _leaveBalanceSub?.cancel();
     _presenceSub?.cancel();
+    _userSub?.cancel();
     _syncRetryTimer?.cancel();
   }
 
@@ -649,6 +678,48 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     } finally {
       _isProcessing = false;
       _fortressStatus = '';
+      notifyListeners();
+    }
+  }
+
+  /// Upload foto profile dari galeri / kamera ke Firebase Storage,
+  /// lalu simpan URL-nya ke `users/{uid}.photoUrl`. Foto dikompres
+  /// dulu jadi ~150KB JPEG supaya hemat storage & loading cepat.
+  Future<void> updateProfilePhoto(String localPath) async {
+    if (_currentUser == null) return;
+    _isProcessing = true;
+    notifyListeners();
+    try {
+      final tmpDir = await getTemporaryDirectory();
+      final outPath = '${tmpDir.path}/pp_${DateTime.now().microsecondsSinceEpoch}.jpg';
+      final compressed = await FlutterImageCompress.compressAndGetFile(
+        localPath,
+        outPath,
+        quality: 75,
+        minWidth: 640,
+        minHeight: 640,
+        format: CompressFormat.jpeg,
+        keepExif: false,
+      );
+
+      final file = compressed != null ? File(compressed.path) : File(localPath);
+      final ref = FirebaseStorage.instance.ref().child('profile_photos/${_currentUser!.uid}.jpg');
+      await ref.putFile(
+        file,
+        SettableMetadata(contentType: 'image/jpeg', cacheControl: 'public,max-age=86400'),
+      );
+      final url = await ref.getDownloadURL();
+
+      await _db.collection('users').doc(_currentUser!.uid).update({
+        'photoUrl': url,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      _currentUser = _currentUser!.copyWith(photoUrl: url);
+    } catch (e) {
+      debugPrint('Update profile photo failed: $e');
+      throw Exception('Gagal memperbarui foto profil. Coba lagi.');
+    } finally {
+      _isProcessing = false;
       notifyListeners();
     }
   }
@@ -1022,11 +1093,63 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
+  /// Kompres JPEG sebelum upload. Resolusi penuh dipertahankan kalau hasil
+  /// kompresnya sudah ≤ target; kalau masih besar, dimensi diturunkan
+  /// bertahap dengan menjaga aspect ratio. Tidak ada hard cap resolusi —
+  /// kita cap *ukuran file* (~250 KB) supaya storage hemat tapi gambar
+  /// tetap tajam untuk verifikasi muka.
+  Future<File> _compressJpeg(String localPath) async {
+    const int targetBytes = 250 * 1024; // ~250 KB
+
+    try {
+      final tmpDir = await getTemporaryDirectory();
+      final outPath = '${tmpDir.path}/att_${DateTime.now().microsecondsSinceEpoch}.jpg';
+
+      // Pass 1: quality 80, no resize. Cukup untuk sebagian besar foto
+      // selfie (1080-1440px) → ~150-250KB.
+      var result = await FlutterImageCompress.compressAndGetFile(
+        localPath,
+        outPath,
+        quality: 80,
+        format: CompressFormat.jpeg,
+        keepExif: false,
+      );
+
+      if (result == null) return File(localPath);
+
+      // Pass 2: kalau masih > 1.5x target, turunkan quality + resize.
+      var bytes = await result.length();
+      if (bytes > targetBytes * 1.5) {
+        final outPath2 = '${tmpDir.path}/att2_${DateTime.now().microsecondsSinceEpoch}.jpg';
+        result = await FlutterImageCompress.compressAndGetFile(
+          localPath,
+          outPath2,
+          quality: 70,
+          minWidth: 1080,
+          minHeight: 1080,
+          format: CompressFormat.jpeg,
+          keepExif: false,
+        );
+        if (result != null) bytes = await result.length();
+      }
+
+      debugPrint('Photo compressed: ${(bytes / 1024).toStringAsFixed(1)} KB');
+      return result != null ? File(result.path) : File(localPath);
+    } catch (e) {
+      debugPrint('Compress failed, uploading original: $e');
+      return File(localPath);
+    }
+  }
+
   Future<void> _uploadAttendancePhoto(String docId, String localPath, {bool isCheckOut = false}) async {
     try {
+      final compressed = await _compressJpeg(localPath);
       final prefix = isCheckOut ? 'checkout' : 'checkin';
       final ref = FirebaseStorage.instance.ref().child('attendance_photos/${prefix}_$docId.jpg');
-      await ref.putFile(File(localPath));
+      await ref.putFile(
+        compressed,
+        SettableMetadata(contentType: 'image/jpeg', cacheControl: 'public,max-age=31536000'),
+      );
       final url = await ref.getDownloadURL();
 
       final field = isCheckOut ? 'checkOut.photoUrl' : 'checkIn.photoUrl';

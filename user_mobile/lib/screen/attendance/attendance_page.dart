@@ -58,9 +58,11 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
+      // Pakai resolusi max bawaan device — biar foto absen tajam.
+      // Ukuran data dikompres di provider sebelum upload.
       final ctrl = CameraController(
-        front, 
-        ResolutionPreset.high, 
+        front,
+        ResolutionPreset.max,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
