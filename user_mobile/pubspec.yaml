@@ -35,6 +35,7 @@ dependencies:
   http: ^1.2.2
   flutter_image_compress: ^2.3.0
   cached_network_image: ^3.4.0
+  dart_format: ^0.0.4
 
 dev_dependencies:
   flutter_test:
