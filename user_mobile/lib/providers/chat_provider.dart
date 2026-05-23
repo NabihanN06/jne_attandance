@@ -9,11 +9,11 @@ class ChatMessage {
   final String text;
   final String senderId;
   final String senderName;
-  final String senderRole;  // 'admin' or 'employee'
+  final String senderRole; // 'admin' or 'employee'
   final String receiverId;
   final String receiverRole;
   final DateTime timestamp;
-  final MessageStatus status;  // NEW: sent, delivered, read
+  final MessageStatus status; // NEW: sent, delivered, read
   final DateTime? readAt;
   final DateTime? deliveredAt;
   final String? imageUrl;
@@ -74,6 +74,10 @@ class ChatProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
+  // Anti-spam cache: avoid repeating read updates for the same message
+  // during snapshot bursts.
+  final Set<String> _markedAsReadInThisChat = <String>{};
+
   String getChatId(String userId, String adminId) {
     List<String> ids = [userId, adminId];
     ids.sort();
@@ -84,30 +88,52 @@ class ChatProvider extends ChangeNotifier {
   bool _otherUserTyping = false;
   bool get otherUserTyping => _otherUserTyping;
 
+  String? _activeChatId;
+
   void listenToMessages(String chatId) {
+    // Prevent re-subscribing on identical chatId (this often causes UI “loop”/flicker)
+    if (_activeChatId == chatId && _messageSubscription != null) return;
+
+    _activeChatId = chatId;
+    _markedAsReadInThisChat.clear();
+
     _messageSubscription?.cancel();
     _typingSubscription?.cancel();
+
     _isLoading = true;
     notifyListeners();
 
-    // Listen to messages for this chat using chatId
     _messageSubscription = _db
         .collection('messages')
         .where('chatId', isEqualTo: chatId)
         .orderBy('createdAt', descending: false)
         .snapshots()
         .listen((snapshot) {
-      _messages = snapshot.docs.map((doc) => ChatMessage.fromFirestore(doc)).toList();
-      _isLoading = false;
-      notifyListeners();
+          _messages = snapshot.docs
+              .map((doc) => ChatMessage.fromFirestore(doc))
+              .toList();
+          _isLoading = false;
 
-      // Mark messages as read
-      for (var msg in _messages) {
-        if (msg.status != MessageStatus.read && msg.senderId != _auth.currentUser?.uid) {
-          _markAsRead(msg.id);
-        }
-      }
-    });
+          // Coalesce: update only once per snapshot
+          notifyListeners();
+
+          // Mark messages as read:
+          // - only unread
+          // - only where current user is the receiver (prevents cross-role spam)
+          // - anti-spam cache to avoid repeated writes in snapshot bursts
+          final myUid = _auth.currentUser?.uid;
+          if (myUid == null) return;
+
+          for (final msg in _messages) {
+            if (msg.id.isEmpty) continue;
+            if (msg.status == MessageStatus.read) continue;
+            if (msg.receiverId != myUid) continue;
+            if (_markedAsReadInThisChat.contains(msg.id)) continue;
+
+            _markedAsReadInThisChat.add(msg.id);
+            _markAsRead(msg.id);
+          }
+        });
 
     _typingSubscription = _db
         .collection('chats')
@@ -116,15 +142,28 @@ class ChatProvider extends ChangeNotifier {
         .doc('status')
         .snapshots()
         .listen((doc) {
-      if (doc.exists) {
-        Map<String, dynamic> data = doc.data()!;
-        String otherUserId = chatId.split('_').firstWhere((id) => id != _auth.currentUser?.uid, orElse: () => '');
-        if (otherUserId.isNotEmpty) {
-          _otherUserTyping = data[otherUserId] ?? false;
-          notifyListeners();
-        }
-      }
-    });
+          if (!doc.exists) {
+            if (_otherUserTyping != false) {
+              _otherUserTyping = false;
+              notifyListeners();
+            }
+            return;
+          }
+
+          final data = doc.data() as Map<String, dynamic>;
+          final myUid = _auth.currentUser?.uid;
+          final otherUserId = chatId
+              .split('_')
+              .firstWhere((id) => id != myUid, orElse: () => '');
+
+          final typing = otherUserId.isNotEmpty
+              ? (data[otherUserId] ?? false) as bool
+              : false;
+          if (typing != _otherUserTyping) {
+            _otherUserTyping = typing;
+            notifyListeners();
+          }
+        });
   }
 
   Future<void> _markAsRead(String messageId) async {
@@ -136,9 +175,12 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> updateTyping(String chatId, bool typing) async {
     if (_auth.currentUser == null) return;
-    await _db.collection('chats').doc(chatId).collection('typing').doc('status').set({
-      _auth.currentUser!.uid: typing,
-    }, SetOptions(merge: true));
+    await _db
+        .collection('chats')
+        .doc(chatId)
+        .collection('typing')
+        .doc('status')
+        .set({_auth.currentUser!.uid: typing}, SetOptions(merge: true));
   }
 
   /// NEW: Enhanced send with status tracking
@@ -174,7 +216,10 @@ class ChatProvider extends ChangeNotifier {
     final docRef = await _db.collection('messages').add(messageData);
 
     // Mark as delivered immediately (optimistic)
-    await docRef.update({'status': 'delivered', 'deliveredAt': FieldValue.serverTimestamp()});
+    await docRef.update({
+      'status': 'delivered',
+      'deliveredAt': FieldValue.serverTimestamp(),
+    });
   }
 
   /// NEW: Mark message as delivered when received on device
