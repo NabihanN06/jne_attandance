@@ -21,13 +21,14 @@
 ## 🛠️ Tech Stack
 
 | Component | Technology | Rationale |
-| :--- | :--- | :--- |
+
 | **Mobile App** | ![Flutter](https://img.shields.io/badge/Flutter-02569B?style=flat&logo=flutter&logoColor=white) | Cross-platform high-performance UI |
 | **State Management** | ![Provider](https://img.shields.io/badge/Provider-02569B?style=flat) | Scalable and reactive state handling |
 | **Admin Web** | ![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat&logo=nextdotjs&logoColor=white) | SSR & optimized administrative routes |
 | **Styling** | ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white) | Rapid Bento-UI development |
-| **Data Layer** | ![Firebase](https://img.shields.io/badge/Firebase_Data_Connect-FFCA28?style=flat&logo=firebase&logoColor=black) | GraphQL bridge to PostgreSQL |
-| **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white) | ACID-compliant relational storage |
+| **Data Layer** | ![Firebase](https://img.shields.io/badge/Firebase_Firestore-FFCA28?style=flat&logo=firebase&logoColor=black) | Firestore real-time database |
+| **Database** | ![Firebase](https://img.shields.io/badge/Firestore-0288D1?style=flat&logo=firebase&logoColor=white) | Real-time NoSQL storage |
+
 
 ---
 
@@ -55,9 +56,10 @@ Sistem ini dirancang dengan arsitektur **Closed-Loop Telemetry**, memastikan sin
 
 ---
 
-The following diagram illustrates the data flow between the mobile application, administrative portal, and the relational database backend via GraphQL.
+The following diagram illustrates the data flow between the mobile application and the administrative portal.
 
 ```mermaid
+
 graph TD
     subgraph "Client Tier"
         A[Flutter Mobile App]
@@ -65,8 +67,7 @@ graph TD
     end
 
     subgraph "Service Tier"
-        C{Firebase Data Connect}
-        D[Firebase Auth]
+D[Firebase Auth]
         E[Firebase Storage]
     end
 
@@ -95,14 +96,12 @@ graph TD
 | **Leaves** | Time-off and sick requests | `id`, `userId`, `startDate`, `endDate` |
 | **Shifts** | Work hours configuration | `id`, `name`, `checkInTime`, `tolerance` |
 
-### Key GraphQL Operations
+### API & Data Operations
 
-| Operation | Type | Description |
-| :--- | :--- | :--- |
-| `getAttendanceByDate` | Query | Retrieves all records for a specific workday. |
-| `submitLeaveRequest` | Mutation | Submits a new time-off request for approval. |
-| `updateUserShift` | Mutation | Updates an employee's assigned work hours. |
-| `markNotificationRead` | Mutation | Updates the read status of admin alerts. |
+Catatan: Implementasi utama aplikasi ini menggunakan **Firebase SDK (Firestore/Auth/Storage)**.
+
+Bagian README ini sebelumnya menyebut GraphQL/Data Connect, namun dokumentasi teknis yang benar ada di **DOKUMENTASI_PROJECT.md** dan **FIRESTORE_SCHEMA.md**.
+
 
 ---
 
@@ -148,9 +147,13 @@ To maintain a "State of the Art" look, all UI components must follow these desig
 
 2. **Database Setup**:
 
-   ```bash
-   firebase deploy --only dataconnect
-   ```
+```bash
+firebase deploy --only firestore:rules
+firebase deploy --only firestore:indexes
+firebase deploy --only storage
+firebase deploy --only functions
+```
+
 
 3. **Config**: Populate `.env` in `admin/` and add `google-services.json` to `user_mobile/`.
 
@@ -175,7 +178,7 @@ To maintain a "State of the Art" look, all UI components must follow these desig
 Before deploying clients, ensure the cloud database is synchronized:
 
 ```bash
-firebase deploy --only dataconnect
+firebase deploy --only firestore:rules
 ```
 
 ### 2. Admin Dashboard (Next.js)

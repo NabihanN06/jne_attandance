@@ -19,11 +19,16 @@ import 'package:firebase_core/firebase_core.dart';
 
 void main() {
   testWidgets('App builds without crashing', (WidgetTester tester) async {
-    // Avoid requiring a real Firebase project for widget smoke tests.
-    // main.dart normally calls Firebase.initializeApp(), but widget tests don't.
     TestWidgetsFlutterBinding.ensureInitialized();
-    if (Firebase.apps.isEmpty) {
+
+    try {
       await Firebase.initializeApp();
+    } on FirebaseException catch (e) {
+      if (e.code != 'duplicate-app') {
+        debugPrint('Firebase initialization warning: ${e.message}');
+      }
+    } catch (e) {
+      debugPrint('Skipping Firebase init for local test: $e');
     }
 
     await tester.pumpWidget(
