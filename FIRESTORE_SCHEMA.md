@@ -316,28 +316,6 @@ Both admin dashboard and mobile app share the same Firebase project: `admin-abse
 
 ---
 
-### 12. sos_alerts
-**Collection**: `sos_alerts`
-**Purpose**: Emergency SOS alerts from mobile
-
-**Fields**:
-```typescript
-{
-  userId: string
-  employeeName: string
-  employeeId: string
-  department: string
-  latitude: number
-  longitude: number
-  locationName: string
-  status: 'active' | 'resolved'
-  timestamp: Timestamp
-  createdAt: Timestamp
-}
-```
-
----
-
 ### 13. user_heartbeats (NEW)
 **Collection**: `user_heartbeats`
 **Purpose**: Real-time online status tracking

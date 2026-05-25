@@ -33,16 +33,6 @@ Sebelum memulai absensi, pastikan hal-hal berikut:
 
 ---
 
-## 🆘 4. Fitur Darurat (SOS)
-
-Jika Anda mengalami kendala di lapangan (kecelakaan, ban bocor, dsb):
-
-1. Tekan tombol **SOS** di halaman utama.
-2. Kirim pesan singkat mengenai kondisi Anda.
-3. Admin akan menerima lokasi GPS Anda secara real-time untuk mengirimkan bantuan.
-
----
-
 ## ⚠️ Pertanyaan Umum (FAQ)
 
 > [!NOTE]

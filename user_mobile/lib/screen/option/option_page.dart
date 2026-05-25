@@ -5,9 +5,12 @@ import '../../providers/app_provider.dart';
 import '../../utils/geofence_service.dart';
 
 class OptionPage extends StatelessWidget {
-  static const Color jneBlue = Color(0xFF005596);
-  static const Color jneRed = Color(0xFFE31E24);
-  static const Color bgLight = Color(0xFFF8FAFC);
+  static const Color zenNavy = Color(0xFF121826);
+  static const Color zenIndigo = Color(0xFF4F46E5);
+  static const Color zenCyan = Color(0xFF22D3EE);
+  static const Color zenRose = Color(0xFFF43F5E);
+  static const Color zenSlate = Color(0xFF94A3B8);
+  static const Color zenOffWhite = Color(0xFFF8FAFC);
 
   const OptionPage({super.key});
 
@@ -15,17 +18,27 @@ class OptionPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = context.watch<AppProvider>().isDarkMode;
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0B1120) : bgLight,
+      backgroundColor: isDark ? const Color(0xFF0B1120) : zenOffWhite,
       appBar: AppBar(
-        backgroundColor: jneBlue,
+        backgroundColor: zenCyan,
+
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'MENU LAYANAN',
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1),
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1,
+          ),
         ),
         centerTitle: true,
       ),
@@ -41,7 +54,8 @@ class OptionPage extends StatelessWidget {
               'Presensi Kehadiran',
               'Verifikasi wajah untuk mulai/selesai kerja.',
               Icons.fingerprint_rounded,
-              jneRed,
+              zenRose,
+
               () => Navigator.pushNamed(context, '/attendance'),
             ),
             const SizedBox(height: 16),
@@ -59,7 +73,8 @@ class OptionPage extends StatelessWidget {
               'Pengajuan Lembur',
               'Permohonan jam kerja tambahan (Overtime).',
               Icons.more_time_rounded,
-              jneBlue,
+              zenCyan,
+
               () => Navigator.pushNamed(context, '/overtime'),
             ),
             const SizedBox(height: 16),
@@ -80,11 +95,6 @@ class OptionPage extends StatelessWidget {
               const Color(0xFF10B981),
               () => Navigator.pushNamed(context, '/chat'),
             ),
-            
-            const SizedBox(height: 32),
-            _buildSectionTitle('Bantuan Darurat'),
-            const SizedBox(height: 16),
-            _buildSOSCard(context),
 
             const SizedBox(height: 32),
             _buildSectionTitle('Aplikasi'),
@@ -104,24 +114,49 @@ class OptionPage extends StatelessWidget {
   }
 
   Widget _buildSectionTitle(String t) {
-    return Text(t.toUpperCase(), style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1));
+    return Text(
+      t.toUpperCase(),
+      style: GoogleFonts.outfit(
+        color: const Color(0xFF94A3B8),
+        fontSize: 11,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 1,
+      ),
+    );
   }
 
-  Widget _buildFeatureCard(BuildContext context, String title, String desc, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildFeatureCard(
+    BuildContext context,
+    String title,
+    String desc,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    final isDark = context.watch<AppProvider>().isDarkMode;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Icon(icon, color: color, size: 28),
             ),
             const SizedBox(width: 20),
@@ -129,97 +164,32 @@ class OptionPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.w800)),
+                  Text(
+                    title,
+                    style: GoogleFonts.outfit(
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(desc, style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 12, height: 1.4, fontWeight: FontWeight.w500)),
+                  Text(
+                    desc,
+                    style: GoogleFonts.outfit(
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
+                      fontSize: 12,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
             ),
             const Icon(Icons.chevron_right_rounded, color: Color(0xFFCBD5E1)),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSOSCard(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _showSOSConfirm(context),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Color(0xFFE31E24), Color(0xFFB71C1C)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: const Color(0xFFE31E24).withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 8))],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-              child: const Icon(Icons.emergency_share_rounded, color: Colors.white, size: 32),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('DARURAT (SOS)', style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
-                  const SizedBox(height: 4),
-                  Text('Kirim lokasi dan sinyal darurat ke Admin.', style: GoogleFonts.outfit(color: Colors.white.withValues(alpha: 0.8), fontSize: 12, fontWeight: FontWeight.w500)),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded, color: Colors.white),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showSOSConfirm(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('KIRIM SINYAL SOS?', style: GoogleFonts.outfit(fontWeight: FontWeight.w900, color: const Color(0xFFE31E24))),
-        content: Text('Sinyal darurat beserta lokasi GPS Anda akan dikirimkan ke Admin JNE Pusat. Pastikan Anda benar-benar dalam keadaan darurat.', style: GoogleFonts.outfit(fontWeight: FontWeight.w500)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('BATAL', style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontWeight: FontWeight.w700))),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final messenger = ScaffoldMessenger.of(context);
-              final geo = context.read<GeofenceService>();
-              final pos = geo.currentPosition;
-              if (pos == null) {
-                messenger.showSnackBar(const SnackBar(
-                  content: Text('Lokasi GPS belum siap. Aktifkan GPS lalu coba lagi.'),
-                  backgroundColor: Color(0xFFE31E24),
-                ));
-                return;
-              }
-              try {
-                await context.read<AppProvider>().sendSOS(
-                  pos.latitude,
-                  pos.longitude,
-                  'Lokasi Anda saat ini',
-                );
-                messenger.showSnackBar(const SnackBar(
-                  content: Text('SOS terkirim. Admin akan merespon segera.'),
-                  backgroundColor: Colors.red,
-                ));
-              } catch (e) {
-                messenger.showSnackBar(SnackBar(
-                  content: Text('Gagal kirim SOS: $e'),
-                  backgroundColor: const Color(0xFFE31E24),
-                ));
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE31E24), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: Text('KIRIM SEKARANG', style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w800)),
-          ),
-        ],
       ),
     );
   }
