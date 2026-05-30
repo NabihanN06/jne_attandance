@@ -1187,20 +1187,24 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
 
     try {
-      await _db.collection('attendance').add({
+      // Tulis ke koleksi `overtime` — bukan `attendance` — supaya muncul
+      // di stream `_overtimeRequests` (lihat listener `overtime` di
+      // _setupListeners) dan bisa di-approve admin via halaman /overtime.
+      // Schema field harus match OvertimeRequest.fromFirestore di
+      // models/app_models.dart + mapOvertime di admin/src/lib/firestore.ts.
+      final hours = (durationMinutes / 60).ceil();
+      await _db.collection('overtime').add({
         'userId': _currentUser!.uid,
         'employeeName': _currentUser!.name,
         'employeeId': _currentUser!.employeeId,
         'department': _currentUser!.department,
-        'attendanceDate': DateFormat('yyyy-MM-dd').format(date),
-        'status': 'overtime',
+        'date': DateFormat('yyyy-MM-dd').format(date),
         'overtimeMinutes': durationMinutes,
-        'notes': reason,
+        'overtimeHours': hours,
+        'status': 'pending',
+        'reason': reason,
         'createdAt': FieldValue.serverTimestamp(),
-        'checkIn': {
-          'time': FieldValue.serverTimestamp(),
-          'type': 'overtime_manual',
-        }
+        'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
       throw Exception('Gagal mengirim data lembur: $e');
