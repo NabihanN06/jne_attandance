@@ -47,7 +47,12 @@ class ChatMessage {
       senderRole: data['senderRole'] ?? 'employee',
       receiverId: data['receiverId'] ?? '',
       receiverRole: data['receiverRole'] ?? 'admin',
-      timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      // Sender menulis ke field `createdAt` (serverTimestamp). Field
+      // `timestamp` lama tidak pernah diisi — kalau tetap dibaca dari sini,
+      // semua bubble jatuh ke DateTime.now() dan ordering kacau.
+      timestamp: (data['createdAt'] as Timestamp?)?.toDate()
+          ?? (data['timestamp'] as Timestamp?)?.toDate()
+          ?? DateTime.now(),
       status: MessageStatus.values.firstWhere(
         (e) => e.toString() == 'MessageStatus.${data['status'] ?? 'sent'}',
         orElse: () => MessageStatus.sent,
@@ -90,7 +95,9 @@ class ChatProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    // Listen to messages for this chat using chatId
+    // Listen ke flat `messages` collection. Query ini butuh composite
+    // index (chatId ASC, createdAt ASC) — kalau index belum di-deploy,
+    // onError dipanggil dan stream tidak akan terus loading.
     _messageSubscription = _db
         .collection('messages')
         .where('chatId', isEqualTo: chatId)
@@ -107,6 +114,11 @@ class ChatProvider extends ChangeNotifier {
           _markAsRead(msg.id);
         }
       }
+    }, onError: (e) {
+      debugPrint('Chat listener error: $e');
+      _messages = [];
+      _isLoading = false;
+      notifyListeners();
     });
 
     _typingSubscription = _db
