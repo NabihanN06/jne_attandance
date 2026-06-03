@@ -685,6 +685,42 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
+  /// Upload foto profil baru dari galeri/kamera ke Storage lalu simpan
+  /// URL-nya ke `users/{uid}.photoUrl`. Path mengikuti storage.rules:
+  /// `profile_photos/{uid}.jpg`. Mengembalikan URL download yang baru.
+  Future<String> updateProfilePhoto(File imageFile) async {
+    if (_currentUser == null) {
+      throw Exception('Sesi tidak ditemukan. Silakan masuk kembali.');
+    }
+    _isProcessing = true;
+    notifyListeners();
+    try {
+      final uid = _currentUser!.uid;
+      final ref = FirebaseStorage.instance.ref().child('profile_photos/$uid.jpg');
+      await ref.putFile(
+        imageFile,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+      final url = await ref.getDownloadURL();
+      // Cache-buster supaya CachedNetworkImage memuat foto terbaru, bukan versi lama.
+      final freshUrl = '$url?v=${DateTime.now().millisecondsSinceEpoch}';
+
+      await _db.collection('users').doc(uid).update({
+        'photoUrl': freshUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      _currentUser = _currentUser!.copyWith(photoUrl: freshUrl);
+      return freshUrl;
+    } catch (e) {
+      debugPrint('updateProfilePhoto failed: $e');
+      throw Exception('Gagal mengunggah foto profil. Coba lagi.');
+    } finally {
+      _isProcessing = false;
+      notifyListeners();
+    }
+  }
+
   /// True jika user perlu set password permanen (first login dengan
   /// temp password yang dibuat admin).
   bool get requiresPasswordChange =>

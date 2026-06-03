@@ -42,7 +42,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     if (email.isEmpty || password.isEmpty) {
-      _showSnack('IDENTIFICATION REQUIRED: ENTER CREDENTIALS', isError: true);
+      _showSnack('Email dan kata sandi wajib diisi', isError: true);
       return;
     }
 
@@ -79,15 +79,15 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showSnack(e.toString().replaceAll('Exception: ', '').toUpperCase(), isError: true);
+      _showSnack(e.toString().replaceAll('Exception: ', ''), isError: true);
     }
   }
 
   void _showSnack(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1)),
-        backgroundColor: isError ? const Color(0xFFF43F5E) : const Color(0xFF10B981),
+        content: Text(msg, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13)),
+        backgroundColor: isError ? const Color(0xFFE31E24) : const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -127,39 +127,39 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 64),
               
               Text(
-                'Operational\nAccess',
+                'Selamat\nDatang',
                 style: GoogleFonts.outfit(
-                  color: zenNavy, 
-                  fontSize: 40, 
-                  fontWeight: FontWeight.w900, 
+                  color: zenNavy,
+                  fontSize: 40,
+                  fontWeight: FontWeight.w900,
                   letterSpacing: -1.5,
                   height: 1.1,
                 ),
               ),
               const SizedBox(height: 16),
               Text(
-                'Authorize your biometric connection to the JNE Martapura operational registry.',
+                'Masuk untuk mulai absensi dan memantau kehadiran Anda di JNE Martapura.',
                 style: GoogleFonts.plusJakartaSans(
-                  color: zenSlate, 
-                  fontSize: 14, 
-                  fontWeight: FontWeight.w600, 
+                  color: zenSlate,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
                   height: 1.6,
                 ),
               ),
               
               const SizedBox(height: 56),
               
-              _label('REGISTRY EMAIL / SERIAL'),
+              _label('Email / ID Karyawan'),
               _field(
                 _emailCtrl,
-                'Ex: budi.ops / JNE-MTP-01',
+                'cth: budi atau budi@jne.mtp.com',
                 keyboard: TextInputType.emailAddress,
                 icon: Icons.alternate_email_rounded,
               ),
-              
+
               const SizedBox(height: 28),
-              
-              _label('SECURITY PASSPHRASE'),
+
+              _label('Kata Sandi'),
               _field(
                 _passCtrl,
                 '••••••••',
@@ -186,7 +186,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   child: _isLoading
                       ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                      : Text('AUTHORIZE SESSION', style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3)),
+                      : Text('Masuk', style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                 ),
               ),
               
@@ -203,12 +203,11 @@ class _LoginPageState extends State<LoginPage> {
                   icon: const Icon(Icons.support_agent_rounded,
                       color: zenSlate, size: 16),
                   label: Text(
-                    'TIDAK BISA LOGIN? LAPOR KE ADMIN',
-                    style: GoogleFonts.outfit(
+                    'Tidak bisa masuk? Lapor ke admin',
+                    style: GoogleFonts.plusJakartaSans(
                         color: zenSlate,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.5),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -221,10 +220,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _label(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 12, left: 4),
+    padding: const EdgeInsets.only(bottom: 10, left: 4),
     child: Text(
       text,
-      style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 2),
+      style: GoogleFonts.plusJakartaSans(color: zenSlate, fontSize: 12.5, fontWeight: FontWeight.w700, letterSpacing: 0.2),
     ),
   );
 

@@ -112,22 +112,22 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     ),
                     const SizedBox(height: 48),
                     Text(
-                      'OPERATIONAL HUB',
+                      'JNE MARTAPURA',
                       style: GoogleFonts.outfit(
                         color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 8.0,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 4.0,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'MARTAPURA SECTOR v2.0',
-                      style: GoogleFonts.outfit(
+                      'Sistem Absensi Karyawan',
+                      style: GoogleFonts.plusJakartaSans(
                         color: zenCyan,
-                        fontSize: 8,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 2.5,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
@@ -171,12 +171,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                    ),
                    const SizedBox(height: 32),
                    Text(
-                    'INITIALIZING SECURE LINK',
-                    style: GoogleFonts.outfit(
-                      color: Colors.white24,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 3,
+                    'Menyiapkan aplikasi...',
+                    style: GoogleFonts.plusJakartaSans(
+                      color: Colors.white38,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ],

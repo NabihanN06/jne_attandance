@@ -51,7 +51,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
-        setState(() => _errorMessage = 'NO CAMERA HARDWARE DETECTED');
+        setState(() => _errorMessage = 'Kamera tidak terdeteksi');
         return;
       }
       final front = cameras.firstWhere(
@@ -70,15 +70,15 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     } on CameraException catch (e) {
       _handleCameraError(e);
     } catch (e) {
-      setState(() => _errorMessage = 'SYSTEM ERROR: $e');
+      setState(() => _errorMessage = 'Terjadi kesalahan: $e');
     }
   }
 
   void _handleCameraError(CameraException e) {
     if (e.code == 'CameraAccessDenied') {
-      setState(() => _errorMessage = 'BIOMETRIC ACCESS DENIED\n\nPlease enable camera permissions in system settings.');
+      setState(() => _errorMessage = 'Akses kamera ditolak\n\nAktifkan izin kamera di pengaturan ponsel Anda.');
     } else {
-      setState(() => _errorMessage = 'CAMERA INITIALIZATION FAILED: ${e.description}');
+      setState(() => _errorMessage = 'Gagal memulai kamera: ${e.description}');
     }
   }
 
@@ -90,18 +90,18 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     final isRemoteAllowed = app.currentUser?.allowRemoteAttendance ?? false;
     
      if (geo.currentPosition == null) {
-       _showFeedback('WAITING FOR GPS STABILIZATION...', zenNavy);
+       _showFeedback('Menunggu sinyal GPS...', zenNavy);
        return;
      }
 
      if (geo.isLocationMocked) {
-       _showFeedback('MOCK LOCATION DETECTED • ACCESS REVOKED', zenRose);
+       _showFeedback('Lokasi palsu terdeteksi • absensi ditolak', zenRose);
        return;
      }
 
     if (!geo.isInRange && !isRemoteAllowed) {
       HapticFeedback.vibrate();
-      _showFeedback('HUB RADIUS BREACHED (${(geo.distanceFromOffice/1000).toStringAsFixed(1)} KM)', zenRose);
+      _showFeedback('Di luar radius kantor (${(geo.distanceFromOffice/1000).toStringAsFixed(1)} km)', zenRose);
       return;
     }
 
@@ -114,7 +114,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       final faces = await _faceDetector.processImage(inputImage);
 
       if (faces.isEmpty) {
-        _showFeedback('BIOMETRIC SCAN FAILED • FACE NOT DETECTED', zenRose);
+        _showFeedback('Wajah tidak terdeteksi • coba lagi', zenRose);
       } else {
         if (!mounted) return;
         final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
@@ -140,17 +140,17 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => SucceedPage(
-              jenis: isCheckOut ? 'Attendance: Exit' : 'Attendance: Entry',
+              jenis: isCheckOut ? 'Absen Keluar' : 'Absen Masuk',
               waktu: '${now.hour.toString().padLeft(2,'0')}:${now.minute.toString().padLeft(2,'0')} WITA',
-              status: isCheckOut ? 'MISSION COMPLETE ✓' : (app.isLateForClockIn ? 'DELAYED SIGNAL ⚠' : 'STATION SYNCED ✓'),
-              lokasi: isRemoteAllowed ? 'EXTERNAL SECTOR' : app.hubName.toUpperCase(),
+              status: isCheckOut ? 'Selesai ✓' : (app.isLateForClockIn ? 'Terlambat ⚠' : 'Tepat Waktu ✓'),
+              lokasi: isRemoteAllowed ? 'Lokasi Luar Kantor' : app.hubName,
             )),
             (route) => route.isFirst,
           );
         }
       }
     } catch (e) {
-      _showFeedback('TELEMETRY ERROR: $e', zenRose);
+      _showFeedback('Gagal menyimpan absensi: $e', zenRose);
     } finally {
       if (mounted) setState(() => _isCapturing = false);
     }
@@ -159,11 +159,11 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   void _showFeedback(String msg, Color bg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.5)),
+        content: Text(msg, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13)),
         backgroundColor: bg,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
@@ -229,7 +229,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     return Container(
       color: zenNavy.withValues(alpha: 0.85),
       child: const PackageLoading(
-        message: 'SYNCING BIOMETRICS...',
+        message: 'Menyimpan absensi...',
         isLight: true,
       ),
     );
@@ -269,15 +269,15 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
                     child: Column(
                       children: [
                         Text(
-                          'BIOMETRIC VERIFICATION',
+                          'Verifikasi Wajah',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 3),
+                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.3),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'STATION ID: ${app.stationId}',
+                          app.hubName,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(color: zenCyan, fontSize: 8, fontWeight: FontWeight.w700, letterSpacing: 1.5),
+                          style: GoogleFonts.plusJakartaSans(color: zenCyan, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5),
                         ),
                       ],
                     ),
@@ -352,8 +352,8 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
                       const Icon(Icons.info_outline_rounded, color: Colors.white54, size: 14),
                       const SizedBox(width: 12),
                       Text(
-                        _isCapturing ? 'SYNCHRONIZING...' : 'ALIGN FACE WITHIN FRAME',
-                        style: GoogleFonts.outfit(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
+                        _isCapturing ? 'Memproses...' : 'Posisikan wajah di dalam bingkai',
+                        style: GoogleFonts.plusJakartaSans(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -375,13 +375,13 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     Color color = isAllowed ? zenCyan : zenRose;
 
     if (isRemoteAllowed) {
-      statusText = 'REMOTE SECTOR: ACTIVE';
+      statusText = 'Absensi Luar Kantor Aktif';
       icon = Icons.satellite_alt_rounded;
     } else if (geo.isInRange) {
-      statusText = '${app.hubName.toUpperCase()}: CONNECTED';
-      icon = Icons.hub_rounded;
+      statusText = '${app.hubName} • Dalam Area';
+      icon = Icons.location_on_rounded;
     } else {
-      statusText = 'HUB BREACH: ${(geo.distanceFromOffice/1000).toStringAsFixed(1)} KM';
+      statusText = 'Di Luar Area • ${(geo.distanceFromOffice/1000).toStringAsFixed(1)} km';
       icon = Icons.warning_amber_rounded;
     }
 
@@ -402,12 +402,12 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
               Icon(icon, color: color, size: 16),
               const SizedBox(width: 12),
               Text(
-                statusText, 
-                style: GoogleFonts.outfit(
-                  color: Colors.white, 
-                  fontSize: 10, 
-                  fontWeight: FontWeight.w900, 
-                  letterSpacing: 1.5,
+                statusText,
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
                   shadows: [Shadow(color: color.withValues(alpha: 0.5), blurRadius: 10)],
                 )
               ),

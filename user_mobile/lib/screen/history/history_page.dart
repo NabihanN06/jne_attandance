@@ -73,8 +73,8 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         ),
         title: Text(
-          'OPERATIONAL LOGS',
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3),
+          'Riwayat Absensi',
+          style: GoogleFonts.outfit(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: 0.2),
         ),
         centerTitle: true,
       ),
@@ -159,8 +159,8 @@ class _HistoryPageState extends State<HistoryPage> {
            const SizedBox(width: 16),
            Expanded(
              child: Text(
-               'UNSYNCED TELEMETRY DETECTED',
-               style: GoogleFonts.outfit(color: Colors.amber.shade900, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+               'Ada absensi yang belum tersinkron',
+               style: GoogleFonts.plusJakartaSans(color: Colors.amber.shade900, fontSize: 12.5, fontWeight: FontWeight.w700),
              ),
            ),
            GestureDetector(
@@ -285,8 +285,8 @@ class _HistoryPageState extends State<HistoryPage> {
           Icon(Icons.inventory_2_outlined, color: zenSlate.withValues(alpha: 0.2), size: 64),
           const SizedBox(height: 20),
           Text(
-            'NO REGISTRY RECORDS FOUND', 
-            style: GoogleFonts.outfit(color: zenSlate.withValues(alpha: 0.4), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
+            'Belum ada riwayat absensi',
+            style: GoogleFonts.plusJakartaSans(color: zenSlate.withValues(alpha: 0.6), fontSize: 13, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -301,11 +301,11 @@ class _HistoryPageState extends State<HistoryPage> {
     bool isLeave = r.status == 'leave';
     
     Color statusColor = zenEmerald;
-    String statusLabel = 'SYNCED';
-    
-    if (isLate) { statusColor = zenRose; statusLabel = 'DELAYED'; }
-    if (isAbsent) { statusColor = zenRose; statusLabel = 'OFFLINE'; }
-    if (isLeave) { statusColor = zenIndigo; statusLabel = 'AUTHORIZED'; }
+    String statusLabel = 'Hadir';
+
+    if (isLate) { statusColor = zenRose; statusLabel = 'Terlambat'; }
+    if (isAbsent) { statusColor = zenRose; statusLabel = 'Tidak Hadir'; }
+    if (isLeave) { statusColor = zenIndigo; statusLabel = 'Izin / Cuti'; }
 
     String checkInTime = r.checkIn?.time != null ? DateFormat('HH:mm').format(r.checkIn!.time!) : '--:--';
     String checkOutTime = r.checkOut?.time != null ? DateFormat('HH:mm').format(r.checkOut!.time!) : '--:--';
@@ -336,8 +336,8 @@ class _HistoryPageState extends State<HistoryPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        DateFormat('EEEE, d MMM yyyy').format(date).toUpperCase(),
-                        style: GoogleFonts.outfit(color: zenNavy, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: -0.2),
+                        DateFormat('EEEE, d MMM yyyy', 'id').format(date),
+                        style: GoogleFonts.outfit(color: zenNavy, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -0.2),
                       ),
                       const SizedBox(height: 6),
                       Row(
@@ -345,8 +345,8 @@ class _HistoryPageState extends State<HistoryPage> {
                           Container(width: 6, height: 6, decoration: const BoxDecoration(color: zenIndigo, shape: BoxShape.circle)),
                           const SizedBox(width: 8),
                           Text(
-                            'SECTOR: MARTAPURA HUB',
-                            style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1),
+                            'JNE Martapura',
+                            style: GoogleFonts.plusJakartaSans(color: zenSlate, fontSize: 11.5, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
@@ -360,7 +360,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     ),
                     child: Text(
                       statusLabel,
-                      style: GoogleFonts.outfit(color: statusColor, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                      style: GoogleFonts.plusJakartaSans(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],
@@ -371,9 +371,9 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
               Row(
                 children: [
-                  _timeBox('ENTRY SIGNAL', checkInTime, Icons.sensors_rounded, zenCyan),
+                  _timeBox('Masuk', checkInTime, Icons.login_rounded, zenCyan),
                   const Spacer(),
-                  _timeBox('EXIT SIGNAL', checkOutTime, Icons.sensors_off_rounded, zenIndigo),
+                  _timeBox('Keluar', checkOutTime, Icons.logout_rounded, zenIndigo),
                   const SizedBox(width: 12),
                   if (dispute == null && (isLate || isAbsent))
                     GestureDetector(
@@ -393,8 +393,8 @@ class _HistoryPageState extends State<HistoryPage> {
                           ],
                         ),
                         child: Text(
-                          'REPORT',
-                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+                          'Lapor',
+                          style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                         ),
                       ),
                     )
@@ -461,12 +461,11 @@ class _HistoryPageState extends State<HistoryPage> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'COMPLAINT STATUS: ${dispute.status.toUpperCase()}',
-                                style: GoogleFonts.outfit(
+                                'Status komplain: ${_disputeStatusLabel(dispute.status)}',
+                                style: GoogleFonts.plusJakartaSans(
                                   color: dispute.status == 'resolved' ? zenEmerald : (dispute.status == 'rejected' ? zenRose : Colors.amber.shade900),
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
@@ -503,6 +502,23 @@ class _HistoryPageState extends State<HistoryPage> {
         );
       }
 
+      String _disputeStatusLabel(String status) {
+        switch (status) {
+          case 'resolved':
+            return 'Selesai';
+          case 'rejected':
+            return 'Ditolak';
+          case 'in_review':
+            return 'Sedang Ditinjau';
+          case 'reopened':
+            return 'Dibuka Kembali';
+          case 'closed':
+            return 'Ditutup';
+          default:
+            return 'Menunggu';
+        }
+      }
+
       Widget _timeBox(String label, String time, IconData icon, Color color) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -512,8 +528,8 @@ class _HistoryPageState extends State<HistoryPage> {
                 Icon(icon, size: 14, color: color.withValues(alpha: 0.6)),
                 const SizedBox(width: 8),
                 Text(
-                  label, 
-                  style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5)
+                  label,
+                  style: GoogleFonts.plusJakartaSans(color: zenSlate, fontSize: 11.5, fontWeight: FontWeight.w600)
                 ),
               ],
             ),
