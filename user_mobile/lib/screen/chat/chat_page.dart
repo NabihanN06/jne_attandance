@@ -58,15 +58,18 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _initChat() async {
     final app = context.read<AppProvider>();
     final chat = context.read<ChatProvider>();
-    
-    // Find a real admin instead of hardcoded ID
+
+    // Room model: room user = uid miliknya sendiri. Chat tidak bergantung
+    // pada "admin mana" — langsung dengarkan room sendiri.
+    final uid = app.currentUser?.uid;
+    if (uid == null) return;
+    setState(() => _chatId = uid);
+    chat.listenToMessages(uid);
+
+    // Ambil identitas admin hanya untuk tampilan header (nama + status online).
     final admin = await app.getFirstAdmin();
-    if (admin != null && app.currentUser != null && mounted) {
-      setState(() {
-        _targetAdmin = admin;
-        _chatId = chat.getChatId(app.currentUser!.uid, admin.uid);
-      });
-      chat.listenToMessages(_chatId!);
+    if (admin != null && mounted) {
+      setState(() => _targetAdmin = admin);
     }
   }
 
@@ -100,9 +103,10 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _handleSend() async {
-    if (_targetAdmin == null || _chatId == null || _isSending) return;
-    
+    if (_chatId == null || _isSending) return;
+
     final chat = context.read<ChatProvider>();
+    final app = context.read<AppProvider>();
 
     if (_messageController.text.trim().isEmpty && _selectedImage == null) return;
     
@@ -128,10 +132,14 @@ class _ChatPageState extends State<ChatPage> {
       }
 
       await chat.sendMessage(
-        receiverId: _targetAdmin!.uid,
-        receiverRole: _targetAdmin!.role,
+        receiverId: _targetAdmin?.uid ?? 'admin',
+        receiverRole: _targetAdmin?.role ?? 'admin',
         text: text,
         imageUrl: uploadedUrl,
+        senderInfo: {
+          'name': app.currentUser?.name ?? 'User',
+          'role': app.currentUser?.role ?? 'employee',
+        },
       );
       _scrollToBottom();
     } catch (e) {
@@ -173,8 +181,8 @@ class _ChatPageState extends State<ChatPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _targetAdmin?.name.toUpperCase() ?? 'MEMUAT ADMIN...',
-                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                  _targetAdmin?.name ?? 'Admin HR',
+                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.2),
                 ),
                 Row(
                   children: [
@@ -200,7 +208,7 @@ class _ChatPageState extends State<ChatPage> {
       body: Column(
         children: [
           Expanded(
-            child: chat.isLoading || _targetAdmin == null
+            child: chat.isLoading
                 ? const Center(child: CircularProgressIndicator(color: Color(0xFF0891B2)))
                 : chat.messages.isEmpty
                     ? _buildEmptyState()
