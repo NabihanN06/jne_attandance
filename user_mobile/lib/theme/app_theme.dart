@@ -42,6 +42,12 @@ class AppColors {
 
   /// Gradient hero navy yang dipakai untuk header & kartu utama.
   static const List<Color> heroGradient = [Color(0xFF15203A), Color(0xFF0B1120)];
+
+  /// Gradient brand JNE oranye → merah (untuk hero bold & tombol utama).
+  static const List<Color> brandGradient = [Color(0xFFFF8A1E), Color(0xFFE31E24)];
+
+  /// Gradient ungu→biru untuk aksen sekunder.
+  static const List<Color> coolGradient = [Color(0xFF6366F1), Color(0xFF2563EB)];
 }
 
 /// Palet sadar tema. Buat sekali per build dari `context.palette`.
@@ -50,6 +56,8 @@ class AppPalette {
   const AppPalette(this.isDark);
 
   Color get bg => isDark ? AppColors.darkBg : AppColors.lightBg;
+  /// Warna dasar di balik [AuroraBackground] (lebih pekat dari [bg]).
+  Color get auroraBase => isDark ? const Color(0xFF070C16) : const Color(0xFFEEF2F7);
   Color get card => isDark ? AppColors.darkCard : AppColors.lightCard;
   Color get cardAlt => isDark ? AppColors.darkCardAlt : AppColors.lightBg;
   Color get textPrimary => isDark ? Colors.white : AppColors.inkPrimary;
@@ -76,6 +84,30 @@ class AppPalette {
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: border),
         boxShadow: cardShadow,
+      );
+
+  // ── Glassmorphism ──
+  /// Isi kaca translucent (dipakai di atas background aurora + BackdropFilter).
+  Color get glassFill =>
+      isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.55);
+  Color get glassBorder =>
+      isDark ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.7);
+
+  /// Hero gradient brand JNE (oranye → merah) dengan glow kuat.
+  BoxDecoration brandHeroDecoration({double radius = 28}) => BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: AppColors.brandGradient,
+        ),
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.brandRed.withValues(alpha: 0.45),
+            blurRadius: 32,
+            offset: const Offset(0, 16),
+          ),
+        ],
       );
 
   /// Dekorasi hero navy (untuk header utama tiap layar).

@@ -34,9 +34,9 @@ class _ProfilePageState extends State<ProfilePage> {
     final stats = provider.getStatsForMonth(now.month, now.year);
 
     return Scaffold(
-      backgroundColor: pal.bg,
+      backgroundColor: pal.auroraBase,
       appBar: AppBar(
-        backgroundColor: pal.bg,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
@@ -53,10 +53,11 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ],
       ),
-      body: ListView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
-        children: [
+      body: AuroraBackground(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+          children: [
           // ── Premium hero header ──
           FadeInDown(
             duration: const Duration(milliseconds: 450),
@@ -73,8 +74,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
           // ── Account info ──
           const SectionLabel('Informasi Akun'),
-          AppCard(
-            child: Column(children: [
+          GlassCard(
+            padding: EdgeInsets.zero,
+            child:Column(children: [
               AppInfoRow(icon: Icons.alternate_email_rounded, label: 'Email', value: user.email),
               const AppRowDivider(),
               AppInfoRow(
@@ -92,8 +94,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
           // ── Services ──
           const SectionLabel('Layanan'),
-          AppCard(
-            child: Column(children: [
+          GlassCard(
+            padding: EdgeInsets.zero,
+            child:Column(children: [
               AppActionRow(
                 icon: Icons.assignment_outlined,
                 iconColor: AppColors.blue,
@@ -124,8 +127,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
           // ── Card & biometric ──
           const SectionLabel('Kartu & Biometrik'),
-          AppCard(
-            child: Column(children: [
+          GlassCard(
+            padding: EdgeInsets.zero,
+            child:Column(children: [
               AppActionRow(
                 icon: Icons.contact_mail_outlined,
                 iconColor: AppColors.brandRed,
@@ -148,8 +152,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
           // ── Security ──
           const SectionLabel('Keamanan'),
-          AppCard(
-            child: AppActionRow(
+          GlassCard(
+            padding: EdgeInsets.zero,
+            child:AppActionRow(
               icon: Icons.lock_outline_rounded,
               iconColor: const Color(0xFF0EA5E9),
               title: 'Ganti Kata Sandi',
@@ -190,7 +195,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   color: pal.textFaint, fontSize: 11, fontWeight: FontWeight.w600),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -280,7 +286,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // ── Leave balance (theme-aware) ──
   Widget _leaveBalanceCard(LeaveBalance balance, AppPalette pal) {
-    return AppCard(
+    return GlassCard(
       radius: 24,
       padding: const EdgeInsets.all(22),
       child: Column(
