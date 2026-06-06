@@ -573,7 +573,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _handleAttendance(AppProvider p, GeofenceService geo) {
     if (_isNavigating) return;
-    if (geo.isInRange) {
+    if (geo.isInRange || p.canBypassGeofence) {
       setState(() => _isNavigating = true);
       Navigator.pushNamed(context, '/attendance', arguments: {'isCheckOut': p.hasClockedInToday}).then((_) {
         if (mounted) setState(() => _isNavigating = false);

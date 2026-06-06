@@ -79,6 +79,30 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   String get stationId => _stationId;
   TimeOfDay officeStartTime = const TimeOfDay(hour: 8, minute: 0);
 
+  // ── Attendance settings (dari admin settings/system → attendance) ──
+  // Default dipilih agar behavior lama tetap aman walau admin belum set.
+  bool _allowOfflineAttendance = true;
+  int _maxFaceAttempts = 3;
+  bool _courierBypassGeofence = false;
+
+  bool get allowOfflineAttendance => _allowOfflineAttendance;
+  int get maxFaceAttempts => _maxFaceAttempts;
+  bool get courierBypassGeofence => _courierBypassGeofence;
+
+  /// Karyawan terdeteksi sebagai kurir (dari department/position).
+  bool get isCourierUser {
+    final d = (_currentUser?.department ?? '').toLowerCase();
+    final p = (_currentUser?.position ?? '').toLowerCase();
+    const keys = ['kurir', 'courier', 'rider', 'driver', 'sigesit'];
+    return keys.any((k) => d.contains(k) || p.contains(k));
+  }
+
+  /// Boleh absen di luar radius kantor?
+  /// True jika flag per-user `allowRemoteAttendance` ON, ATAU bypass kurir global
+  /// aktif dan karyawan ini kurir.
+  bool get canBypassGeofence =>
+      (_currentUser?.allowRemoteAttendance ?? false) || (_courierBypassGeofence && isCourierUser);
+
   // ── Persisted User Preferences ──
   static const _kDarkModeKey = 'pref_dark_mode';
   static const _kNotifEnabledKey = 'pref_notif_enabled';
@@ -888,6 +912,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         // Mark as synced immediately since we wrote directly
         await _db.collection('attendance').doc(docId).update({'syncStatus': 'synced'});
       } else {
+        if (!_allowOfflineAttendance) {
+          throw Exception('Absensi offline dinonaktifkan admin. Sambungkan internet untuk absen masuk.');
+        }
         final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
         final data = {
           'userId': _currentUser!.uid,
@@ -1293,18 +1320,28 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
   void _listenToSettings() {
     _settingsSub = _db.collection('settings').doc('system').snapshots().listen((snap) {
-      if (snap.exists) {
-        final data = snap.data();
-        if (data != null && data['office'] != null) {
-          final office = data['office'] as Map<String, dynamic>;
-          _officeLat = (office['latitude'] ?? -3.4150).toDouble();
-          _officeLng = (office['longitude'] ?? 114.8465).toDouble();
-          _officeRadius = (office['radiusMeters'] ?? 500).toDouble();
-          _hubName = (office['name'] as String?) ?? _hubName;
-          _stationId = (office['stationId'] as String?) ?? _stationId;
-          notifyListeners();
-        }
+      if (!snap.exists) return;
+      final data = snap.data();
+      if (data == null) return;
+
+      final office = data['office'];
+      if (office is Map<String, dynamic>) {
+        _officeLat = (office['latitude'] ?? _officeLat).toDouble();
+        _officeLng = (office['longitude'] ?? _officeLng).toDouble();
+        _officeRadius = (office['radiusMeters'] ?? _officeRadius).toDouble();
+        _hubName = (office['name'] as String?) ?? _hubName;
+        _stationId = (office['stationId'] as String?) ?? _stationId;
       }
+
+      // Setting tab Absensi — sekarang benar-benar dipatuhi APK.
+      final att = data['attendance'];
+      if (att is Map<String, dynamic>) {
+        _allowOfflineAttendance = (att['allowOfflineAttendance'] as bool?) ?? _allowOfflineAttendance;
+        _maxFaceAttempts = (att['maxFaceAttempts'] as num?)?.toInt() ?? _maxFaceAttempts;
+        _courierBypassGeofence = (att['courierBypassGeofence'] as bool?) ?? _courierBypassGeofence;
+      }
+
+      notifyListeners();
     });
   }
 

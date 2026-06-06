@@ -38,6 +38,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   late AnimationController _scanAnimController;
   bool _isCapturing = false;
   bool _scanError = false; // true sebentar saat gagal (no face / luar area / GPS palsu)
+  int _faceAttempts = 0; // hitung gagal deteksi wajah (batas dari admin: maxFaceAttempts)
 
   void _flashError() {
     if (!mounted) return;
@@ -97,7 +98,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     
     final geo = Provider.of<GeofenceService>(context, listen: false);
     final app = Provider.of<AppProvider>(context, listen: false);
-    final isRemoteAllowed = app.currentUser?.allowRemoteAttendance ?? false;
+    final isRemoteAllowed = app.canBypassGeofence;
     
      if (geo.currentPosition == null) {
        _showFeedback('Menunggu sinyal GPS...', zenNavy);
@@ -126,9 +127,18 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       final faces = await _faceDetector.processImage(inputImage);
 
       if (faces.isEmpty) {
+        _faceAttempts++;
         _flashError();
-        _showFeedback('Wajah tidak terdeteksi • coba lagi', zenRose);
+        if (_faceAttempts >= app.maxFaceAttempts) {
+          _showFeedback('Gagal mendeteksi wajah $_faceAttempts kali. Coba lagi nanti.', zenRose);
+          await Future.delayed(const Duration(milliseconds: 1300));
+          if (mounted) Navigator.pop(context);
+          return;
+        }
+        final sisa = app.maxFaceAttempts - _faceAttempts;
+        _showFeedback('Wajah tidak terdeteksi • sisa $sisa percobaan', zenRose);
       } else {
+        _faceAttempts = 0; // reset saat berhasil
         if (!mounted) return;
         final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         final bool isCheckOut = args?['isCheckOut'] ?? false;
@@ -258,7 +268,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   }
 
   Widget _buildOverlay(GeofenceService geo, AppProvider app) {
-    final remoteAllowed = app.currentUser?.allowRemoteAttendance ?? false;
+    final remoteAllowed = app.canBypassGeofence;
     final geoOk = geo.isInRange || remoteAllowed;
     // Merah saat: baru gagal scan, GPS palsu, atau di luar area (setelah GPS dapat).
     final frameColor = (_scanError || geo.isLocationMocked || (!geoOk && geo.currentPosition != null))
@@ -419,7 +429,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   }
 
   Widget _buildStatusInfo(GeofenceService geo, AppProvider app) {
-    final isRemoteAllowed = app.currentUser?.allowRemoteAttendance ?? false;
+    final isRemoteAllowed = app.canBypassGeofence;
     final isAllowed = geo.isInRange || isRemoteAllowed;
     
     String statusText = '';
