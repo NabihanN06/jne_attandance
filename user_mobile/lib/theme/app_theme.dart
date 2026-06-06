@@ -56,8 +56,8 @@ class AppPalette {
   const AppPalette(this.isDark);
 
   Color get bg => isDark ? AppColors.darkBg : AppColors.lightBg;
-  /// Warna dasar di balik [AuroraBackground] (lebih pekat dari [bg]).
-  Color get auroraBase => isDark ? const Color(0xFF070C16) : const Color(0xFFEEF2F7);
+  /// Sama dengan [bg] — disatukan supaya semua layar punya background konsisten.
+  Color get auroraBase => bg;
   Color get card => isDark ? AppColors.darkCard : AppColors.lightCard;
   Color get cardAlt => isDark ? AppColors.darkCardAlt : AppColors.lightBg;
   Color get textPrimary => isDark ? Colors.white : AppColors.inkPrimary;
