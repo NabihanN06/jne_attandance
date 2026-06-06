@@ -8,6 +8,7 @@ import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
 import '../../utils/geofence_service.dart';
 import '../../utils/connectivity_service.dart';
+import '../../widgets/live_location_map.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -47,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             if (!conn.isOnline) _offlineBanner(),
+            if (p.dataError != null) _dataErrorBanner(p),
             Expanded(
               child: ListView(
                 physics: const BouncingScrollPhysics(),
@@ -57,6 +59,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   FadeInDown(
                     duration: const Duration(milliseconds: 500),
                     child: _attendanceCard(p, geo),
+                  ),
+                  const SizedBox(height: 28),
+                  _sectionHeader('Lokasi Saya', 'Buka Peta', textPrimary, () => _go('/lokasi')),
+                  const SizedBox(height: 14),
+                  FadeInUp(
+                    duration: const Duration(milliseconds: 500),
+                    child: LiveLocationMap(
+                      compact: true,
+                      height: 172,
+                      onTap: () => _go('/lokasi'),
+                    ),
                   ),
                   const SizedBox(height: 28),
                   _sectionHeader('Statistik Bulan Ini', 'Lihat Semua', textPrimary, () => _go('/statistic')),
@@ -96,6 +109,63 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ─────────────────────────────────────────── Data error banner
+  Widget _dataErrorBanner(AppProvider p) {
+    return GestureDetector(
+      onTap: () => _showDataErrorDialog(p),
+      child: Container(
+        width: double.infinity,
+        color: const Color(0xFFB91C1C),
+        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 16),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline_rounded, color: Colors.white, size: 16),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Sebagian data gagal dimuat • ketuk untuk detail',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Colors.white70, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDataErrorDialog(AppProvider p) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Detail Error Data',
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: SingleChildScrollView(
+          child: SelectableText(
+            p.dataError ?? '-',
+            style: GoogleFonts.robotoMono(fontSize: 11.5, height: 1.5, color: const Color(0xFF0F172A)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              p.clearDataError();
+              Navigator.pop(ctx);
+            },
+            child: Text('Tutup',
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: brandRed)),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ─────────────────────────────────────────── Header
   Widget _header(String firstName, Color textPrimary, Color textSub, int unread, bool isDark) {
     final hour = DateTime.now().hour;
@@ -116,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text('$greeting,',
                   style: GoogleFonts.plusJakartaSans(color: textSub, fontSize: 13.5, fontWeight: FontWeight.w500)),
               const SizedBox(height: 2),
-              Text('$firstName 👋',
+              Text(firstName,
                   style: GoogleFonts.plusJakartaSans(
                       color: textPrimary, fontSize: 23, fontWeight: FontWeight.w800, letterSpacing: -0.4)),
             ],
@@ -210,13 +280,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-        ),
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.22), blurRadius: 28, offset: const Offset(0, 14))],
+        color: const Color(0xFF15203A),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         children: [
@@ -320,9 +386,8 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         height: 54,
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.82)]),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 18, offset: const Offset(0, 8))],
+          color: color,
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Center(
           child: Row(
@@ -455,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(width: 12),
         _menuTile(Icons.assignment_rounded, 'Pengajuan', accentBlue, isDark, textPrimary, () => _go('/my_requests')),
         const SizedBox(width: 12),
-        _menuTile(Icons.notifications_rounded, 'Notifikasi', jneOrange, isDark, textPrimary, () => _go('/notification')),
+        _menuTile(Icons.map_rounded, 'Lokasi', jneOrange, isDark, textPrimary, () => _go('/lokasi')),
         const SizedBox(width: 12),
         _menuTile(Icons.sos_rounded, 'SOS Darurat', brandRed, isDark, textPrimary, () => _showSOSConfirm(p, geo)),
       ],
@@ -473,11 +538,12 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Container(
               height: 58,
+              width: double.infinity,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: isDark ? 0.16 : 0.1),
-                borderRadius: BorderRadius.circular(18),
+                color: color.withValues(alpha: isDark ? 0.14 : 0.10),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: Icon(icon, color: color, size: 23),
             ),
             const SizedBox(height: 8),
             Text(label,

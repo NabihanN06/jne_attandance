@@ -10,6 +10,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/app_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../models/app_models.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/ui_kit.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -19,11 +21,14 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  // Aksen chat: clean green (Travigo-style) sesuai preferensi.
+  static const Color _accent = AppColors.green;
+
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
-  
+
   UserModel? _targetAdmin;
   String? _chatId;
   bool _isSending = false;
@@ -109,12 +114,12 @@ class _ChatPageState extends State<ChatPage> {
     final app = context.read<AppProvider>();
 
     if (_messageController.text.trim().isEmpty && _selectedImage == null) return;
-    
+
     setState(() => _isSending = true);
 
     String text = _messageController.text;
     File? image = _selectedImage;
-    
+
     _messageController.clear();
     setState(() {
       _selectedImage = null;
@@ -157,24 +162,46 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     final chat = context.watch<ChatProvider>();
     final app = context.watch<AppProvider>();
-    final isDark = app.isDarkMode;
+    final pal = context.palette;
+    final online = _targetAdmin?.isOnline ?? false;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0B1120) : const Color(0xFFF8FAFC),
+      backgroundColor: pal.bg,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0891B2),
+        backgroundColor: pal.card,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
+        scrolledUnderElevation: 0,
+        surfaceTintColor: pal.card,
+        leading: const AppBackButton(),
+        titleSpacing: 0,
+        shape: Border(bottom: BorderSide(color: pal.border)),
         title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
-              child: const Icon(Icons.support_agent_rounded, color: Colors.white, size: 20),
+            Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _accent.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.support_agent_rounded, color: _accent, size: 20),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 11,
+                    height: 11,
+                    decoration: BoxDecoration(
+                      color: online ? _accent : pal.textFaint,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: pal.card, width: 2),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(width: 12),
             Column(
@@ -182,23 +209,15 @@ class _ChatPageState extends State<ChatPage> {
               children: [
                 Text(
                   _targetAdmin?.name ?? 'Admin HR',
-                  style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.2),
+                  style: GoogleFonts.plusJakartaSans(
+                      color: pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w800),
                 ),
-                Row(
-                  children: [
-                    Container(
-                      width: 6, height: 6,
-                      decoration: BoxDecoration(
-                        color: (_targetAdmin?.isOnline ?? false) ? Colors.greenAccent : Colors.white38,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      (_targetAdmin?.isOnline ?? false) ? 'Online' : 'Offline',
-                      style: GoogleFonts.outfit(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600),
-                    ),
-                  ],
+                Text(
+                  online ? 'Online' : 'Offline',
+                  style: GoogleFonts.plusJakartaSans(
+                      color: online ? _accent : pal.textSub,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -209,53 +228,64 @@ class _ChatPageState extends State<ChatPage> {
         children: [
           Expanded(
             child: chat.isLoading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF0891B2)))
+                ? const Center(child: CircularProgressIndicator(color: _accent))
                 : chat.messages.isEmpty
-                    ? _buildEmptyState()
+                    ? const EmptyState(
+                        icon: Icons.forum_rounded,
+                        title: 'Mulai Percakapan',
+                        subtitle:
+                            'Sampaikan pertanyaan, kendala absensi, atau pengajuan langsung ke admin HUB.',
+                      )
                     : ListView.builder(
                         controller: _scrollController,
                         padding: const EdgeInsets.all(20),
                         itemCount: chat.messages.length + (chat.otherUserTyping ? 1 : 0),
                         itemBuilder: (context, index) {
                           if (index == chat.messages.length) {
-                            return _buildTypingIndicator();
+                            return _buildTypingIndicator(pal);
                           }
                           final msg = chat.messages[index];
                           bool isMe = msg.senderId == app.currentUser?.uid;
-                          return _buildMessageBubble(msg, isMe, chat);
+                          return _buildMessageBubble(msg, isMe, chat, pal);
                         },
                       ),
           ),
-          _buildInputArea(),
+          _buildInputArea(pal),
         ],
       ),
     );
   }
 
-  Widget _buildTypingIndicator() {
+  Widget _buildTypingIndicator(AppPalette pal) {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: pal.card,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+          border: Border.all(color: pal.border),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Admin sedang mengetik', style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w600, color: const Color(0xFF64748B))),
+            Text('Admin sedang mengetik',
+                style: GoogleFonts.plusJakartaSans(
+                    fontSize: 10, fontWeight: FontWeight.w600, color: pal.textSub)),
             const SizedBox(width: 8),
             SizedBox(
               width: 20,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(3, (i) => Container(
-                  width: 4, height: 4,
-                  decoration: const BoxDecoration(color: Color(0xFF0891B2), shape: BoxShape.circle),
-                )),
+                children: List.generate(
+                  3,
+                  (i) => Container(
+                    width: 4,
+                    height: 4,
+                    decoration: const BoxDecoration(color: _accent, shape: BoxShape.circle),
+                  ),
+                ),
               ),
             ),
           ],
@@ -264,46 +294,37 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.chat_bubble_outline_rounded, color: const Color(0xFFCBD5E1), size: 64),
-          const SizedBox(height: 16),
-          Text('Belum ada pesan', style: GoogleFonts.outfit(color: Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMessageBubble(ChatMessage msg, bool isMe, ChatProvider chat) {
-    bool isDeleted = msg.text == '🚫 Pesan telah dihapus'; 
+  Widget _buildMessageBubble(ChatMessage msg, bool isMe, ChatProvider chat, AppPalette pal) {
+    final bool isDeleted = msg.text == '🚫 Pesan telah dihapus';
+    final bubbleColor = isMe ? _accent : pal.card;
+    final textColor = isMe ? Colors.white : pal.textPrimary;
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
-        onLongPress: isMe && !isDeleted ? () => _showDeleteDialog(msg, chat) : null,
+        onLongPress: isMe && !isDeleted ? () => _showDeleteDialog(msg, chat, pal) : null,
         child: Container(
           margin: const EdgeInsets.only(bottom: 16),
           constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
           decoration: BoxDecoration(
-            color: isMe ? const Color(0xFF0891B2) : Colors.white,
+            color: bubbleColor,
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(20),
               topRight: const Radius.circular(20),
-              bottomLeft: Radius.circular(isMe ? 20 : 0),
-              bottomRight: Radius.circular(isMe ? 0 : 20),
+              bottomLeft: Radius.circular(isMe ? 20 : 4),
+              bottomRight: Radius.circular(isMe ? 4 : 20),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            border: isMe ? null : Border.all(color: pal.border),
+            boxShadow: pal.isDark
+                ? null
+                : [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4)),
+                  ],
           ),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
@@ -327,9 +348,9 @@ class _ChatPageState extends State<ChatPage> {
               if (msg.text.isNotEmpty)
                 Text(
                   msg.text,
-                  style: GoogleFonts.outfit(
-                    color: isMe ? Colors.white : const Color(0xFF1E293B),
-                    fontSize: 13,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: textColor,
+                    fontSize: 13.5,
                     fontWeight: isDeleted ? FontWeight.w400 : FontWeight.w500,
                     fontStyle: isDeleted ? FontStyle.italic : FontStyle.normal,
                     height: 1.4,
@@ -341,8 +362,8 @@ class _ChatPageState extends State<ChatPage> {
                 children: [
                   Text(
                     DateFormat('HH:mm').format(msg.timestamp),
-                    style: GoogleFonts.outfit(
-                      color: isMe ? Colors.white70 : const Color(0xFF94A3B8),
+                    style: GoogleFonts.plusJakartaSans(
+                      color: isMe ? Colors.white70 : pal.textFaint,
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
                     ),
@@ -352,7 +373,7 @@ class _ChatPageState extends State<ChatPage> {
                     Icon(
                       msg.isRead ? Icons.done_all_rounded : Icons.done_rounded,
                       size: 12,
-                      color: msg.isRead ? Colors.greenAccent : Colors.white38,
+                      color: msg.isRead ? Colors.white : Colors.white38,
                     ),
                   ],
                 ],
@@ -364,40 +385,49 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  void _showDeleteDialog(ChatMessage msg, ChatProvider chat) {
+  void _showDeleteDialog(ChatMessage msg, ChatProvider chat, AppPalette pal) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: pal.card,
+        surfaceTintColor: pal.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Hapus Pesan?', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, fontSize: 16)),
-        content: Text('Pesan ini akan dihapus untuk semua orang.', style: GoogleFonts.outfit(fontSize: 14)),
+        title: Text('Hapus Pesan?',
+            style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w800, fontSize: 16, color: pal.textPrimary)),
+        content: Text('Pesan ini akan dihapus untuk semua orang.',
+            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: pal.textSub)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('BATAL', style: GoogleFonts.outfit(color: Colors.grey, fontWeight: FontWeight.bold))),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('BATAL',
+                style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontWeight: FontWeight.bold)),
+          ),
           TextButton(
             onPressed: () {
               if (_chatId != null) {
                 chat.deleteMessage(msg.id);
                 Navigator.pop(context);
               }
-            }, 
-            child: Text('HAPUS', style: GoogleFonts.outfit(color: Colors.red, fontWeight: FontWeight.bold))
+            },
+            child: Text('HAPUS',
+                style: GoogleFonts.plusJakartaSans(
+                    color: AppColors.brandRed, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInputArea() {
+  Widget _buildInputArea(AppPalette pal) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, -5)),
-        ],
+        color: pal.card,
+        border: Border(top: BorderSide(color: pal.border)),
       ),
       child: SafeArea(
+        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -406,7 +436,7 @@ class _ChatPageState extends State<ChatPage> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: pal.cardAlt,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -417,14 +447,13 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        'Foto terpilih',
-                        style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w700),
-                      ),
+                      child: Text('Foto terpilih',
+                          style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12, fontWeight: FontWeight.w700, color: pal.textPrimary)),
                     ),
                     IconButton(
                       onPressed: () => setState(() => _selectedImage = null),
-                      icon: const Icon(Icons.close_rounded, size: 20),
+                      icon: Icon(Icons.close_rounded, size: 20, color: pal.textSub),
                     ),
                   ],
                 ),
@@ -433,18 +462,19 @@ class _ChatPageState extends State<ChatPage> {
               children: [
                 IconButton(
                   onPressed: _pickImage,
-                  icon: const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF64748B)),
+                  icon: Icon(Icons.add_photo_alternate_outlined, color: pal.textSub),
                 ),
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: pal.cardAlt,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: TextField(
                       controller: _messageController,
                       textCapitalization: TextCapitalization.sentences,
-                      style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.plusJakartaSans(
+                          fontSize: 13, fontWeight: FontWeight.w600, color: pal.textPrimary),
                       onChanged: (val) {
                         if (_chatId != null) {
                           context.read<ChatProvider>().updateTyping(_chatId!, val.isNotEmpty);
@@ -452,30 +482,39 @@ class _ChatPageState extends State<ChatPage> {
                       },
                       decoration: InputDecoration(
                         hintText: 'Ketik pesan...',
-                        hintStyle: GoogleFonts.outfit(color: const Color(0xFF94A3B8)),
+                        hintStyle: GoogleFonts.plusJakartaSans(color: pal.textFaint),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       ),
                     ),
                   ),
                 ),
-                 const SizedBox(width: 8),
-                 GestureDetector(
-                   onTap: _isSending ? null : _handleSend,
-                   child: Container(
-                     padding: const EdgeInsets.all(12),
-                     decoration: BoxDecoration(
-                       color: _isSending ? const Color(0xFF0891B2).withValues(alpha: 0.6) : const Color(0xFF0891B2),
-                       shape: BoxShape.circle,
-                     ),
-                     child: _isSending
-                         ? const SizedBox(
-                             width: 20, height: 20,
-                             child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
-                           )
-                         : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                   ),
-                 ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: _isSending ? null : _handleSend,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _isSending ? _accent.withValues(alpha: 0.6) : _accent,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                            color: _accent.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: _isSending
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                          )
+                        : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                  ),
+                ),
               ],
             ),
           ],
@@ -484,4 +523,3 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 }
-

@@ -47,6 +47,22 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   String _fortressStatus = '';
   String get fortressStatus => _fortressStatus;
 
+  // Surface Firestore stream errors to the UI so problems are visible on
+  // device (e.g. missing composite index → message includes a create-index
+  // URL) instead of silently showing empty data.
+  String? _dataError;
+  String? get dataError => _dataError;
+  void clearDataError() {
+    _dataError = null;
+    notifyListeners();
+  }
+
+  void _setDataError(String source, Object e) {
+    debugPrint('$source listener error: $e');
+    _dataError = '$source — $e';
+    _scheduleNotify();
+  }
+
   bool get isLoggedIn => _auth.currentUser != null;
 
   // Configuration
@@ -457,7 +473,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _attendanceRecords = snap.docs.map((doc) => AttendanceRecord.fromFirestore(doc)).toList();
       _scheduleNotify();
-    }, onError: (e) => debugPrint('Attendance listener error: $e'));
+    }, onError: (e) => _setDataError('Data absensi', e));
 
     _leaveSub = _db.collection('leaves')
         .where('userId', isEqualTo: _currentUser!.uid)
@@ -466,7 +482,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _leaveRequests = snap.docs.map((doc) => LeaveRequest.fromFirestore(doc)).toList();
       _scheduleNotify();
-    }, onError: (e) => debugPrint('Leave listener error: $e'));
+    }, onError: (e) => _setDataError('Data cuti', e));
 
     _overtimeSub = _db.collection('overtime')
         .where('userId', isEqualTo: _currentUser!.uid)
@@ -476,7 +492,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _overtimeRequests = snap.docs.map((doc) => OvertimeRequest.fromFirestore(doc)).toList();
       _scheduleNotify();
-    }, onError: (e) => debugPrint('Overtime listener error: $e'));
+    }, onError: (e) => _setDataError('Data lembur', e));
 
     // Disputes
     _disputeSub = _db.collection('disputes')
@@ -487,7 +503,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _disputeRequests = snap.docs.map((doc) => DisputeRequest.fromFirestore(doc)).toList();
       _scheduleNotify();
-    }, onError: (e) => debugPrint('Dispute listener error: $e'));
+    }, onError: (e) => _setDataError('Data sanggahan', e));
 
     // Leave balance from admin (collection: leave_balances/{uid})
     _leaveBalanceSub = _db.collection('leave_balances')
@@ -496,7 +512,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _firestoreLeaveBalance = snap.exists ? LeaveBalance.fromFirestore(snap) : null;
       _scheduleNotify();
-    }, onError: (e) => debugPrint('LeaveBalance listener error: $e'));
+    }, onError: (e) => _setDataError('Saldo cuti', e));
     _notifSub = _db.collection('userNotifications')
         .where('userId', isEqualTo: _currentUser!.uid)
         .orderBy('createdAt', descending: true)
@@ -504,7 +520,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .snapshots()
         .listen((snap) {
       _updateNotifications(snap, isBroadcast: false);
-    });
+    }, onError: (e) => _setDataError('Notifikasi', e));
 
     _broadcastSub = _db.collection('broadcasts')
         .orderBy('createdAt', descending: true)
@@ -512,7 +528,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .snapshots()
         .listen((snap) {
       _updateNotifications(snap, isBroadcast: true);
-    });
+    }, onError: (e) => _setDataError('Broadcast', e));
 
     _eventSub = _db.collection('calendarEvents')
         .where('startDate', isGreaterThanOrEqualTo: DateTime.now().subtract(const Duration(days: 30)))
@@ -520,7 +536,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _events = snap.docs.map((doc) => CalendarEvent.fromFirestore(doc)).toList();
       _scheduleNotify();
-    }, onError: (e) => debugPrint('Event listener error: $e'));
+    }, onError: (e) => _setDataError('Kalender', e));
   }
 
   void _updateNotifications(QuerySnapshot snap, {required bool isBroadcast}) {
@@ -625,7 +641,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _leaveRequests = snap.docs.map((doc) => LeaveRequest.fromFirestore(doc)).toList();
       notifyListeners();
-    });
+    }, onError: (e) => _setDataError('Data cuti', e));
   }
 
   // ── Auth Methods ──
@@ -814,6 +830,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           'employeeName': _currentUser!.name,
           'employeeId': _currentUser!.employeeId,
           'department': _currentUser!.department,
+          'date': dateStr,
           'attendanceDate': dateStr,
           'status': _mapMobileStatusToAdmin(status),
           'checkIn': {
@@ -877,6 +894,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           'employeeName': _currentUser!.name,
           'employeeId': _currentUser!.employeeId,
           'department': _currentUser!.department,
+          'date': dateStr,
           'attendanceDate': dateStr,
           'status': _mapMobileStatusToAdmin(status),
           'checkIn': {
@@ -1062,7 +1080,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     try {
       final prefix = isCheckOut ? 'checkout' : 'checkin';
       final ref = FirebaseStorage.instance.ref().child('attendance_photos/${prefix}_$docId.jpg');
-      await ref.putFile(File(localPath));
+      await ref.putFile(File(localPath), SettableMetadata(contentType: 'image/jpeg'));
       final url = await ref.getDownloadURL();
 
       final field = isCheckOut ? 'checkOut.photoUrl' : 'checkIn.photoUrl';

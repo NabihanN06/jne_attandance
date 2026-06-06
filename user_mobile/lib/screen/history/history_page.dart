@@ -6,6 +6,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
+import '../../theme/app_theme.dart';
 import '../../widgets/package_loading.dart';
 import '../attendance/dispute_submission_screen.dart';
 import '../attendance/dispute_detail_screen.dart';
@@ -102,11 +103,11 @@ class _HistoryPageState extends State<HistoryPage> {
                 const SizedBox(height: 28),
                 Row(
                   children: [
-                    _headerStat('Synced', presentCount.toString().padLeft(2, '0'), zenCyan),
+                    _headerStat('Hadir', presentCount.toString().padLeft(2, '0'), zenCyan),
                     const SizedBox(width: 12),
-                    _headerStat('Authorized', leaveCount.toString().padLeft(2, '0'), zenIndigo),
+                    _headerStat('Izin/Cuti', leaveCount.toString().padLeft(2, '0'), zenIndigo),
                     const SizedBox(width: 12),
-                    _headerStat('Delayed', lateCount.toString().padLeft(2, '0'), zenRose),
+                    _headerStat('Telat', lateCount.toString().padLeft(2, '0'), zenRose),
                   ],
                 ),
               ],
@@ -193,8 +194,8 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Widget _buildDropdownMonth() {
     final months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
     ];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -294,8 +295,9 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Widget _buildAttendanceCard(BuildContext context, AttendanceRecord r) {
+    final pal = context.palette;
     final date = DateTime.tryParse(r.date) ?? DateTime.now();
-    
+
     bool isLate = r.status == 'late';
     bool isAbsent = r.status == 'absent';
     bool isLeave = r.status == 'leave';
@@ -313,21 +315,10 @@ class _HistoryPageState extends State<HistoryPage> {
     final dispute = context.watch<AppProvider>().myDisputeRequests.where((d) => d.relatedAttendanceId == r.id).firstOrNull;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(40),
-        border: Border.all(color: zenNavy.withValues(alpha: 0.03)),
-        boxShadow: [
-          BoxShadow(
-                color: zenNavy.withValues(alpha: 0.02), 
-                blurRadius: 30, 
-                offset: const Offset(0, 15)
-              )
-            ],
-          ),
-          child: Column(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(24),
+      decoration: pal.cardDecoration(radius: 28),
+      child: Column(
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -337,7 +328,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     children: [
                       Text(
                         DateFormat('EEEE, d MMM yyyy', 'id').format(date),
-                        style: GoogleFonts.outfit(color: zenNavy, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -0.2),
+                        style: GoogleFonts.outfit(color: pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -0.2),
                       ),
                       const SizedBox(height: 6),
                       Row(
@@ -365,15 +356,15 @@ class _HistoryPageState extends State<HistoryPage> {
                   ),
                 ],
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Divider(color: zenOffWhite, thickness: 2, height: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Divider(color: pal.border, thickness: 1, height: 1),
               ),
               Row(
                 children: [
-                  _timeBox('Masuk', checkInTime, Icons.login_rounded, zenCyan),
+                  _timeBox('Masuk', checkInTime, Icons.login_rounded, zenCyan, pal),
                   const Spacer(),
-                  _timeBox('Keluar', checkOutTime, Icons.logout_rounded, zenIndigo),
+                  _timeBox('Keluar', checkOutTime, Icons.logout_rounded, zenIndigo, pal),
                   const SizedBox(width: 12),
                   if (dispute == null && (isLate || isAbsent))
                     GestureDetector(
@@ -445,7 +436,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: zenOffWhite,
+                      color: pal.cardAlt,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -488,8 +479,8 @@ class _HistoryPageState extends State<HistoryPage> {
                         if (dispute.adminResponse != null && dispute.adminResponse!.isNotEmpty) ...[
                           const SizedBox(height: 6),
                           Text(
-                            'Tap untuk buka percakapan dengan admin',
-                            style: GoogleFonts.plusJakartaSans(color: zenNavy.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.w600, height: 1.4),
+                            'Ketuk untuk buka percakapan dengan admin',
+                            style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontSize: 10, fontWeight: FontWeight.w600, height: 1.4),
                           ),
                         ],
                       ],
@@ -519,7 +510,7 @@ class _HistoryPageState extends State<HistoryPage> {
         }
       }
 
-      Widget _timeBox(String label, String time, IconData icon, Color color) {
+      Widget _timeBox(String label, String time, IconData icon, Color color, AppPalette pal) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -529,7 +520,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 const SizedBox(width: 8),
                 Text(
                   label,
-                  style: GoogleFonts.plusJakartaSans(color: zenSlate, fontSize: 11.5, fontWeight: FontWeight.w600)
+                  style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontSize: 11.5, fontWeight: FontWeight.w600)
                 ),
               ],
             ),
@@ -537,9 +528,9 @@ class _HistoryPageState extends State<HistoryPage> {
             Text(
               time,
               style: GoogleFonts.outfit(
-                color: zenNavy, 
-                fontSize: 20, 
-                fontWeight: FontWeight.w900, 
+                color: pal.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
                 fontFeatures: [const FontFeature.tabularFigures()]
               ),
             ),

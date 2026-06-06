@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/ui_kit.dart';
 import '../help/faq_screen.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -45,15 +47,13 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       backgroundColor: _bgColor,
       appBar: AppBar(
-        backgroundColor: jneBlue,
+        backgroundColor: _bgColor,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
+        scrolledUnderElevation: 0,
+        leading: const AppBackButton(),
         title: Text(
-          'PENGATURAN',
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1),
+          'Pengaturan',
+          style: GoogleFonts.plusJakartaSans(color: _textColor, fontSize: 17, fontWeight: FontWeight.w800),
         ),
         centerTitle: true,
       ),
@@ -253,12 +253,18 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [jneBlue, zenIndigo],
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: AppColors.heroGradient,
         ),
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
         boxShadow: [
-          BoxShadow(color: jneBlue.withValues(alpha: 0.2), blurRadius: 24, offset: const Offset(0, 8)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: _isDark ? 0.4 : 0.18),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
         ],
       ),
       child: Row(
@@ -267,7 +273,9 @@ class _SettingsPageState extends State<SettingsPage> {
             width: 56, height: 56,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              gradient: LinearGradient(
+                colors: [AppColors.jneOrange.withValues(alpha: 0.9), AppColors.brandRed],
+              ),
               shape: BoxShape.circle,
             ),
             child: Text(

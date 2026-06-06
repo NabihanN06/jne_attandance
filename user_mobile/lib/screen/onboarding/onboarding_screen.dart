@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:animate_do/animate_do.dart';
 import '../auth/login_page.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -10,113 +12,179 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
+  // ── Zen Premium palette (konsisten dgn Splash & Home) ──
+  static const Color navy = Color(0xFF0B1120);
+  static const Color indigo = Color(0xFF4F46E5);
+  static const Color jneOrange = Color(0xFFFF6B00);
+
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
   final List<OnboardingData> _pages = [
     OnboardingData(
       title: 'Geofencing Pintar',
-      description: 'Absensi otomatis terdeteksi saat Anda berada di dalam radius kantor JNE.',
-      icon: Icons.location_on_rounded,
-      color: const Color(0xFF005596),
+      description:
+          'Absensi terverifikasi otomatis saat Anda berada di dalam radius kantor JNE Martapura.',
+      icon: Icons.my_location_rounded,
+      color: const Color(0xFF22D3EE),
     ),
     OnboardingData(
-      title: 'Biometrik Wajah',
-      description: 'Keamanan ekstra dengan verifikasi wajah untuk memastikan kehadiran yang valid.',
+      title: 'Verifikasi Wajah',
+      description:
+          'Keamanan ekstra dengan pemindaian wajah untuk memastikan kehadiran benar-benar Anda.',
       icon: Icons.face_retouching_natural_rounded,
-      color: const Color(0xFFE31E24),
+      color: indigo,
     ),
     OnboardingData(
-      title: 'Laporan Real-time',
-      description: 'Pantau riwayat absensi dan status kerja Anda secara instan dalam genggaman.',
-      icon: Icons.analytics_rounded,
-      color: const Color(0xFF0891B2),
+      title: 'Peta & Laporan Real-time',
+      description:
+          'Lihat lokasi Anda di peta dan pantau riwayat absensi, cuti, serta lembur dalam genggaman.',
+      icon: Icons.insights_rounded,
+      color: jneOrange,
     ),
   ];
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _goToLogin() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final accent = _pages[_currentPage].color;
+    final isLast = _currentPage == _pages.length - 1;
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (int page) {
-                  setState(() {
-                    _currentPage = page;
-                  });
-                },
-                itemCount: _pages.length,
-                itemBuilder: (context, index) {
-                  return _buildPage(_pages[index]);
-                },
-              ),
-            ),
-            
-            // Indicator and Navigation
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      _pages.length,
-                      (index) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.only(right: 8),
-                        height: 8,
-                        width: _currentPage == index ? 24 : 8,
-                        decoration: BoxDecoration(
-                          color: _currentPage == index 
-                              ? _pages[_currentPage].color 
-                              : const Color(0xFFE2E8F0),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 60,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (_currentPage == _pages.length - 1) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (_) => const LoginPage()),
-                          );
-                        } else {
-                          _pageController.nextPage(
-                            duration: const Duration(milliseconds: 500),
-                            curve: Curves.easeInOutQuart,
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _pages[_currentPage].color,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        elevation: 0,
-                      ),
+      backgroundColor: navy,
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                // ── Skip ──
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 8, 16, 0),
+                    child: TextButton(
+                      onPressed: _goToLogin,
                       child: Text(
-                        _currentPage == _pages.length - 1 ? 'MULAI SEKARANG' : 'LANJUTKAN',
-                        style: GoogleFonts.outfit(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1,
+                        'Lewati',
+                        style: GoogleFonts.plusJakartaSans(
+                          color: Colors.white54,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (page) => setState(() => _currentPage = page),
+                    itemCount: _pages.length,
+                    itemBuilder: (context, index) => _buildPage(_pages[index]),
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(40, 0, 40, 40),
+                  child: Column(
+                    children: [
+                      // Indicator
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          _pages.length,
+                          (index) => AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.only(right: 8),
+                            height: 8,
+                            width: _currentPage == index ? 26 : 8,
+                            decoration: BoxDecoration(
+                              color: _currentPage == index
+                                  ? accent
+                                  : Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 36),
+                      // CTA
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          if (isLast) {
+                            _goToLogin();
+                          } else {
+                            _pageController.nextPage(
+                              duration: const Duration(milliseconds: 450),
+                              curve: Curves.easeInOutCubic,
+                            );
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [jneOrange, Color(0xFFFF8C3B)],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: jneOrange.withValues(alpha: 0.4),
+                                blurRadius: 22,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  isLast ? 'Mulai Sekarang' : 'Lanjutkan',
+                                  style: GoogleFonts.outfit(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Icon(
+                                  isLast
+                                      ? Icons.check_rounded
+                                      : Icons.arrow_forward_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -125,37 +193,46 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(height: 80),
-          Container(
-            width: 260,
-            height: 260,
-            decoration: BoxDecoration(
-              color: data.color.withValues(alpha: 0.05),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(data.icon, color: data.color, size: 100),
-          ),
-          const SizedBox(height: 60),
-          Text(
-            data.title,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
-              color: const Color(0xFF1E293B),
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.5,
+          FadeInDown(
+            duration: const Duration(milliseconds: 500),
+            child: Container(
+              width: 128,
+              height: 128,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: data.color.withValues(alpha: 0.12),
+              ),
+              child: Icon(data.icon, color: data.color, size: 50),
             ),
           ),
-          const SizedBox(height: 20),
-          Text(
-            data.description,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(
-              color: const Color(0xFF64748B),
-              fontSize: 16,
-              height: 1.6,
-              fontWeight: FontWeight.w500,
+          const SizedBox(height: 56),
+          FadeInUp(
+            duration: const Duration(milliseconds: 500),
+            child: Text(
+              data.title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          FadeInUp(
+            duration: const Duration(milliseconds: 600),
+            child: Text(
+              data.description,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                color: const Color(0xFF94A3B8),
+                fontSize: 15,
+                height: 1.6,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],

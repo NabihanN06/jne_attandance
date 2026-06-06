@@ -18,13 +18,19 @@ class NotificationPage extends StatefulWidget {
 
 class _NotificationPageState extends State<NotificationPage> {
   static const Color jneBlue = Color(0xFF005596);
-  static const Color zenNavy = Color(0xFF121826);
   static const Color zenIndigo = Color(0xFF4F46E5);
   static const Color zenRose = Color(0xFFF43F5E);
   static const Color zenEmerald = Color(0xFF10B981);
   static const Color zenAmber = Color(0xFFF59E0B);
   static const Color zenSlate = Color(0xFF94A3B8);
   static const Color bgLight = Color(0xFFF8FAFC);
+
+  // ── Theme-aware surfaces (mendukung dark/light mode) ──
+  bool get _isDark => context.read<AppProvider>().isDarkMode;
+  Color get zenNavy => _isDark ? Colors.white : const Color(0xFF121826);
+  Color get _card => _isDark ? const Color(0xFF15203A) : Colors.white;
+  Color get _border => _isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0);
+  Color get _headerColor => _isDark ? const Color(0xFF15203A) : jneBlue;
 
   // Filter: 'all' | 'unread'
   String _filter = 'all';
@@ -50,7 +56,7 @@ class _NotificationPageState extends State<NotificationPage> {
         slivers: [
           // ── Header ──
           SliverAppBar(
-            backgroundColor: jneBlue,
+            backgroundColor: _headerColor,
             elevation: 0,
             pinned: true,
             expandedHeight: 100,
@@ -153,9 +159,9 @@ class _NotificationPageState extends State<NotificationPage> {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: active ? jneBlue : Colors.white,
+          color: active ? jneBlue : _card,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: active ? jneBlue : const Color(0xFFE2E8F0)),
+          border: Border.all(color: active ? jneBlue : _border),
           boxShadow: active
               ? [BoxShadow(color: jneBlue.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4))]
               : null,
@@ -230,7 +236,7 @@ class _NotificationPageState extends State<NotificationPage> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _card,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withValues(alpha: 0.2), width: 1.2),
         boxShadow: [BoxShadow(color: color.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
@@ -443,10 +449,10 @@ class _NotificationPageState extends State<NotificationPage> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: _card,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isRead ? const Color(0xFFE2E8F0) : color.withValues(alpha: 0.25),
+                color: isRead ? _border : color.withValues(alpha: 0.25),
                 width: isRead ? 1 : 1.2,
               ),
               boxShadow: isRead
@@ -475,7 +481,7 @@ class _NotificationPageState extends State<NotificationPage> {
                           decoration: BoxDecoration(
                             color: zenRose,
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+                            border: Border.all(color: _card, width: 2),
                           ),
                         ),
                       ),
@@ -533,7 +539,7 @@ class _NotificationPageState extends State<NotificationPage> {
   Future<void> _showNotifActions(AdminNotification notif, AppProvider provider) async {
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: _card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),

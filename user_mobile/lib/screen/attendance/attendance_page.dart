@@ -8,6 +8,7 @@ import '../../providers/app_provider.dart';
 import '../../utils/geofence_service.dart';
 import '../succeed/succeed_page.dart';
 import '../../widgets/package_loading.dart';
+import '../../widgets/live_location_map.dart';
 
 class AttendancePage extends StatefulWidget {
   const AttendancePage({super.key});
@@ -36,6 +37,15 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
    
   late AnimationController _scanAnimController;
   bool _isCapturing = false;
+  bool _scanError = false; // true sebentar saat gagal (no face / luar area / GPS palsu)
+
+  void _flashError() {
+    if (!mounted) return;
+    setState(() => _scanError = true);
+    Future.delayed(const Duration(milliseconds: 2500), () {
+      if (mounted) setState(() => _scanError = false);
+    });
+  }
 
   @override
   void initState() {
@@ -95,12 +105,14 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
      }
 
      if (geo.isLocationMocked) {
+       _flashError();
        _showFeedback('Lokasi palsu terdeteksi • absensi ditolak', zenRose);
        return;
      }
 
     if (!geo.isInRange && !isRemoteAllowed) {
       HapticFeedback.vibrate();
+      _flashError();
       _showFeedback('Di luar radius kantor (${(geo.distanceFromOffice/1000).toStringAsFixed(1)} km)', zenRose);
       return;
     }
@@ -114,6 +126,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       final faces = await _faceDetector.processImage(inputImage);
 
       if (faces.isEmpty) {
+        _flashError();
         _showFeedback('Wajah tidak terdeteksi • coba lagi', zenRose);
       } else {
         if (!mounted) return;
@@ -150,7 +163,16 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
         }
       }
     } catch (e) {
-      _showFeedback('Gagal menyimpan absensi: $e', zenRose);
+      _flashError();
+      final raw = e.toString();
+      final msg = raw.contains('sudah melakukan absensi')
+          ? 'Anda sudah absen masuk hari ini.'
+          : raw.contains('tidak ditemukan')
+              ? 'Belum ada absen masuk hari ini.'
+              : raw.toLowerCase().contains('network') || raw.toLowerCase().contains('unavailable')
+                  ? 'Koneksi bermasalah. Periksa internet lalu coba lagi.'
+                  : 'Gagal menyimpan absensi. Coba lagi sebentar.';
+      _showFeedback(msg, zenRose);
     } finally {
       if (mounted) setState(() => _isCapturing = false);
     }
@@ -236,9 +258,15 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   }
 
   Widget _buildOverlay(GeofenceService geo, AppProvider app) {
+    final remoteAllowed = app.currentUser?.allowRemoteAttendance ?? false;
+    final geoOk = geo.isInRange || remoteAllowed;
+    // Merah saat: baru gagal scan, GPS palsu, atau di luar area (setelah GPS dapat).
+    final frameColor = (_scanError || geo.isLocationMocked || (!geoOk && geo.currentPosition != null))
+        ? zenRose
+        : zenIndigo;
     return Stack(
       children: [
-        _buildScannerOverlay(),
+        _buildScannerOverlay(frameColor),
           
           // ── APP BAR ──
           Positioned(
@@ -290,7 +318,38 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
           
           // ── STATUS TAG ──
           _buildStatusInfo(geo, app),
-          
+
+          // ── LIVE MINI MAP (glance where you are vs office) ──
+          Positioned(
+            top: 190,
+            right: 16,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 130,
+                  height: 90,
+                  child: LiveLocationMap(
+                    compact: true,
+                    height: 90,
+                    borderRadius: 18,
+                    showStatusPill: false,
+                    onTap: () => Navigator.pushNamed(context, '/lokasi'),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Ketuk untuk peta',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white60,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           // ── BOTTOM SHUTTER AREA ──
           Positioned(
             bottom: 0, left: 0, right: 0,
@@ -322,18 +381,11 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: zenIndigo,
-                          boxShadow: [
-                            BoxShadow(
-                              color: zenIndigo.withValues(alpha: 0.4),
-                              blurRadius: 30,
-                              spreadRadius: 4,
-                            ),
-                          ],
+                          color: frameColor,
                         ),
-                        child: _isCapturing 
+                        child: _isCapturing
                           ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
-                          : const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 40),
+                          : Icon(_scanError ? Icons.error_outline_rounded : Icons.fingerprint_rounded, color: Colors.white, size: 40),
                       ),
                     ),
                   ),
@@ -418,12 +470,12 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     );
   }
 
-  Widget _buildScannerOverlay() {
+  Widget _buildScannerOverlay(Color color) {
     return AnimatedBuilder(
       animation: _scanAnimController,
       builder: (context, child) {
         return CustomPaint(
-          painter: ScannerPainter(_scanAnimController.value),
+          painter: ScannerPainter(_scanAnimController.value, color),
           child: Container(),
         );
       },
@@ -434,31 +486,24 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
 
 class ScannerPainter extends CustomPainter {
   final double scanValue;
-  ScannerPainter(this.scanValue);
+  final Color color;
+  ScannerPainter(this.scanValue, [this.color = const Color(0xFF4F46E5)]);
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2 - 40);
     final radius = size.width * 0.38;
-    
+
     // Background Darkening
     final backgroundPath = Path()
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
       ..addOval(Rect.fromCircle(center: center, radius: radius))
       ..fillType = PathFillType.evenOdd;
-    
+
     canvas.drawPath(
       backgroundPath,
       Paint()..color = const Color(0xFF121826).withValues(alpha: 0.8),
     );
-
-    // Frame Glow
-    final glowPaint = Paint()
-      ..color = const Color(0xFF4F46E5).withValues(alpha: 0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 30.0
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
-    canvas.drawCircle(center, radius, glowPaint);
 
     // Main Circle Border
     final borderPaint = Paint()
@@ -466,10 +511,10 @@ class ScannerPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
     canvas.drawCircle(center, radius, borderPaint);
-    
+
     // Corner brackets (Zen Style)
     final bracketPaint = Paint()
-      ..color = const Color(0xFF4F46E5)
+      ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round;
@@ -490,9 +535,9 @@ class ScannerPainter extends CustomPainter {
     final scanLinePaint = Paint()
       ..shader = LinearGradient(
         colors: [
-          const Color(0xFF4F46E5).withValues(alpha: 0),
-          const Color(0xFF4F46E5).withValues(alpha: 0.9),
-          const Color(0xFF4F46E5).withValues(alpha: 0),
+          color.withValues(alpha: 0),
+          color.withValues(alpha: 0.9),
+          color.withValues(alpha: 0),
         ],
       ).createShader(Rect.fromLTRB(center.dx - radius, lineY - 15, center.dx + radius, lineY + 15))
       ..strokeWidth = 4.0;

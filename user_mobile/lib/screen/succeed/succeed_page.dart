@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../../providers/app_provider.dart';
 import '../home/home_screen.dart';
 import '../history/history_page.dart';
 
@@ -26,11 +28,19 @@ class SucceedPage extends StatefulWidget {
 }
 
 class _SucceedPageState extends State<SucceedPage> with SingleTickerProviderStateMixin {
-  static const Color zenNavy = Color(0xFF121826);
   static const Color zenEmerald = Color(0xFF10B981);
+  static const Color zenIndigo = Color(0xFFFF6B00); // primary = JNE orange (minimalis)
 
   late AnimationController _ctrl;
   late Animation<double> _scale;
+
+  // ── Theme-aware colors ──
+  bool get _isDark => context.read<AppProvider>().isDarkMode;
+  Color get _bg => _isDark ? const Color(0xFF0B1120) : const Color(0xFFF8FAFC);
+  Color get _card => _isDark ? const Color(0xFF15203A) : Colors.white;
+  Color get _textPrimary => _isDark ? Colors.white : const Color(0xFF1E293B);
+  Color get _textSub => _isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  Color get _border => _isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9);
 
   @override
   void initState() {
@@ -52,7 +62,7 @@ class _SucceedPageState extends State<SucceedPage> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: _bg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
@@ -64,7 +74,7 @@ class _SucceedPageState extends State<SucceedPage> with SingleTickerProviderStat
                 child: Container(
                   width: 100, height: 100,
                   decoration: BoxDecoration(
-                    color: zenEmerald.withValues(alpha: 0.08),
+                    color: zenEmerald.withValues(alpha: _isDark ? 0.16 : 0.08),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.check_circle_rounded, color: zenEmerald, size: 64),
@@ -73,23 +83,25 @@ class _SucceedPageState extends State<SucceedPage> with SingleTickerProviderStat
               const SizedBox(height: 40),
               Text(
                 widget.isEnroll ? 'Wajah Terdaftar' : 'Absensi Berhasil',
-                style: GoogleFonts.outfit(color: zenNavy, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5),
+                style: GoogleFonts.outfit(color: _textPrimary, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5),
               ),
               const SizedBox(height: 12),
               Text(
                 widget.isEnroll ? 'Data wajah Anda sudah aktif.' : 'Data absensi berhasil tersimpan.',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(color: const Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w600),
+                style: GoogleFonts.plusJakartaSans(color: _textSub, fontSize: 14, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 60),
               if (!widget.isEnroll)
                 Container(
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: _card,
                     borderRadius: BorderRadius.circular(32),
-                    boxShadow: [BoxShadow(color: zenNavy.withValues(alpha: 0.03), blurRadius: 40, offset: const Offset(0, 10))],
-                    border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+                    boxShadow: _isDark
+                        ? null
+                        : [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 40, offset: const Offset(0, 10))],
+                    border: Border.all(color: _border, width: 1.5),
                   ),
                   child: Column(
                     children: [
@@ -110,7 +122,7 @@ class _SucceedPageState extends State<SucceedPage> with SingleTickerProviderStat
                 child: ElevatedButton(
                   onPressed: () => Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const HomeScreen()), (r) => false),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: zenNavy,
+                    backgroundColor: zenIndigo,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     elevation: 0,
@@ -121,7 +133,7 @@ class _SucceedPageState extends State<SucceedPage> with SingleTickerProviderStat
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryPage())),
-                child: Text('Lihat Riwayat Lengkap', style: GoogleFonts.plusJakartaSans(color: const Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w700)),
+                child: Text('Lihat Riwayat Lengkap', style: GoogleFonts.plusJakartaSans(color: _textSub, fontSize: 13, fontWeight: FontWeight.w700)),
               ),
             ],
           ),
@@ -135,10 +147,10 @@ class _SucceedPageState extends State<SucceedPage> with SingleTickerProviderStat
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(l, style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.w700)),
-        Text(v, style: GoogleFonts.outfit(color: vc ?? const Color(0xFF1E293B), fontSize: 13, fontWeight: FontWeight.w900)),
+        Text(l, style: GoogleFonts.outfit(color: _textSub, fontSize: 12, fontWeight: FontWeight.w700)),
+        Text(v, style: GoogleFonts.outfit(color: vc ?? _textPrimary, fontSize: 13, fontWeight: FontWeight.w900)),
       ],
     ),
   );
-  Widget _div() => const Divider(color: Color(0xFFF1F5F9), height: 1);
+  Widget _div() => Divider(color: _border, height: 1);
 }

@@ -40,10 +40,11 @@
             android:name="flutterEmbedding"
             android:value="2"/>
 
-        <!-- Google Maps API Key -->
+        <!-- Google Maps API Key (dedicated key: Maps SDK for Android only,
+             restricted to package id.co.jne.mtp.absensi + release & debug SHA-1) -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyD8_xQ095GsDSOr_nhONflsPa0qtMnWfkY"/>
+            android:value="AIzaSyBzjQn_NfqvD28CLhPFBg8mSKZMmUxj65I"/>
     </application>
 
     <queries>
