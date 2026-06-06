@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,6 +13,7 @@ import '../../providers/chat_provider.dart';
 import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
+import '../../utils/presence_service.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -33,6 +35,11 @@ class _ChatPageState extends State<ChatPage> {
   String? _chatId;
   bool _isSending = false;
 
+  Timer? _typingTimer;
+  StreamSubscription<bool>? _adminPresenceSub;
+  bool _adminOnline = false;
+  ChatProvider? _chatRef; // dipakai di dispose (context tidak aman di dispose)
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +48,10 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    _typingTimer?.cancel();
+    _adminPresenceSub?.cancel();
+    // Pastikan status "mengetik" tidak nyangkut saat user keluar dari chat.
+    if (_chatId != null) _chatRef?.updateTyping(_chatId!, false);
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -63,6 +74,7 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _initChat() async {
     final app = context.read<AppProvider>();
     final chat = context.read<ChatProvider>();
+    _chatRef = chat;
 
     // Room model: room user = uid miliknya sendiri. Chat tidak bergantung
     // pada "admin mana" — langsung dengarkan room sendiri.
@@ -71,10 +83,29 @@ class _ChatPageState extends State<ChatPage> {
     setState(() => _chatId = uid);
     chat.listenToMessages(uid);
 
-    // Ambil identitas admin hanya untuk tampilan header (nama + status online).
+    // Ambil identitas admin untuk header + pantau status online-nya realtime.
     final admin = await app.getFirstAdmin();
     if (admin != null && mounted) {
       setState(() => _targetAdmin = admin);
+      _adminPresenceSub?.cancel();
+      _adminPresenceSub = PresenceService.subscribeToUser(admin.uid).listen((online) {
+        if (mounted) setState(() => _adminOnline = online);
+      });
+    }
+  }
+
+  void _onTypingChanged(String val) {
+    final id = _chatId;
+    if (id == null) return;
+    final chat = context.read<ChatProvider>();
+    if (val.isNotEmpty) {
+      chat.updateTyping(id, true);
+      // Auto-reset kalau berhenti ngetik 3 dtk (biar tidak nyangkut "mengetik").
+      _typingTimer?.cancel();
+      _typingTimer = Timer(const Duration(seconds: 3), () => chat.updateTyping(id, false));
+    } else {
+      _typingTimer?.cancel();
+      chat.updateTyping(id, false);
     }
   }
 
@@ -124,6 +155,9 @@ class _ChatPageState extends State<ChatPage> {
     setState(() {
       _selectedImage = null;
     });
+    // Reset indikator mengetik setelah kirim (clear() tidak memicu onChanged).
+    _typingTimer?.cancel();
+    if (_chatId != null) chat.updateTyping(_chatId!, false);
 
     try {
       // Kalau ada gambar, upload dulu ke Storage. Tanpa upload, penerima
@@ -163,7 +197,7 @@ class _ChatPageState extends State<ChatPage> {
     final chat = context.watch<ChatProvider>();
     final app = context.watch<AppProvider>();
     final pal = context.palette;
-    final online = _targetAdmin?.isOnline ?? false;
+    final online = _adminOnline;
 
     return Scaffold(
       backgroundColor: pal.bg,
@@ -475,11 +509,7 @@ class _ChatPageState extends State<ChatPage> {
                       textCapitalization: TextCapitalization.sentences,
                       style: GoogleFonts.plusJakartaSans(
                           fontSize: 13, fontWeight: FontWeight.w600, color: pal.textPrimary),
-                      onChanged: (val) {
-                        if (_chatId != null) {
-                          context.read<ChatProvider>().updateTyping(_chatId!, val.isNotEmpty);
-                        }
-                      },
+                      onChanged: _onTypingChanged,
                       decoration: InputDecoration(
                         hintText: 'Ketik pesan...',
                         hintStyle: GoogleFonts.plusJakartaSans(color: pal.textFaint),

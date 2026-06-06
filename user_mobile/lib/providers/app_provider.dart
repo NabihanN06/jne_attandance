@@ -620,7 +620,13 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   Future<void> _updatePresence(bool isOnline) async {
     if (_auth.currentUser == null) return;
     try {
-      PresenceService.start(deviceId: 'mobile_${_auth.currentUser!.uid}');
+      if (isOnline) {
+        PresenceService.start(deviceId: 'mobile_${_auth.currentUser!.uid}');
+      } else {
+        // Penting: saat app ke background, benar-benar set offline
+        // (sebelumnya keliru memanggil start() → malah online terus).
+        PresenceService.stop();
+      }
     } catch (e) {
       debugPrint('Presence update error: $e');
     }
