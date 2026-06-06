@@ -252,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
         : 'Absensi Hari Ini';
 
     return Container(
-      decoration: context.palette.brandHeroDecoration(radius: 30),
+      decoration: context.palette.heroDecoration(radius: 30),
       child: Stack(
         children: [
           // dekor lingkaran translucent untuk kedalaman
@@ -402,8 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: color.withValues(alpha: 0.18),
-              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 12)],
+              color: color.withValues(alpha: 0.16),
             ),
             child: Icon(icon, color: color, size: 16),
           ),
@@ -476,15 +475,10 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 60,
             width: double.infinity,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [color, color.withValues(alpha: 0.7)],
-              ),
+              color: color.withValues(alpha: pal.isDark ? 0.18 : 0.12),
               borderRadius: BorderRadius.circular(18),
-              boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 14, offset: const Offset(0, 6))],
             ),
-            child: Icon(icon, color: Colors.white, size: 24),
+            child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 8),
           Text(label,
@@ -541,9 +535,8 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: EdgeInsets.symmetric(horizontal: active ? 16 : 14, vertical: 8),
         decoration: active
             ? BoxDecoration(
-                gradient: const LinearGradient(colors: AppColors.brandGradient),
+                color: AppColors.brandRed,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: AppColors.brandRed.withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, 4))],
               )
             : null,
         child: Row(

@@ -110,20 +110,16 @@ class AppPalette {
         ],
       );
 
-  /// Dekorasi hero navy (untuk header utama tiap layar).
+  /// Dekorasi hero navy SOLID (untuk header utama tiap layar). Tanpa gradient.
   BoxDecoration heroDecoration({double radius = 28}) => BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: AppColors.heroGradient,
-        ),
+        color: AppColors.darkCard,
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.18),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
           ),
         ],
       );
