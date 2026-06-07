@@ -8,6 +8,7 @@ import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
+import '../../utils/app_strings.dart';
 import '../../utils/geofence_service.dart';
 import '../../utils/connectivity_service.dart';
 import '../../widgets/live_location_map.dart';
@@ -30,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final pal = context.palette;
 
     final user = p.currentUser;
-    final firstName = (user?.name.trim().isNotEmpty ?? false) ? user!.name.trim().split(' ').first : 'Rekan';
+    final firstName = (user?.name.trim().isNotEmpty ?? false) ? user!.name.trim().split(' ').first : context.tr('buddy');
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -56,11 +57,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: _attendanceHero(p, geo),
                         ),
                         const SizedBox(height: 26),
-                        _sectionHeader('Statistik Bulan Ini', 'Lihat', pal, () => _go('/statistic')),
+                        _sectionHeader(context.tr('sec_stats'), context.tr('open'), pal, () => _go('/statistic')),
                         const SizedBox(height: 14),
                         FadeInUp(duration: const Duration(milliseconds: 450), child: _monthlyStats(p, pal)),
                         const SizedBox(height: 26),
-                        _sectionHeader('Lokasi Saya', 'Peta', pal, () => _go('/lokasi')),
+                        _sectionHeader(context.tr('sec_location'), context.tr('open_map'), pal, () => _go('/lokasi')),
                         const SizedBox(height: 14),
                         FadeInUp(
                           duration: const Duration(milliseconds: 450),
@@ -70,11 +71,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 26),
-                        _sectionHeader('Saldo Cuti', 'Ajukan', pal, () => _go('/leave')),
+                        _sectionHeader(context.tr('sec_leave_balance'), context.tr('submit'), pal, () => _go('/leave')),
                         const SizedBox(height: 14),
                         _leaveBalance(p, pal),
                         const SizedBox(height: 26),
-                        _sectionHeader('Menu Cepat', null, pal, null),
+                        _sectionHeader(context.tr('sec_quick_menu'), null, pal, null),
                         const SizedBox(height: 14),
                         _quickMenu(p, geo, pal),
                       ],
@@ -101,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
         color: AppColors.brandRed,
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Center(
-          child: Text('Mode Offline • data akan tersinkron otomatis',
+          child: Text(context.tr('offline_banner'),
               style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700)),
         ),
       );
@@ -116,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Icon(Icons.error_outline_rounded, color: Colors.white, size: 16),
             const SizedBox(width: 8),
             Expanded(
-              child: Text('Sebagian data gagal dimuat • ketuk untuk detail',
+              child: Text(context.tr('data_error_banner'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700)),
@@ -157,12 +158,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _header(String firstName, AppPalette pal, int unread) {
     final hour = DateTime.now().hour;
     final greeting = hour < 11
-        ? 'Selamat Pagi'
+        ? context.tr('greet_morning')
         : hour < 15
-            ? 'Selamat Siang'
+            ? context.tr('greet_afternoon')
             : hour < 18
-                ? 'Selamat Sore'
-                : 'Selamat Malam';
+                ? context.tr('greet_evening')
+                : context.tr('greet_night');
     return Row(
       children: [
         Expanded(
@@ -234,22 +235,22 @@ class _HomeScreenState extends State<HomeScreen> {
     String badge;
     IconData badgeIcon;
     if (todayRec == null || checkIn == null) {
-      badge = 'Belum Absen';
+      badge = context.tr('status_not_yet');
       badgeIcon = Icons.schedule_rounded;
     } else if (checkOut != null) {
-      badge = 'Selesai';
+      badge = context.tr('status_done');
       badgeIcon = Icons.check_circle_rounded;
     } else if (todayRec.status == 'late') {
-      badge = 'Terlambat';
+      badge = context.tr('status_late');
       badgeIcon = Icons.running_with_errors_rounded;
     } else {
-      badge = 'Hadir';
+      badge = context.tr('status_present');
       badgeIcon = Icons.verified_rounded;
     }
 
     final roleLabel = (p.currentUser?.position.trim().isNotEmpty ?? false)
         ? p.currentUser!.position.trim()
-        : 'Absensi Hari Ini';
+        : context.tr('attendance_today');
 
     return Container(
       decoration: context.palette.heroDecoration(radius: 30),
@@ -311,11 +312,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    _heroStat('Masuk', checkInStr, Icons.login_rounded),
+                    _heroStat(context.tr('check_in'), checkInStr, Icons.login_rounded),
                     _heroDivider(),
-                    _heroStat('Keluar', checkOutStr, Icons.logout_rounded),
+                    _heroStat(context.tr('check_out'), checkOutStr, Icons.logout_rounded),
                     _heroDivider(),
-                    _heroStat('Lokasi', inRange ? 'Dalam Area' : 'Luar Area', Icons.location_on_rounded, small: true),
+                    _heroStat(context.tr('location'), inRange ? context.tr('in_area') : context.tr('out_area'),
+                        Icons.location_on_rounded, small: true),
                   ],
                 ),
                 const SizedBox(height: 18),
@@ -345,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _heroDivider() => Container(width: 1, height: 38, color: Colors.white.withValues(alpha: 0.2));
 
   Widget _attendanceCta(AppProvider p, GeofenceService geo, bool clockedIn) {
-    final label = clockedIn ? 'Absen Keluar Sekarang' : 'Absen Masuk Sekarang';
+    final label = clockedIn ? context.tr('do_check_out') : context.tr('do_check_in');
     final icon = clockedIn ? Icons.logout_rounded : Icons.login_rounded;
     return GestureDetector(
       onTap: p.isProcessing ? null : () => _handleAttendance(p, geo),
@@ -382,13 +384,13 @@ class _HomeScreenState extends State<HomeScreen> {
         .fold<int>(0, (s, l) => s + l.totalDays);
 
     return Row(children: [
-      _statCard('$hadir', 'Hadir', Icons.check_circle_rounded, AppColors.green, pal),
+      _statCard('$hadir', context.tr('stat_present'), Icons.check_circle_rounded, AppColors.green, pal),
       const SizedBox(width: 12),
-      _statCard('$terlambat', 'Telat', Icons.schedule_rounded, AppColors.amber, pal),
+      _statCard('$terlambat', context.tr('stat_late'), Icons.schedule_rounded, AppColors.amber, pal),
       const SizedBox(width: 12),
-      _statCard('$absen', 'Absen', Icons.cancel_rounded, AppColors.brandRed, pal),
+      _statCard('$absen', context.tr('stat_absent'), Icons.cancel_rounded, AppColors.brandRed, pal),
       const SizedBox(width: 12),
-      _statCard('$cuti', 'Cuti', Icons.beach_access_rounded, AppColors.blue, pal),
+      _statCard('$cuti', context.tr('stat_leave'), Icons.beach_access_rounded, AppColors.blue, pal),
     ]);
   }
 
@@ -421,11 +423,11 @@ class _HomeScreenState extends State<HomeScreen> {
     return GlassCard(
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
       child: Row(children: [
-        _balanceCol('${b.remainingAnnual}', 'Cuti Tahunan', 'sisa', AppColors.amber, pal),
+        _balanceCol('${b.remainingAnnual}', context.tr('leave_annual'), context.tr('remaining'), AppColors.amber, pal),
         _balanceVDivider(pal),
-        _balanceCol('${b.usedSick}', 'Cuti Sakit', 'terpakai', AppColors.blue, pal),
+        _balanceCol('${b.usedSick}', context.tr('leave_sick'), context.tr('used'), AppColors.blue, pal),
         _balanceVDivider(pal),
-        _balanceCol('${b.usedPermission}', 'Cuti Pribadi', 'terpakai', AppColors.green, pal),
+        _balanceCol('${b.usedPermission}', context.tr('leave_personal'), context.tr('used'), AppColors.green, pal),
       ]),
     );
   }
@@ -453,13 +455,13 @@ class _HomeScreenState extends State<HomeScreen> {
   // ─────────────────────────────────────────── Quick menu (glass + gradient icons)
   Widget _quickMenu(AppProvider p, GeofenceService geo, AppPalette pal) {
     return Row(children: [
-      _menuTile(Icons.chat_bubble_rounded, 'Chat HR', AppColors.green, pal, () => _go('/chat')),
+      _menuTile(Icons.chat_bubble_rounded, context.tr('menu_chat'), AppColors.green, pal, () => _go('/chat')),
       const SizedBox(width: 12),
-      _menuTile(Icons.assignment_rounded, 'Pengajuan', AppColors.blue, pal, () => _go('/my_requests')),
+      _menuTile(Icons.assignment_rounded, context.tr('menu_requests'), AppColors.blue, pal, () => _go('/my_requests')),
       const SizedBox(width: 12),
-      _menuTile(Icons.map_rounded, 'Lokasi', AppColors.jneOrange, pal, () => _go('/lokasi')),
+      _menuTile(Icons.map_rounded, context.tr('menu_location'), AppColors.jneOrange, pal, () => _go('/lokasi')),
       const SizedBox(width: 12),
-      _menuTile(Icons.sos_rounded, 'SOS', AppColors.brandRed, pal, () => _showSOSConfirm(p, geo)),
+      _menuTile(Icons.sos_rounded, context.tr('menu_sos'), AppColors.brandRed, pal, () => _showSOSConfirm(p, geo)),
     ]);
   }
 
@@ -512,10 +514,10 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _navItem(Icons.home_rounded, 'Beranda', true, pal, 0, () {}),
-          _navItem(Icons.history_rounded, 'Riwayat', false, pal, 0, () => _go('/history')),
-          _navItem(Icons.beach_access_rounded, 'Cuti', false, pal, 0, () => _go('/leave')),
-          _navItem(Icons.person_rounded, 'Profil', false, pal, unread, () => _go('/profile')),
+          _navItem(Icons.home_rounded, context.tr('nav_home'), true, pal, 0, () {}),
+          _navItem(Icons.history_rounded, context.tr('nav_history'), false, pal, 0, () => _go('/history')),
+          _navItem(Icons.beach_access_rounded, context.tr('nav_leave'), false, pal, 0, () => _go('/leave')),
+          _navItem(Icons.person_rounded, context.tr('nav_profile'), false, pal, unread, () => _go('/profile')),
         ],
       ),
     );
@@ -579,7 +581,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (mounted) setState(() => _isNavigating = false);
       });
     } else {
-      _toast('Anda berada di luar radius kantor. Mendekatlah ke lokasi kantor.', AppColors.brandRed);
+      _toast(context.tr('out_of_radius'), AppColors.brandRed);
     }
   }
 
@@ -615,10 +617,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: const Icon(Icons.warning_amber_rounded, color: AppColors.brandRed, size: 38),
               ),
               const SizedBox(height: 20),
-              Text('Kirim Sinyal SOS?',
+              Text(context.tr('sos_title'),
                   style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 19, color: pal.textPrimary)),
               const SizedBox(height: 10),
-              Text('Lokasi dan sinyal darurat Anda akan langsung dipantau oleh admin hub. Gunakan hanya saat darurat.',
+              Text(context.tr('sos_desc'),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontSize: 13, fontWeight: FontWeight.w500, height: 1.5)),
               const SizedBox(height: 24),
@@ -626,7 +628,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: TextButton(
                     onPressed: dialogLoading ? null : () => Navigator.pop(ctx),
-                    child: Text('Batal', style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontWeight: FontWeight.w700)),
+                    child: Text(context.tr('cancel'), style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontWeight: FontWeight.w700)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -636,13 +638,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         ? null
                         : () async {
                             final navigator = Navigator.of(ctx);
+                            final sentMsg = context.tr('sos_sent');
                             setDialogState(() => dialogLoading = true);
                             try {
                               if (geo.currentPosition != null) {
                                 await p.sendSOS(geo.currentPosition!.latitude, geo.currentPosition!.longitude, '${p.hubName} Area');
                               }
                               navigator.pop();
-                              _toast('Sinyal SOS terkirim!', AppColors.brandRed);
+                              _toast(sentMsg, AppColors.brandRed);
                             } catch (e) {
                               navigator.pop();
                               _toast('Gagal mengirim SOS: $e', AppColors.brandRed);
@@ -660,7 +663,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation(Colors.white)))
-                        : Text('Kirim', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
+                        : Text(context.tr('send'), style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800)),
                   ),
                 ),
               ]),

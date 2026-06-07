@@ -1,0 +1,216 @@
+import 'package:flutter/widgets.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
+
+/// ─────────────────────────────────────────────────────────────────────────
+/// i18n sederhana (tanpa paket eksternal, biar tidak belibet).
+/// Tambah bahasa/teks cukup di map `_t` di bawah. Pakai: `context.tr('key')`.
+/// Bahasa aktif diambil dari AppProvider.language ('id' | 'en').
+/// ─────────────────────────────────────────────────────────────────────────
+class AppStrings {
+  AppStrings._();
+
+  static const String fallback = 'id';
+
+  static const Map<String, Map<String, String>> _t = {
+    // ── Bahasa Indonesia ──
+    'id': {
+      // umum
+      'save': 'Simpan',
+      'cancel': 'Batal',
+      'send': 'Kirim',
+      'yes': 'Ya',
+      'no': 'Tidak',
+      'close': 'Tutup',
+      'see_all': 'Lihat Semua',
+      'open': 'Buka',
+      'submit': 'Ajukan',
+      // greeting
+      'greet_morning': 'Selamat Pagi',
+      'greet_afternoon': 'Selamat Siang',
+      'greet_evening': 'Selamat Sore',
+      'greet_night': 'Selamat Malam',
+      'buddy': 'Rekan',
+      // bottom nav
+      'nav_home': 'Beranda',
+      'nav_history': 'Riwayat',
+      'nav_leave': 'Cuti',
+      'nav_profile': 'Profil',
+      // home sections
+      'sec_stats': 'Statistik Bulan Ini',
+      'sec_location': 'Lokasi Saya',
+      'sec_leave_balance': 'Saldo Cuti',
+      'sec_quick_menu': 'Menu Cepat',
+      'open_map': 'Peta',
+      // attendance hero
+      'attendance_today': 'Absensi Hari Ini',
+      'status_not_yet': 'Belum Absen',
+      'status_done': 'Selesai',
+      'status_late': 'Terlambat',
+      'status_present': 'Hadir',
+      'check_in': 'Masuk',
+      'check_out': 'Keluar',
+      'location': 'Lokasi',
+      'in_area': 'Dalam Area',
+      'out_area': 'Luar Area',
+      'do_check_in': 'Absen Masuk Sekarang',
+      'do_check_out': 'Absen Keluar Sekarang',
+      // stats
+      'stat_present': 'Hadir',
+      'stat_late': 'Telat',
+      'stat_absent': 'Absen',
+      'stat_leave': 'Cuti',
+      // leave balance
+      'leave_annual': 'Cuti Tahunan',
+      'leave_sick': 'Cuti Sakit',
+      'leave_personal': 'Cuti Pribadi',
+      'remaining': 'sisa',
+      'used': 'terpakai',
+      // quick menu
+      'menu_chat': 'Chat HR',
+      'menu_requests': 'Pengajuan',
+      'menu_location': 'Lokasi',
+      'menu_sos': 'SOS',
+      // banners
+      'offline_banner': 'Mode Offline • data akan tersinkron otomatis',
+      'data_error_banner': 'Sebagian data gagal dimuat • ketuk untuk detail',
+      // sos
+      'sos_title': 'Kirim Sinyal SOS?',
+      'sos_desc': 'Lokasi dan sinyal darurat Anda akan langsung dipantau oleh admin hub. Gunakan hanya saat darurat.',
+      'sos_sent': 'Sinyal SOS terkirim!',
+      'out_of_radius': 'Anda berada di luar radius kantor. Mendekatlah ke lokasi kantor.',
+      // profile
+      'profile_title': 'Profil Saya',
+      'sec_account': 'Informasi Akun',
+      'sec_services': 'Layanan',
+      'sec_card_bio': 'Kartu & Biometrik',
+      'sec_security': 'Keamanan',
+      'email': 'Email',
+      'phone': 'Nomor HP',
+      'employee_id': 'ID Karyawan',
+      'not_set': 'Belum diatur',
+      'request_center': 'Pusat Pengajuan',
+      'request_center_sub': 'Pantau cuti, lembur & komplain',
+      'chat_hr_sub': 'Hubungi admin secara langsung',
+      'help_faq': 'Bantuan & FAQ',
+      'help_faq_sub': 'Pertanyaan yang sering diajukan',
+      'id_card': 'Kartu Identitas',
+      'id_card_sub': 'Kartu pegawai resmi JNE',
+      'reenroll_face': 'Daftar Ulang Wajah',
+      'reenroll_face_sub': 'Perbarui data pengenalan wajah',
+      'change_password': 'Ganti Kata Sandi',
+      'change_password_sub': 'Perbarui kata sandi akun Anda',
+      'logout': 'Keluar',
+      'remaining_annual_leave': 'Sisa Cuti Tahunan',
+      'of_days': 'dari',
+      'days': 'hari',
+      // settings
+      'settings_title': 'Pengaturan',
+      'set_display_lang': 'Tampilan & Bahasa',
+      'set_dark_mode': 'Mode Gelap',
+      'set_language': 'Bahasa',
+      'set_notif': 'Notifikasi',
+      'lang_indonesian': 'Bahasa Indonesia',
+      'lang_english': 'English',
+      'choose_language': 'Pilih Bahasa',
+    },
+    // ── English ──
+    'en': {
+      'save': 'Save',
+      'cancel': 'Cancel',
+      'send': 'Send',
+      'yes': 'Yes',
+      'no': 'No',
+      'close': 'Close',
+      'see_all': 'See All',
+      'open': 'Open',
+      'submit': 'Request',
+      'greet_morning': 'Good Morning',
+      'greet_afternoon': 'Good Afternoon',
+      'greet_evening': 'Good Evening',
+      'greet_night': 'Good Night',
+      'buddy': 'There',
+      'nav_home': 'Home',
+      'nav_history': 'History',
+      'nav_leave': 'Leave',
+      'nav_profile': 'Profile',
+      'sec_stats': 'This Month\'s Stats',
+      'sec_location': 'My Location',
+      'sec_leave_balance': 'Leave Balance',
+      'sec_quick_menu': 'Quick Menu',
+      'open_map': 'Map',
+      'attendance_today': 'Today\'s Attendance',
+      'status_not_yet': 'Not Yet',
+      'status_done': 'Done',
+      'status_late': 'Late',
+      'status_present': 'Present',
+      'check_in': 'In',
+      'check_out': 'Out',
+      'location': 'Location',
+      'in_area': 'In Area',
+      'out_area': 'Out of Area',
+      'do_check_in': 'Check In Now',
+      'do_check_out': 'Check Out Now',
+      'stat_present': 'Present',
+      'stat_late': 'Late',
+      'stat_absent': 'Absent',
+      'stat_leave': 'Leave',
+      'leave_annual': 'Annual Leave',
+      'leave_sick': 'Sick Leave',
+      'leave_personal': 'Personal Leave',
+      'remaining': 'left',
+      'used': 'used',
+      'menu_chat': 'Chat HR',
+      'menu_requests': 'Requests',
+      'menu_location': 'Location',
+      'menu_sos': 'SOS',
+      'offline_banner': 'Offline Mode • data will sync automatically',
+      'data_error_banner': 'Some data failed to load • tap for details',
+      'sos_title': 'Send SOS Signal?',
+      'sos_desc': 'Your location and emergency signal will be monitored by the hub admin immediately. Use only in emergencies.',
+      'sos_sent': 'SOS signal sent!',
+      'out_of_radius': 'You are outside the office radius. Please move closer to the office.',
+      'profile_title': 'My Profile',
+      'sec_account': 'Account Info',
+      'sec_services': 'Services',
+      'sec_card_bio': 'Card & Biometric',
+      'sec_security': 'Security',
+      'email': 'Email',
+      'phone': 'Phone Number',
+      'employee_id': 'Employee ID',
+      'not_set': 'Not set',
+      'request_center': 'Request Center',
+      'request_center_sub': 'Track leave, overtime & disputes',
+      'chat_hr_sub': 'Contact admin directly',
+      'help_faq': 'Help & FAQ',
+      'help_faq_sub': 'Frequently asked questions',
+      'id_card': 'ID Card',
+      'id_card_sub': 'Official JNE employee card',
+      'reenroll_face': 'Re-enroll Face',
+      'reenroll_face_sub': 'Update your face recognition data',
+      'change_password': 'Change Password',
+      'change_password_sub': 'Update your account password',
+      'logout': 'Logout',
+      'remaining_annual_leave': 'Remaining Annual Leave',
+      'of_days': 'of',
+      'days': 'days',
+      'settings_title': 'Settings',
+      'set_display_lang': 'Display & Language',
+      'set_dark_mode': 'Dark Mode',
+      'set_language': 'Language',
+      'set_notif': 'Notifications',
+      'lang_indonesian': 'Bahasa Indonesia',
+      'lang_english': 'English',
+      'choose_language': 'Choose Language',
+    },
+  };
+
+  static String of(String lang, String key) {
+    return _t[lang]?[key] ?? _t[fallback]?[key] ?? key;
+  }
+}
+
+extension TrX on BuildContext {
+  /// Terjemahkan `key` sesuai bahasa aktif. Ikut rebuild saat bahasa berubah.
+  String tr(String key) => AppStrings.of(watch<AppProvider>().language, key);
+}
