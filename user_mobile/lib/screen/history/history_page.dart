@@ -6,6 +6,8 @@ import 'package:animate_do/animate_do.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
+import '../../theme/app_theme.dart';
+import '../../utils/app_strings.dart';
 import '../../widgets/package_loading.dart';
 import '../attendance/dispute_submission_screen.dart';
 import '../attendance/dispute_detail_screen.dart';
@@ -73,8 +75,8 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         ),
         title: Text(
-          'OPERATIONAL LOGS',
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3),
+          context.tr('history_title'),
+          style: GoogleFonts.outfit(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: 0.2),
         ),
         centerTitle: true,
       ),
@@ -102,11 +104,11 @@ class _HistoryPageState extends State<HistoryPage> {
                 const SizedBox(height: 28),
                 Row(
                   children: [
-                    _headerStat('Synced', presentCount.toString().padLeft(2, '0'), zenCyan),
+                    _headerStat(context.tr('stat_present'), presentCount.toString().padLeft(2, '0'), zenCyan),
                     const SizedBox(width: 12),
-                    _headerStat('Authorized', leaveCount.toString().padLeft(2, '0'), zenIndigo),
+                    _headerStat(context.tr('leave_permit'), leaveCount.toString().padLeft(2, '0'), zenIndigo),
                     const SizedBox(width: 12),
-                    _headerStat('Delayed', lateCount.toString().padLeft(2, '0'), zenRose),
+                    _headerStat(context.tr('stat_late'), lateCount.toString().padLeft(2, '0'), zenRose),
                   ],
                 ),
               ],
@@ -159,8 +161,8 @@ class _HistoryPageState extends State<HistoryPage> {
            const SizedBox(width: 16),
            Expanded(
              child: Text(
-               'UNSYNCED TELEMETRY DETECTED',
-               style: GoogleFonts.outfit(color: Colors.amber.shade900, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+               context.tr('unsynced_attendance'),
+               style: GoogleFonts.plusJakartaSans(color: Colors.amber.shade900, fontSize: 12.5, fontWeight: FontWeight.w700),
              ),
            ),
            GestureDetector(
@@ -192,10 +194,7 @@ class _HistoryPageState extends State<HistoryPage> {
    }
 
   Widget _buildDropdownMonth() {
-    final months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
+    final months = AppStrings.months(context.read<AppProvider>().language);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
@@ -285,8 +284,8 @@ class _HistoryPageState extends State<HistoryPage> {
           Icon(Icons.inventory_2_outlined, color: zenSlate.withValues(alpha: 0.2), size: 64),
           const SizedBox(height: 20),
           Text(
-            'NO REGISTRY RECORDS FOUND', 
-            style: GoogleFonts.outfit(color: zenSlate.withValues(alpha: 0.4), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
+            context.tr('no_history'),
+            style: GoogleFonts.plusJakartaSans(color: zenSlate.withValues(alpha: 0.6), fontSize: 13, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -294,18 +293,19 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Widget _buildAttendanceCard(BuildContext context, AttendanceRecord r) {
+    final pal = context.palette;
     final date = DateTime.tryParse(r.date) ?? DateTime.now();
-    
+
     bool isLate = r.status == 'late';
     bool isAbsent = r.status == 'absent';
     bool isLeave = r.status == 'leave';
     
     Color statusColor = zenEmerald;
-    String statusLabel = 'SYNCED';
-    
-    if (isLate) { statusColor = zenRose; statusLabel = 'DELAYED'; }
-    if (isAbsent) { statusColor = zenRose; statusLabel = 'OFFLINE'; }
-    if (isLeave) { statusColor = zenIndigo; statusLabel = 'AUTHORIZED'; }
+    String statusLabel = context.tr('status_present');
+
+    if (isLate) { statusColor = zenRose; statusLabel = context.tr('status_late'); }
+    if (isAbsent) { statusColor = zenRose; statusLabel = context.tr('status_absent_full'); }
+    if (isLeave) { statusColor = zenIndigo; statusLabel = context.tr('status_leave_full'); }
 
     String checkInTime = r.checkIn?.time != null ? DateFormat('HH:mm').format(r.checkIn!.time!) : '--:--';
     String checkOutTime = r.checkOut?.time != null ? DateFormat('HH:mm').format(r.checkOut!.time!) : '--:--';
@@ -313,21 +313,10 @@ class _HistoryPageState extends State<HistoryPage> {
     final dispute = context.watch<AppProvider>().myDisputeRequests.where((d) => d.relatedAttendanceId == r.id).firstOrNull;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(40),
-        border: Border.all(color: zenNavy.withValues(alpha: 0.03)),
-        boxShadow: [
-          BoxShadow(
-                color: zenNavy.withValues(alpha: 0.02), 
-                blurRadius: 30, 
-                offset: const Offset(0, 15)
-              )
-            ],
-          ),
-          child: Column(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(24),
+      decoration: pal.cardDecoration(radius: 28),
+      child: Column(
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -336,8 +325,8 @@ class _HistoryPageState extends State<HistoryPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        DateFormat('EEEE, d MMM yyyy').format(date).toUpperCase(),
-                        style: GoogleFonts.outfit(color: zenNavy, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: -0.2),
+                        DateFormat('EEEE, d MMM yyyy', context.read<AppProvider>().language).format(date),
+                        style: GoogleFonts.outfit(color: pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -0.2),
                       ),
                       const SizedBox(height: 6),
                       Row(
@@ -345,8 +334,8 @@ class _HistoryPageState extends State<HistoryPage> {
                           Container(width: 6, height: 6, decoration: const BoxDecoration(color: zenIndigo, shape: BoxShape.circle)),
                           const SizedBox(width: 8),
                           Text(
-                            'SECTOR: MARTAPURA HUB',
-                            style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1),
+                            'JNE Martapura',
+                            style: GoogleFonts.plusJakartaSans(color: zenSlate, fontSize: 11.5, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
@@ -360,20 +349,20 @@ class _HistoryPageState extends State<HistoryPage> {
                     ),
                     child: Text(
                       statusLabel,
-                      style: GoogleFonts.outfit(color: statusColor, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                      style: GoogleFonts.plusJakartaSans(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Divider(color: zenOffWhite, thickness: 2, height: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Divider(color: pal.border, thickness: 1, height: 1),
               ),
               Row(
                 children: [
-                  _timeBox('ENTRY SIGNAL', checkInTime, Icons.sensors_rounded, zenCyan),
+                  _timeBox(context.tr('check_in'), checkInTime, Icons.login_rounded, zenCyan, pal),
                   const Spacer(),
-                  _timeBox('EXIT SIGNAL', checkOutTime, Icons.sensors_off_rounded, zenIndigo),
+                  _timeBox(context.tr('check_out'), checkOutTime, Icons.logout_rounded, zenIndigo, pal),
                   const SizedBox(width: 12),
                   if (dispute == null && (isLate || isAbsent))
                     GestureDetector(
@@ -393,8 +382,8 @@ class _HistoryPageState extends State<HistoryPage> {
                           ],
                         ),
                         child: Text(
-                          'REPORT',
-                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+                          context.tr('report_btn'),
+                          style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                         ),
                       ),
                     )
@@ -445,7 +434,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: zenOffWhite,
+                      color: pal.cardAlt,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -461,12 +450,11 @@ class _HistoryPageState extends State<HistoryPage> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'COMPLAINT STATUS: ${dispute.status.toUpperCase()}',
-                                style: GoogleFonts.outfit(
+                                '${context.tr('dispute_status_prefix')}: ${_disputeStatusLabel(context, dispute.status)}',
+                                style: GoogleFonts.plusJakartaSans(
                                   color: dispute.status == 'resolved' ? zenEmerald : (dispute.status == 'rejected' ? zenRose : Colors.amber.shade900),
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
@@ -478,7 +466,7 @@ class _HistoryPageState extends State<HistoryPage> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  'KONFIRMASI',
+                                  context.tr('confirm_badge'),
                                   style: GoogleFonts.outfit(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900, letterSpacing: 1),
                                 ),
                               ),
@@ -489,8 +477,8 @@ class _HistoryPageState extends State<HistoryPage> {
                         if (dispute.adminResponse != null && dispute.adminResponse!.isNotEmpty) ...[
                           const SizedBox(height: 6),
                           Text(
-                            'Tap untuk buka percakapan dengan admin',
-                            style: GoogleFonts.plusJakartaSans(color: zenNavy.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.w600, height: 1.4),
+                            context.tr('tap_open_chat_admin'),
+                            style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontSize: 10, fontWeight: FontWeight.w600, height: 1.4),
                           ),
                         ],
                       ],
@@ -503,7 +491,24 @@ class _HistoryPageState extends State<HistoryPage> {
         );
       }
 
-      Widget _timeBox(String label, String time, IconData icon, Color color) {
+      String _disputeStatusLabel(BuildContext context, String status) {
+        switch (status) {
+          case 'resolved':
+            return context.tr('ds_resolved');
+          case 'rejected':
+            return context.tr('ds_rejected');
+          case 'in_review':
+            return context.tr('ds_in_review');
+          case 'reopened':
+            return context.tr('ds_reopened');
+          case 'closed':
+            return context.tr('ds_closed');
+          default:
+            return context.tr('ds_pending');
+        }
+      }
+
+      Widget _timeBox(String label, String time, IconData icon, Color color, AppPalette pal) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -512,8 +517,8 @@ class _HistoryPageState extends State<HistoryPage> {
                 Icon(icon, size: 14, color: color.withValues(alpha: 0.6)),
                 const SizedBox(width: 8),
                 Text(
-                  label, 
-                  style: GoogleFonts.outfit(color: zenSlate, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5)
+                  label,
+                  style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontSize: 11.5, fontWeight: FontWeight.w600)
                 ),
               ],
             ),
@@ -521,9 +526,9 @@ class _HistoryPageState extends State<HistoryPage> {
             Text(
               time,
               style: GoogleFonts.outfit(
-                color: zenNavy, 
-                fontSize: 20, 
-                fontWeight: FontWeight.w900, 
+                color: pal.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
                 fontFeatures: [const FontFeature.tabularFigures()]
               ),
             ),

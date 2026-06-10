@@ -1,411 +1,261 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:animate_do/animate_do.dart';
 import '../../providers/app_provider.dart';
+import '../../models/app_models.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/ui_kit.dart';
+import '../../utils/app_strings.dart';
 import '../auth/login_page.dart';
 import '../enroll/enroll_page.dart';
 import '../help/faq_screen.dart';
 
-class ProfilePage extends StatelessWidget {
-  // ── ZEN PREMIUM PALETTE ──
-  static const Color zenNavy = Color(0xFF121826);
-  static const Color zenIndigo = Color(0xFF4F46E5);
-  static const Color zenCyan = Color(0xFF22D3EE);
-  static const Color zenRose = Color(0xFFF43F5E);
-  static const Color zenSlate = Color(0xFF94A3B8);
-  static const Color zenOffWhite = Color(0xFFF8FAFC);
-
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  bool _uploading = false;
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
     final user = provider.currentUser;
     if (user == null) return const SizedBox();
-    final isDark = provider.isDarkMode;
+    final pal = context.palette;
+    final balance = provider.leaveBalance;
+    final now = DateTime.now();
+    final stats = provider.getStatsForMonth(now.month, now.year);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0B1120) : zenOffWhite,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // ── PREMIUM NAVIGATION BAR ──
-          SliverAppBar(
-            expandedHeight: 120,
-            floating: false,
-            pinned: true,
-            elevation: 0,
-            backgroundColor: Colors.white.withValues(alpha: 0.8),
-            flexibleSpace: FlexibleSpaceBar(
-              centerTitle: true,
-              title: Text(
-                'PERSONNEL REGISTRY',
-                style: GoogleFonts.outfit(
-                  color: zenNavy,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 2.5,
-                ),
+      backgroundColor: pal.auroraBase,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leading: const AppBackButton(),
+        title: Text(
+          context.tr('profile_title'),
+          style: GoogleFonts.plusJakartaSans(
+              color: pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800),
+        ),
+        actions: [
+          IconButton(
+            onPressed: () => Navigator.pushNamed(context, '/settings'),
+            icon: Icon(Icons.settings_outlined, color: pal.textPrimary, size: 22),
+          ),
+        ],
+      ),
+      body: AuroraBackground(
+        child: ListView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+          children: [
+          // ── Premium hero header ──
+          FadeInDown(
+            duration: const Duration(milliseconds: 450),
+            child: _heroHeader(user, stats),
+          ),
+          const SizedBox(height: 20),
+
+          // ── Leave balance ──
+          FadeInUp(
+            duration: const Duration(milliseconds: 450),
+            child: _leaveBalanceCard(balance, pal),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Account info ──
+          SectionLabel(context.tr('sec_account')),
+          GlassCard(
+            padding: EdgeInsets.zero,
+            child:Column(children: [
+              AppInfoRow(icon: Icons.alternate_email_rounded, label: context.tr('email'), value: user.email),
+              const AppRowDivider(),
+              AppInfoRow(
+                  icon: Icons.phone_iphone_rounded,
+                  label: context.tr('phone'),
+                  value: user.phone.isEmpty ? context.tr('not_set') : user.phone),
+              const AppRowDivider(),
+              AppInfoRow(
+                  icon: Icons.badge_outlined,
+                  label: context.tr('employee_id'),
+                  value: user.employeeId.isEmpty ? '-' : user.employeeId),
+            ]),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Services ──
+          SectionLabel(context.tr('sec_services')),
+          GlassCard(
+            padding: EdgeInsets.zero,
+            child:Column(children: [
+              AppActionRow(
+                icon: Icons.assignment_outlined,
+                iconColor: AppColors.blue,
+                title: context.tr('request_center'),
+                subtitle: context.tr('request_center_sub'),
+                onTap: () => Navigator.pushNamed(context, '/my_requests'),
               ),
+              const AppRowDivider(),
+              AppActionRow(
+                icon: Icons.support_agent_rounded,
+                iconColor: AppColors.green,
+                title: context.tr('menu_chat'),
+                subtitle: context.tr('chat_hr_sub'),
+                onTap: () => Navigator.pushNamed(context, '/chat'),
+              ),
+              const AppRowDivider(),
+              AppActionRow(
+                icon: Icons.help_outline_rounded,
+                iconColor: AppColors.amber,
+                title: context.tr('help_faq'),
+                subtitle: context.tr('help_faq_sub'),
+                onTap: () => Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => const FaqScreen())),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Card & biometric ──
+          SectionLabel(context.tr('sec_card_bio')),
+          GlassCard(
+            padding: EdgeInsets.zero,
+            child:Column(children: [
+              AppActionRow(
+                icon: Icons.contact_mail_outlined,
+                iconColor: AppColors.brandRed,
+                title: context.tr('id_card'),
+                subtitle: context.tr('id_card_sub'),
+                onTap: () => Navigator.pushNamed(context, '/profile/id_card'),
+              ),
+              const AppRowDivider(),
+              AppActionRow(
+                icon: Icons.face_retouching_natural_rounded,
+                iconColor: AppColors.violet,
+                title: context.tr('reenroll_face'),
+                subtitle: context.tr('reenroll_face_sub'),
+                onTap: () => Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => const EnrollPage())),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 24),
+
+          // ── Security ──
+          SectionLabel(context.tr('sec_security')),
+          GlassCard(
+            padding: EdgeInsets.zero,
+            child:AppActionRow(
+              icon: Icons.lock_outline_rounded,
+              iconColor: const Color(0xFF0EA5E9),
+              title: context.tr('change_password'),
+              subtitle: context.tr('change_password_sub'),
+              onTap: () => _showChangePasswordDialog(context, provider, pal.isDark),
             ),
-            leading: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: zenNavy.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.chevron_left_rounded,
-                    color: zenNavy,
-                    size: 28,
-                  ),
-                ),
+          ),
+          const SizedBox(height: 28),
+
+          // ── Logout ──
+          GestureDetector(
+            onTap: () => _confirmLogout(context, provider, pal.isDark),
+            child: Container(
+              height: 56,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.brandRed.withValues(alpha: pal.isDark ? 0.14 : 0.08),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.brandRed.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.logout_rounded, color: AppColors.brandRed, size: 19),
+                  const SizedBox(width: 10),
+                  Text(context.tr('logout'),
+                      style: GoogleFonts.plusJakartaSans(
+                          color: AppColors.brandRed, fontSize: 15, fontWeight: FontWeight.w800)),
+                ],
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              context.tr('app_footer'),
+              style: GoogleFonts.plusJakartaSans(
+                  color: pal.textFaint, fontSize: 11, fontWeight: FontWeight.w600),
+            ),
+          ),
+          ],
+        ),
+      ),
+    );
+  }
 
-          SliverToBoxAdapter(
-            child: Column(
+  // ── Hero header (navy gradient + avatar + stat chips) ──
+  Widget _heroHeader(UserModel user, Map<String, dynamic> stats) {
+    final pal = context.palette;
+    final roleText = [
+      if (user.position.isNotEmpty) user.position,
+      if (user.department.isNotEmpty) user.department,
+    ].join(' • ');
+    final punctuality = ((stats['punctuality'] as num?) ?? 1.0).toDouble();
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
+      decoration: pal.heroDecoration(),
+      child: Column(
+        children: [
+          _buildAvatar(user.photoUrl, pal.isDark),
+          const SizedBox(height: 16),
+          Text(
+            user.name,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(
+                color: Colors.white, fontSize: 21, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+          ),
+          if (roleText.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppColors.jneOrange.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(color: AppColors.jneOrange.withValues(alpha: 0.35)),
+              ),
+              child: Text(
+                roleText,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                    color: AppColors.jneOrange, fontSize: 11.5, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+          const SizedBox(height: 22),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
               children: [
-                // ── CORE IDENTITY HUB ──
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-                  child: Container(
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(40),
-                      border: Border.all(
-                        color: zenNavy.withValues(alpha: 0.04),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: zenNavy.withValues(alpha: 0.03),
-                          blurRadius: 40,
-                          offset: const Offset(0, 20),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: zenIndigo.withValues(alpha: 0.1),
-                              width: 2,
-                            ),
-                          ),
-                          child: CircleAvatar(
-                            radius: 54,
-                            backgroundColor: zenNavy.withValues(alpha: 0.03),
-                            backgroundImage:
-                                (user.photoUrl != null &&
-                                    user.photoUrl!.isNotEmpty)
-                                ? NetworkImage(user.photoUrl!)
-                                : null,
-                            child:
-                                (user.photoUrl == null ||
-                                    user.photoUrl!.isEmpty)
-                                ? const Icon(
-                                    Icons.person_rounded,
-                                    color: zenNavy,
-                                    size: 56,
-                                  )
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(height: 28),
-                        Text(
-                          user.name.toUpperCase(),
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(
-                            color: zenNavy,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.8,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: zenIndigo.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(100),
-                            border: Border.all(
-                              color: zenIndigo.withValues(alpha: 0.1),
-                            ),
-                          ),
-                          child: Text(
-                            '${user.position} • ${user.department}'
-                                .toUpperCase(),
-                            style: GoogleFonts.outfit(
-                              color: zenIndigo,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // ── LEAVE BALANCE VISUALIZER ──
-                _buildSectionHeader('Operational Quota'),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 0,
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.all(28),
-                    decoration: BoxDecoration(
-                      color: zenNavy,
-                      borderRadius: BorderRadius.circular(32),
-                      boxShadow: [
-                        BoxShadow(
-                          color: zenNavy.withValues(alpha: 0.2),
-                          blurRadius: 30,
-                          offset: const Offset(0, 15),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'ANNUAL LEAVE BALANCE',
-                                  style: GoogleFonts.outfit(
-                                    color: zenCyan,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 2,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      '${provider.leaveBalance.remainingAnnual}',
-                                      style: GoogleFonts.outfit(
-                                        color: Colors.white,
-                                        fontSize: 32,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 6,
-                                        left: 4,
-                                      ),
-                                      child: Text(
-                                        '/ ${provider.leaveBalance.annualQuota} DAYS',
-                                        style: GoogleFonts.outfit(
-                                          color: Colors.white38,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.05),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.event_available_rounded,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(100),
-                          child: LinearProgressIndicator(
-                            value: provider.leaveBalance.usagePercent,
-                            backgroundColor: Colors.white10,
-                            color: zenCyan,
-                            minHeight: 8,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildMiniStat(
-                              'USED',
-                              '${provider.leaveBalance.usedAnnual}d',
-                            ),
-                            _buildMiniStat(
-                              'SICK',
-                              '${provider.leaveBalance.usedSick}d',
-                            ),
-                            _buildMiniStat(
-                              'PERM',
-                              '${provider.leaveBalance.usedPermission}d',
-                            ),
-                            _buildMiniStat(
-                              'PENDING',
-                              '${provider.leaveBalance.pendingDays}d',
-                              color: Colors.amber,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 32),
-
-                // ── OPERATIONAL TELEMETRY ──
-                _buildSectionHeader('Operational Telemetry'),
-                _buildCardWrapper([
-                  _buildInfoItem(
-                    Icons.alternate_email_rounded,
-                    'Registry Email',
-                    user.email,
-                  ),
-                  _buildDivider(),
-                  _buildInfoItem(
-                    Icons.phone_iphone_rounded,
-                    'Signal Frequency',
-                    user.phone.isEmpty ? '+62 000-000-0000' : user.phone,
-                  ),
-                  _buildDivider(),
-                  _buildInfoItem(
-                    Icons.fingerprint_rounded,
-                    'Registry Serial',
-                    user.employeeId,
-                  ),
-                ]),
-
-                // ── OPERATIONAL SUPPORT ──
-                _buildSectionHeader('Operational Support'),
-                _buildCardWrapper([
-                  _buildActionItem(
-                    context,
-                    Icons.analytics_outlined,
-                    'Request Center',
-                    'Track leaves & complaints',
-                    () => Navigator.pushNamed(context, '/my_requests'),
-                  ),
-                  _buildDivider(),
-                  _buildActionItem(
-                    context,
-                    Icons.support_agent_rounded,
-                    'Command Center Chat',
-                    'Direct sync with admin',
-                    () => Navigator.pushNamed(context, '/chat'),
-                  ),
-                  _buildDivider(),
-                  _buildActionItem(
-                    context,
-                    Icons.help_outline_rounded,
-                    'Help & FAQ',
-                    'Cek pertanyaan umum dulu sebelum komplain',
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const FaqScreen()),
-                    ),
-                  ),
-                ]),
-
-                const SizedBox(height: 32),
-
-                // ── ACCESS PROTOCOLS ──
-                _buildSectionHeader('Access Protocols'),
-                _buildCardWrapper([
-                  _buildActionItem(
-                    context,
-                    Icons.badge_outlined,
-                    'Identity Badge',
-                    'Official HUB-MTP Registry',
-                    () => Navigator.pushNamed(context, '/id_card'),
-                  ),
-                  _buildDivider(),
-                  _buildActionItem(
-                    context,
-                    Icons.face_retouching_natural_rounded,
-                    'Biometric Recalibration',
-                    'Sync Facial Signatures',
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const EnrollPage()),
-                    ),
-                  ),
-                ]),
-
-                const SizedBox(height: 32),
-
-                // ── SECURITY ARCHITECTURE ──
-                _buildSectionHeader('Security Architecture'),
-                _buildCardWrapper([
-                  _buildActionItem(
-                    context,
-                    Icons.shield_outlined,
-                    'Access Override',
-                    'Rotate Hub Credentials',
-                    () => _showChangePasswordDialog(context, provider),
-                  ),
-                ]),
-
-                const SizedBox(height: 48),
-
-                // ── TERMINATION SECTOR ──
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: GestureDetector(
-                    onTap: () => _confirmLogout(context, provider),
-                    child: Container(
-                      height: 72,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: zenRose.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: zenRose.withValues(alpha: 0.12),
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'TERMINATE ACTIVE SESSION',
-                          style: GoogleFonts.outfit(
-                            color: zenRose,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 3,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 80),
+                _heroStat('${stats['present']}', context.tr('stat_present'), Icons.check_circle_rounded, AppColors.green),
+                _heroDivider(),
+                _heroStat('${stats['late']}', context.tr('stat_late'), Icons.alarm_rounded, AppColors.amber),
+                _heroDivider(),
+                _heroStat('${(punctuality * 100).toInt()}%', context.tr('on_time'),
+                    Icons.verified_rounded, AppColors.sky),
               ],
             ),
           ),
@@ -414,116 +264,159 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildMiniStat(String label, String value, {Color? color}) {
+  Widget _heroStat(String value, String label, IconData icon, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 17),
+          const SizedBox(height: 6),
+          Text(value,
+              style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 2),
+          Text(label,
+              style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroDivider() =>
+      Container(width: 1, height: 38, color: Colors.white.withValues(alpha: 0.08));
+
+  // ── Leave balance (theme-aware) ──
+  Widget _leaveBalanceCard(LeaveBalance balance, AppPalette pal) {
+    return GlassCard(
+      radius: 24,
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(context.tr('remaining_annual_leave'),
+                      style: GoogleFonts.plusJakartaSans(
+                          color: pal.textSub, fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('${balance.remainingAnnual}',
+                          style: GoogleFonts.plusJakartaSans(
+                              color: pal.textPrimary,
+                              fontSize: 34,
+                              fontWeight: FontWeight.w800,
+                              height: 1)),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 5, left: 5),
+                        child: Text('${context.tr('of_days')} ${balance.annualQuota} ${context.tr('days')}',
+                            style: GoogleFonts.plusJakartaSans(
+                                color: pal.textFaint, fontSize: 12, fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                    color: AppColors.green.withValues(alpha: 0.12), shape: BoxShape.circle),
+                child: const Icon(Icons.event_available_rounded, color: AppColors.green, size: 26),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(100),
+            child: LinearProgressIndicator(
+              value: balance.usagePercent,
+              backgroundColor: pal.isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+              color: AppColors.green,
+              minHeight: 8,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _miniStat(context.tr('used2'), '${balance.usedAnnual} ${context.tr('days')}', pal, pal.textPrimary),
+              _miniStat(context.tr('sick2'), '${balance.usedSick} ${context.tr('days')}', pal, pal.textPrimary),
+              _miniStat(context.tr('permit'), '${balance.usedPermission} ${context.tr('days')}', pal, pal.textPrimary),
+              _miniStat(context.tr('submitted'), '${balance.pendingDays} ${context.tr('days')}', pal, AppColors.amber),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _miniStat(String label, String value, AppPalette pal, Color valueColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.outfit(
-            color: Colors.white38,
-            fontSize: 8,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1,
-          ),
-        ),
+        Text(label,
+            style: GoogleFonts.plusJakartaSans(
+                color: pal.textFaint, fontSize: 10, fontWeight: FontWeight.w600)),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: GoogleFonts.outfit(
-            color: color ?? Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
+        Text(value,
+            style: GoogleFonts.plusJakartaSans(
+                color: valueColor, fontSize: 13, fontWeight: FontWeight.w800)),
       ],
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 0, 32, 16),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          title.toUpperCase(),
-          style: GoogleFonts.outfit(
-            color: zenSlate,
-            fontSize: 9,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 4,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardWrapper(List<Widget> children) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: zenNavy.withValues(alpha: 0.03)),
-          boxShadow: [
-            BoxShadow(
-              color: zenNavy.withValues(alpha: 0.02),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(children: children),
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Divider(
-      height: 1,
-      thickness: 1,
-      color: zenNavy.withValues(alpha: 0.02),
-    );
-  }
-
-  Widget _buildInfoItem(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Row(
+  // ── Avatar with change-photo affordance ──
+  Widget _buildAvatar(String? photoUrl, bool isDark) {
+    final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
+    return GestureDetector(
+      onTap: _uploading ? null : _pickAndUploadPhoto,
+      child: Stack(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: zenNavy.withValues(alpha: 0.03),
-              borderRadius: BorderRadius.circular(14),
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.jneOrange.withValues(alpha: 0.4), width: 2),
             ),
-            child: Icon(icon, color: zenSlate, size: 20),
+            child: CircleAvatar(
+              radius: 50,
+              backgroundColor: const Color(0xFF1E293B),
+              backgroundImage: hasPhoto ? CachedNetworkImageProvider(photoUrl) : null,
+              child: hasPhoto
+                  ? null
+                  : const Icon(Icons.person_rounded, color: Colors.white54, size: 52),
+            ),
           ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label.toUpperCase(),
-                  style: GoogleFonts.outfit(
-                    color: zenSlate,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
+          if (_uploading)
+            Positioned.fill(
+              child: Container(
+                margin: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black54),
+                child: const Center(
+                  child: SizedBox(
+                    width: 26,
+                    height: 26,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation(Colors.white)),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: GoogleFonts.outfit(
-                    color: zenNavy,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
+              ),
+            ),
+          Positioned(
+            right: 2,
+            bottom: 2,
+            child: Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: AppColors.brandRed,
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF15203A), width: 3),
+              ),
+              child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
             ),
           ),
         ],
@@ -531,105 +424,112 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildActionItem(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String subtitle,
-    VoidCallback onTap,
-  ) {
+  Future<void> _pickAndUploadPhoto() async {
+    final provider = context.read<AppProvider>();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = context.read<AppProvider>().isDarkMode;
+        final sheet = isDark ? const Color(0xFF15203A) : Colors.white;
+        final txt = isDark ? Colors.white : const Color(0xFF0F172A);
+        return Container(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: sheet, borderRadius: BorderRadius.circular(24)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                child: Row(
+                  children: [
+                    Text(context.tr('change_photo'),
+                        style: GoogleFonts.plusJakartaSans(
+                            color: txt, fontWeight: FontWeight.w800, fontSize: 16)),
+                  ],
+                ),
+              ),
+              _sheetOption(ctx, Icons.photo_library_rounded, context.tr('from_gallery'), txt, ImageSource.gallery),
+              _sheetOption(ctx, Icons.photo_camera_rounded, context.tr('take_photo'), txt, ImageSource.camera),
+              const SizedBox(height: 4),
+            ],
+          ),
+        );
+      },
+    );
+    if (source == null) return;
+
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 80,
+      );
+      if (picked == null) return;
+
+      setState(() => _uploading = true);
+      await provider.updateProfilePhoto(File(picked.path));
+      if (!mounted) return;
+      showAppSnack(context, context.tr('photo_updated'), color: AppColors.green);
+    } catch (e) {
+      if (!mounted) return;
+      showAppSnack(context, e.toString().replaceAll('Exception: ', ''), color: AppColors.brandRed);
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  Widget _sheetOption(BuildContext ctx, IconData icon, String label, Color txt, ImageSource src) {
     return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(32),
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => Navigator.pop(ctx, src),
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: zenIndigo.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: zenIndigo, size: 20),
+                  color: AppColors.brandRed.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: AppColors.brandRed, size: 20),
             ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.outfit(
-                      color: zenNavy,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.plusJakartaSans(
-                      color: zenSlate,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: zenSlate.withValues(alpha: 0.3),
-              size: 14,
-            ),
+            const SizedBox(width: 14),
+            Text(label,
+                style: GoogleFonts.plusJakartaSans(
+                    color: txt, fontWeight: FontWeight.w700, fontSize: 14.5)),
           ],
         ),
       ),
     );
   }
 
-  void _confirmLogout(BuildContext context, AppProvider provider) {
+  void _confirmLogout(BuildContext context, AppProvider provider, bool isDark) {
+    final card = isDark ? const Color(0xFF15203A) : Colors.white;
+    final txt = isDark ? Colors.white : const Color(0xFF0F172A);
+    final sub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-        title: Text(
-          'TERMINATE SESSION?',
-          style: GoogleFonts.outfit(
-            color: zenNavy,
-            fontWeight: FontWeight.w900,
-            fontSize: 18,
-            letterSpacing: 0.5,
-          ),
-        ),
+        backgroundColor: card,
+        surfaceTintColor: card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(context.tr('logout_confirm'),
+            style: GoogleFonts.plusJakartaSans(color: txt, fontWeight: FontWeight.w800, fontSize: 18)),
         content: Text(
-          'Operational connection to Hub Martapura will be severed. Manual re-sync is mandatory for future telemetry access.',
-          style: GoogleFonts.plusJakartaSans(
-            color: zenSlate,
-            fontSize: 13,
-            height: 1.6,
-          ),
+          context.tr('logout_confirm_desc'),
+          style: GoogleFonts.plusJakartaSans(color: sub, fontSize: 13.5, height: 1.5),
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              'ABORT',
-              style: GoogleFonts.outfit(
-                color: zenSlate,
-                fontWeight: FontWeight.w900,
-                fontSize: 12,
-                letterSpacing: 2,
-              ),
-            ),
+            child: Text(context.tr('cancel'),
+                style: GoogleFonts.plusJakartaSans(color: sub, fontWeight: FontWeight.w700)),
           ),
-          const SizedBox(width: 8),
           ElevatedButton(
             onPressed: () {
               provider.logout();
@@ -640,153 +540,90 @@ class ProfilePage extends StatelessWidget {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: zenRose,
+              backgroundColor: AppColors.brandRed,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            child: Text(
-              'TERMINATE',
-              style: GoogleFonts.outfit(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 12,
-                letterSpacing: 2,
-              ),
-            ),
+            child: Text(context.tr('logout'),
+                style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.w800)),
           ),
         ],
       ),
     );
   }
 
-  void _showChangePasswordDialog(BuildContext context, AppProvider provider) {
+  void _showChangePasswordDialog(BuildContext context, AppProvider provider, bool isDark) {
     final controller = TextEditingController();
+    final card = isDark ? const Color(0xFF15203A) : Colors.white;
+    final txt = isDark ? Colors.white : const Color(0xFF0F172A);
+    final sub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-        title: Text(
-          'ACCESS OVERRIDE',
-          style: GoogleFonts.outfit(
-            fontWeight: FontWeight.w900,
-            fontSize: 18,
-            color: zenNavy,
-          ),
-        ),
+        backgroundColor: card,
+        surfaceTintColor: card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(context.tr('change_password'),
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 18, color: txt)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Specify a high-entropy passphrase to secure your active personnel registry node.',
-              style: GoogleFonts.plusJakartaSans(
-                color: zenSlate,
-                fontSize: 13,
-                height: 1.6,
-              ),
-            ),
-            const SizedBox(height: 28),
+            Text(context.tr('cp_desc'),
+                style: GoogleFonts.plusJakartaSans(color: sub, fontSize: 13.5, height: 1.5)),
+            const SizedBox(height: 20),
             TextField(
               controller: controller,
               obscureText: true,
-              style: GoogleFonts.outfit(
-                fontWeight: FontWeight.w800,
-                color: zenNavy,
-              ),
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: txt),
               decoration: InputDecoration(
-                hintText: 'New Access Token',
-                hintStyle: GoogleFonts.outfit(
-                  color: zenSlate.withValues(alpha: 0.4),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                prefixIcon: const Icon(
-                  Icons.shield_rounded,
-                  size: 18,
-                  color: zenSlate,
-                ),
+                hintText: context.tr('new_password_hint'),
+                hintStyle: GoogleFonts.plusJakartaSans(color: sub.withValues(alpha: 0.6), fontSize: 13.5),
+                prefixIcon: Icon(Icons.lock_outline_rounded, size: 19, color: sub),
                 filled: true,
-                fillColor: zenNavy.withValues(alpha: 0.03),
+                fillColor: sub.withValues(alpha: 0.08),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.all(22),
+                    borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.all(18),
               ),
             ),
           ],
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'CANCEL',
-              style: GoogleFonts.outfit(
-                color: zenSlate,
-                fontWeight: FontWeight.w900,
-                fontSize: 12,
-                letterSpacing: 1,
-              ),
-            ),
+            child: Text(context.tr('cancel'),
+                style: GoogleFonts.plusJakartaSans(color: sub, fontWeight: FontWeight.w700)),
           ),
-          const SizedBox(width: 8),
           ElevatedButton(
             onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final navigator = Navigator.of(ctx);
+              final minMsg = context.tr('cp_min');
+              final okMsg = context.tr('password_changed');
               if (controller.text.length < 6) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Access Token must be ≥ 6 chars.'),
-                  ),
-                );
+                messenger.showSnackBar(appSnack(minMsg, AppColors.brandRed));
                 return;
               }
               try {
                 await provider.changePassword(controller.text);
-                if (!context.mounted) return;
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Access Token Synced Successfully.'),
-                    backgroundColor: zenIndigo,
-                    behavior: SnackBarBehavior.floating,
-                    margin: const EdgeInsets.all(24),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                );
+                navigator.pop();
+                messenger.showSnackBar(appSnack(okMsg, AppColors.green));
               } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(e.toString().replaceAll('Exception: ', '')),
-                  ),
-                );
+                messenger.showSnackBar(
+                    appSnack(e.toString().replaceAll('Exception: ', ''), AppColors.brandRed));
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: zenNavy,
+              backgroundColor: AppColors.blue,
               elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            child: Text(
-              'SYNC TOKEN',
-              style: GoogleFonts.outfit(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 12,
-                letterSpacing: 1,
-              ),
-            ),
+            child: Text(context.tr('save'),
+                style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.w800)),
           ),
         ],
       ),

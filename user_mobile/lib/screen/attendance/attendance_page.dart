@@ -8,6 +8,8 @@ import '../../providers/app_provider.dart';
 import '../../utils/geofence_service.dart';
 import '../succeed/succeed_page.dart';
 import '../../widgets/package_loading.dart';
+import '../../widgets/live_location_map.dart';
+import '../../utils/app_strings.dart';
 
 class AttendancePage extends StatefulWidget {
   const AttendancePage({super.key});
@@ -36,6 +38,16 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
    
   late AnimationController _scanAnimController;
   bool _isCapturing = false;
+  bool _scanError = false; // true sebentar saat gagal (no face / luar area / GPS palsu)
+  int _faceAttempts = 0; // hitung gagal deteksi wajah (batas dari admin: maxFaceAttempts)
+
+  void _flashError() {
+    if (!mounted) return;
+    setState(() => _scanError = true);
+    Future.delayed(const Duration(milliseconds: 2500), () {
+      if (mounted) setState(() => _scanError = false);
+    });
+  }
 
   @override
   void initState() {
@@ -48,10 +60,12 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   }
 
   Future<void> _initCamera() async {
+    final camNotDetected = context.tr('camera_not_detected');
+    final errPrefix = context.tr('error_occurred');
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
-        setState(() => _errorMessage = 'NO CAMERA HARDWARE DETECTED');
+        setState(() => _errorMessage = camNotDetected);
         return;
       }
       final front = cameras.firstWhere(
@@ -70,15 +84,15 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     } on CameraException catch (e) {
       _handleCameraError(e);
     } catch (e) {
-      setState(() => _errorMessage = 'SYSTEM ERROR: $e');
+      setState(() => _errorMessage = '$errPrefix: $e');
     }
   }
 
   void _handleCameraError(CameraException e) {
     if (e.code == 'CameraAccessDenied') {
-      setState(() => _errorMessage = 'BIOMETRIC ACCESS DENIED\n\nPlease enable camera permissions in system settings.');
+      setState(() => _errorMessage = context.tr('camera_denied'));
     } else {
-      setState(() => _errorMessage = 'CAMERA INITIALIZATION FAILED: ${e.description}');
+      setState(() => _errorMessage = '${context.tr('camera_start_failed')}: ${e.description}');
     }
   }
 
@@ -87,26 +101,44 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     
     final geo = Provider.of<GeofenceService>(context, listen: false);
     final app = Provider.of<AppProvider>(context, listen: false);
-    final isRemoteAllowed = app.currentUser?.allowRemoteAttendance ?? false;
+    final isRemoteAllowed = app.canBypassGeofence;
     
      if (geo.currentPosition == null) {
-       _showFeedback('WAITING FOR GPS STABILIZATION...', zenNavy);
+       _showFeedback(context.tr('waiting_gps'), zenNavy);
        return;
      }
 
      if (geo.isLocationMocked) {
-       _showFeedback('MOCK LOCATION DETECTED • ACCESS REVOKED', zenRose);
+       _flashError();
+       _showFeedback(context.tr('mock_location_rejected'), zenRose);
        return;
      }
 
     if (!geo.isInRange && !isRemoteAllowed) {
       HapticFeedback.vibrate();
-      _showFeedback('HUB RADIUS BREACHED (${(geo.distanceFromOffice/1000).toStringAsFixed(1)} KM)', zenRose);
+      _flashError();
+      _showFeedback('${context.tr('out_of_radius_office')} (${(geo.distanceFromOffice/1000).toStringAsFixed(1)} km)', zenRose);
       return;
     }
 
     setState(() => _isCapturing = true);
     HapticFeedback.mediumImpact();
+
+    // Ambil teks terjemahan sebelum await (hindari pakai context lintas async gap).
+    final faceFailPre = context.tr('face_detect_failed');
+    final timesTryLater = context.tr('times_try_later');
+    final faceNotDetectedPre = context.tr('face_not_detected_pre');
+    final attemptsWord = context.tr('attempts_word');
+    final alreadyCheckedIn = context.tr('already_checked_in');
+    final noCheckinYet = context.tr('no_checkin_yet');
+    final connIssue = context.tr('connection_issue');
+    final saveFailed = context.tr('save_attendance_failed');
+    final checkInLabel = context.tr('check_in_label');
+    final checkOutLabel = context.tr('check_out_label');
+    final doneCheck = context.tr('done_check');
+    final lateCheck = context.tr('late_check');
+    final ontimeCheck = context.tr('ontime_check');
+    final outsideOfficeLoc = context.tr('outside_office_loc');
 
     try {
       final XFile photo = await _cameraController!.takePicture();
@@ -114,8 +146,18 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       final faces = await _faceDetector.processImage(inputImage);
 
       if (faces.isEmpty) {
-        _showFeedback('BIOMETRIC SCAN FAILED • FACE NOT DETECTED', zenRose);
+        _faceAttempts++;
+        _flashError();
+        if (_faceAttempts >= app.maxFaceAttempts) {
+          _showFeedback('$faceFailPre $_faceAttempts $timesTryLater', zenRose);
+          await Future.delayed(const Duration(milliseconds: 1300));
+          if (mounted) Navigator.pop(context);
+          return;
+        }
+        final sisa = app.maxFaceAttempts - _faceAttempts;
+        _showFeedback('$faceNotDetectedPre $sisa $attemptsWord', zenRose);
       } else {
+        _faceAttempts = 0; // reset saat berhasil
         if (!mounted) return;
         final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         final bool isCheckOut = args?['isCheckOut'] ?? false;
@@ -140,17 +182,26 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => SucceedPage(
-              jenis: isCheckOut ? 'Attendance: Exit' : 'Attendance: Entry',
+              jenis: isCheckOut ? checkOutLabel : checkInLabel,
               waktu: '${now.hour.toString().padLeft(2,'0')}:${now.minute.toString().padLeft(2,'0')} WITA',
-              status: isCheckOut ? 'MISSION COMPLETE ✓' : (app.isLateForClockIn ? 'DELAYED SIGNAL ⚠' : 'STATION SYNCED ✓'),
-              lokasi: isRemoteAllowed ? 'EXTERNAL SECTOR' : app.hubName.toUpperCase(),
+              status: isCheckOut ? doneCheck : (app.isLateForClockIn ? lateCheck : ontimeCheck),
+              lokasi: isRemoteAllowed ? outsideOfficeLoc : app.hubName,
             )),
             (route) => route.isFirst,
           );
         }
       }
     } catch (e) {
-      _showFeedback('TELEMETRY ERROR: $e', zenRose);
+      _flashError();
+      final raw = e.toString();
+      final msg = raw.contains('sudah melakukan absensi')
+          ? alreadyCheckedIn
+          : raw.contains('tidak ditemukan')
+              ? noCheckinYet
+              : raw.toLowerCase().contains('network') || raw.toLowerCase().contains('unavailable')
+                  ? connIssue
+                  : saveFailed;
+      _showFeedback(msg, zenRose);
     } finally {
       if (mounted) setState(() => _isCapturing = false);
     }
@@ -159,11 +210,11 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   void _showFeedback(String msg, Color bg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.outfit(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.5)),
+        content: Text(msg, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13)),
         backgroundColor: bg,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
@@ -228,17 +279,23 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   Widget _buildLoadingOverlay() {
     return Container(
       color: zenNavy.withValues(alpha: 0.85),
-      child: const PackageLoading(
-        message: 'SYNCING BIOMETRICS...',
+      child: PackageLoading(
+        message: context.tr('saving_attendance'),
         isLight: true,
       ),
     );
   }
 
   Widget _buildOverlay(GeofenceService geo, AppProvider app) {
+    final remoteAllowed = app.canBypassGeofence;
+    final geoOk = geo.isInRange || remoteAllowed;
+    // Merah saat: baru gagal scan, GPS palsu, atau di luar area (setelah GPS dapat).
+    final frameColor = (_scanError || geo.isLocationMocked || (!geoOk && geo.currentPosition != null))
+        ? zenRose
+        : zenIndigo;
     return Stack(
       children: [
-        _buildScannerOverlay(),
+        _buildScannerOverlay(frameColor),
           
           // ── APP BAR ──
           Positioned(
@@ -269,15 +326,15 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
                     child: Column(
                       children: [
                         Text(
-                          'BIOMETRIC VERIFICATION',
+                          context.tr('face_verification'),
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 3),
+                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.3),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'STATION ID: ${app.stationId}',
+                          app.hubName,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(color: zenCyan, fontSize: 8, fontWeight: FontWeight.w700, letterSpacing: 1.5),
+                          style: GoogleFonts.plusJakartaSans(color: zenCyan, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5),
                         ),
                       ],
                     ),
@@ -290,7 +347,38 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
           
           // ── STATUS TAG ──
           _buildStatusInfo(geo, app),
-          
+
+          // ── LIVE MINI MAP (glance where you are vs office) ──
+          Positioned(
+            top: 190,
+            right: 16,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 130,
+                  height: 90,
+                  child: LiveLocationMap(
+                    compact: true,
+                    height: 90,
+                    borderRadius: 18,
+                    showStatusPill: false,
+                    onTap: () => Navigator.pushNamed(context, '/lokasi'),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  context.tr('tap_for_map'),
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white60,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           // ── BOTTOM SHUTTER AREA ──
           Positioned(
             bottom: 0, left: 0, right: 0,
@@ -322,18 +410,11 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: zenIndigo,
-                          boxShadow: [
-                            BoxShadow(
-                              color: zenIndigo.withValues(alpha: 0.4),
-                              blurRadius: 30,
-                              spreadRadius: 4,
-                            ),
-                          ],
+                          color: frameColor,
                         ),
-                        child: _isCapturing 
+                        child: _isCapturing
                           ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
-                          : const Icon(Icons.fingerprint_rounded, color: Colors.white, size: 40),
+                          : Icon(_scanError ? Icons.error_outline_rounded : Icons.fingerprint_rounded, color: Colors.white, size: 40),
                       ),
                     ),
                   ),
@@ -352,8 +433,8 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
                       const Icon(Icons.info_outline_rounded, color: Colors.white54, size: 14),
                       const SizedBox(width: 12),
                       Text(
-                        _isCapturing ? 'SYNCHRONIZING...' : 'ALIGN FACE WITHIN FRAME',
-                        style: GoogleFonts.outfit(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
+                        _isCapturing ? context.tr('processing') : context.tr('position_face'),
+                        style: GoogleFonts.plusJakartaSans(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -367,7 +448,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   }
 
   Widget _buildStatusInfo(GeofenceService geo, AppProvider app) {
-    final isRemoteAllowed = app.currentUser?.allowRemoteAttendance ?? false;
+    final isRemoteAllowed = app.canBypassGeofence;
     final isAllowed = geo.isInRange || isRemoteAllowed;
     
     String statusText = '';
@@ -375,13 +456,13 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     Color color = isAllowed ? zenCyan : zenRose;
 
     if (isRemoteAllowed) {
-      statusText = 'REMOTE SECTOR: ACTIVE';
+      statusText = context.tr('remote_attendance_active');
       icon = Icons.satellite_alt_rounded;
     } else if (geo.isInRange) {
-      statusText = '${app.hubName.toUpperCase()}: CONNECTED';
-      icon = Icons.hub_rounded;
+      statusText = '${app.hubName} • ${context.tr('in_area')}';
+      icon = Icons.location_on_rounded;
     } else {
-      statusText = 'HUB BREACH: ${(geo.distanceFromOffice/1000).toStringAsFixed(1)} KM';
+      statusText = '${context.tr('out_of_area_label')} • ${(geo.distanceFromOffice/1000).toStringAsFixed(1)} km';
       icon = Icons.warning_amber_rounded;
     }
 
@@ -402,12 +483,12 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
               Icon(icon, color: color, size: 16),
               const SizedBox(width: 12),
               Text(
-                statusText, 
-                style: GoogleFonts.outfit(
-                  color: Colors.white, 
-                  fontSize: 10, 
-                  fontWeight: FontWeight.w900, 
-                  letterSpacing: 1.5,
+                statusText,
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
                   shadows: [Shadow(color: color.withValues(alpha: 0.5), blurRadius: 10)],
                 )
               ),
@@ -418,12 +499,12 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     );
   }
 
-  Widget _buildScannerOverlay() {
+  Widget _buildScannerOverlay(Color color) {
     return AnimatedBuilder(
       animation: _scanAnimController,
       builder: (context, child) {
         return CustomPaint(
-          painter: ScannerPainter(_scanAnimController.value),
+          painter: ScannerPainter(_scanAnimController.value, color),
           child: Container(),
         );
       },
@@ -434,31 +515,24 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
 
 class ScannerPainter extends CustomPainter {
   final double scanValue;
-  ScannerPainter(this.scanValue);
+  final Color color;
+  ScannerPainter(this.scanValue, [this.color = const Color(0xFF4F46E5)]);
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2 - 40);
     final radius = size.width * 0.38;
-    
+
     // Background Darkening
     final backgroundPath = Path()
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
       ..addOval(Rect.fromCircle(center: center, radius: radius))
       ..fillType = PathFillType.evenOdd;
-    
+
     canvas.drawPath(
       backgroundPath,
       Paint()..color = const Color(0xFF121826).withValues(alpha: 0.8),
     );
-
-    // Frame Glow
-    final glowPaint = Paint()
-      ..color = const Color(0xFF4F46E5).withValues(alpha: 0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 30.0
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
-    canvas.drawCircle(center, radius, glowPaint);
 
     // Main Circle Border
     final borderPaint = Paint()
@@ -466,10 +540,10 @@ class ScannerPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
     canvas.drawCircle(center, radius, borderPaint);
-    
+
     // Corner brackets (Zen Style)
     final bracketPaint = Paint()
-      ..color = const Color(0xFF4F46E5)
+      ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round;
@@ -490,9 +564,9 @@ class ScannerPainter extends CustomPainter {
     final scanLinePaint = Paint()
       ..shader = LinearGradient(
         colors: [
-          const Color(0xFF4F46E5).withValues(alpha: 0),
-          const Color(0xFF4F46E5).withValues(alpha: 0.9),
-          const Color(0xFF4F46E5).withValues(alpha: 0),
+          color.withValues(alpha: 0),
+          color.withValues(alpha: 0.9),
+          color.withValues(alpha: 0),
         ],
       ).createShader(Rect.fromLTRB(center.dx - radius, lineY - 15, center.dx + radius, lineY + 15))
       ..strokeWidth = 4.0;

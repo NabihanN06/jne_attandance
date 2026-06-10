@@ -76,7 +76,11 @@ class PresenceService {
     }
   }
 
-  /// Listen to a specific user's presence status
+  /// Dianggap offline jika heartbeat terakhir lebih lama dari ini
+  /// (heartbeat tiap 30 dtk → 75 dtk = ~2.5x, hindari flicker).
+  static const Duration staleAfter = Duration(seconds: 75);
+
+  /// Listen to a specific user's presence status (online + lastSeen masih segar).
   static Stream<bool> subscribeToUser(String userId) {
     return _db
         .collection('user_presence')
@@ -84,8 +88,13 @@ class PresenceService {
         .snapshots()
         .map((snap) {
       final data = snap.data();
-      if (data == null) return false;
-      return data['isOnline'] == true;
+      if (data == null || data['isOnline'] != true) return false;
+      final ls = data['lastSeen'];
+      if (ls is Timestamp) {
+        return DateTime.now().difference(ls.toDate()) < staleAfter;
+      }
+      // Belum ada lastSeen valid → anggap online apa adanya.
+      return true;
     });
   }
 

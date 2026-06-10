@@ -12,10 +12,9 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  // ── ZEN PREMIUM PALETTE ──
-  static const Color zenNavy = Color(0xFF121826);
-  static const Color zenIndigo = Color(0xFF4F46E5);
-  static const Color zenCyan = Color(0xFF22D3EE);
+  // ── JNE Brand palette ──
+  static const Color navy = Color(0xFF0B1120);
+  static const Color jneOrange = Color(0xFFFF6B00);
 
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -24,35 +23,24 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    );
-
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 2000));
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.7, curve: Curves.easeIn)),
     );
-
-    _scaleAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+    _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: const Interval(0.0, 1.0, curve: Curves.easeOutBack)),
     );
-
     _controller.forward();
     _checkInit();
   }
 
   Future<void> _checkInit() async {
     final provider = Provider.of<AppProvider>(context, listen: false);
-    
-    // Minimal delay for brand establishment
     await Future.delayed(const Duration(milliseconds: 2500));
-    
     while (!provider.isInitialized) {
       await Future.delayed(const Duration(milliseconds: 100));
     }
-
     if (!mounted) return;
-    
     if (provider.isLoggedIn) {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
@@ -69,25 +57,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: zenNavy,
+      backgroundColor: navy,
       body: Stack(
         children: [
-          // Background Gradient Hub
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.center,
-                  radius: 1.0,
-                  colors: [
-                    zenIndigo.withValues(alpha: 0.08),
-                    zenNavy,
-                  ],
-                ),
-              ),
-            ),
-          ),
-
           Center(
             child: FadeTransition(
               opacity: _fadeAnimation,
@@ -96,39 +68,30 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Brand Identity
+                    // JNE logo — flat, clean
                     Container(
-                      padding: const EdgeInsets.all(32),
+                      width: 92,
+                      height: 92,
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.03),
-                        borderRadius: BorderRadius.circular(48),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
                       ),
                       child: Image.asset(
-                        'assets/images/jne_logo.png',
-                        width: 180,
-                        errorBuilder: (_, _, _) => _buildFallbackLogo(),
+                        'assets/images/jne.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const Icon(Icons.local_shipping_rounded, color: jneOrange, size: 50),
                       ),
                     ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 28),
                     Text(
-                      'OPERATIONAL HUB',
-                      style: GoogleFonts.outfit(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 8.0,
-                      ),
+                      'JNE MARTAPURA',
+                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: 3),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'MARTAPURA SECTOR v2.0',
-                      style: GoogleFonts.outfit(
-                        color: zenCyan,
-                        fontSize: 8,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 2.5,
-                      ),
+                      'Sistem Absensi Karyawan',
+                      style: GoogleFonts.plusJakartaSans(color: const Color(0xFF8A93A6), fontSize: 12.5, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -137,47 +100,44 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           ),
 
           Positioned(
-            bottom: 80,
-            left: 0, right: 0,
+            bottom: 70,
+            left: 0,
+            right: 0,
             child: FadeTransition(
               opacity: _fadeAnimation,
               child: Column(
                 children: [
-                   Container(
-                     width: 40, height: 2,
-                     decoration: BoxDecoration(
-                       color: zenIndigo.withValues(alpha: 0.2),
-                       borderRadius: BorderRadius.circular(10),
-                     ),
-                     child: OverflowBox(
-                       maxWidth: 40,
-                       child: AnimatedBuilder(
-                         animation: _controller,
-                         builder: (context, child) {
-                           return Align(
-                             alignment: Alignment(-1.0 + (2.0 * (_controller.value % 1.0)), 0.0),
-                             child: Container(
-                               width: 12, height: 2,
-                               decoration: BoxDecoration(
-                                 color: zenCyan,
-                                 borderRadius: BorderRadius.circular(10),
-                                 boxShadow: [BoxShadow(color: zenCyan.withValues(alpha: 0.5), blurRadius: 4)],
-                               ),
-                             ),
-                           );
-                         },
-                       ),
-                     ),
-                   ),
-                   const SizedBox(height: 32),
-                   Text(
-                    'INITIALIZING SECURE LINK',
-                    style: GoogleFonts.outfit(
-                      color: Colors.white24,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 3,
+                  SizedBox(
+                    width: 44,
+                    height: 3,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Stack(
+                        children: [
+                          Container(color: Colors.white.withValues(alpha: 0.08)),
+                          AnimatedBuilder(
+                            animation: _controller,
+                            builder: (context, child) => Align(
+                              alignment: Alignment(-1.0 + (2.0 * (_controller.value % 1.0)), 0),
+                              child: Container(
+                                width: 16,
+                                height: 3,
+                                decoration: BoxDecoration(
+                                  color: jneOrange,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [BoxShadow(color: jneOrange.withValues(alpha: 0.6), blurRadius: 6)],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                  ),
+                  const SizedBox(height: 26),
+                  Text(
+                    'Menyiapkan aplikasi...',
+                    style: GoogleFonts.plusJakartaSans(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.5),
                   ),
                 ],
               ),
@@ -185,24 +145,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildFallbackLogo() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'JNE',
-          style: GoogleFonts.outfit(
-            color: Colors.white,
-            fontSize: 64,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -2,
-          ),
-        ),
-        Container(width: 80, height: 4, color: zenCyan, margin: const EdgeInsets.only(top: 4)),
-      ],
     );
   }
 }

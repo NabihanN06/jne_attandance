@@ -5,6 +5,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
+import '../../theme/app_theme.dart';
 
 class CalendarPage extends StatefulWidget {
   const CalendarPage({super.key});
@@ -25,6 +26,7 @@ class _CalendarPageState extends State<CalendarPage> {
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
     final user = provider.currentUser;
+    final pal = context.palette;
     final isDark = provider.isDarkMode;
 
     // Filter events:
@@ -49,8 +51,8 @@ class _CalendarPageState extends State<CalendarPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'SMART CALENDAR',
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1.5),
+          'Kalender',
+          style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800),
         ),
         centerTitle: true,
       ),
@@ -79,7 +81,7 @@ class _CalendarPageState extends State<CalendarPage> {
 
           // ── Events for Selected Day ──
           Expanded(
-            child: _buildEventList(events),
+            child: _buildEventList(events, pal),
           ),
         ],
       ),
@@ -178,7 +180,7 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  Widget _buildEventList(List<CalendarEvent> events) {
+  Widget _buildEventList(List<CalendarEvent> events, AppPalette pal) {
     final dayEvents = events.where((e) => isSameDay(e.startDate, _selectedDay)).toList();
 
     return Column(
@@ -189,10 +191,13 @@ class _CalendarPageState extends State<CalendarPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                DateFormat('EEEE, d MMMM', 'id').format(_selectedDay),
-                style: GoogleFonts.outfit(color: slate950, fontSize: 18, fontWeight: FontWeight.w900),
+              Expanded(
+                child: Text(
+                  DateFormat('EEEE, d MMMM', 'id').format(_selectedDay),
+                  style: GoogleFonts.outfit(color: pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w900),
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(color: jneBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
@@ -214,7 +219,7 @@ class _CalendarPageState extends State<CalendarPage> {
                   final e = dayEvents[index];
                   return FadeInUp(
                     delay: Duration(milliseconds: index * 100),
-                    child: _buildEventCard(e),
+                    child: _buildEventCard(e, pal),
                   );
                 },
               ),
@@ -223,15 +228,11 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-  Widget _buildEventCard(CalendarEvent e) {
+  Widget _buildEventCard(CalendarEvent e, AppPalette pal) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 10))],
-      ),
+      decoration: pal.cardDecoration(radius: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -251,14 +252,14 @@ class _CalendarPageState extends State<CalendarPage> {
               const Spacer(),
               Text(
                 DateFormat('HH:mm').format(e.startDate),
-                style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w800),
+                style: GoogleFonts.outfit(color: pal.textSub, fontSize: 12, fontWeight: FontWeight.w800),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             e.title,
-            style: GoogleFonts.outfit(color: slate950, fontSize: 16, fontWeight: FontWeight.w900, height: 1.2),
+            style: GoogleFonts.outfit(color: pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w900, height: 1.2),
           ),
           if (e.description.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -266,7 +267,7 @@ class _CalendarPageState extends State<CalendarPage> {
               e.description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w500),
+              style: GoogleFonts.outfit(color: pal.textSub, fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ],
           const SizedBox(height: 16),

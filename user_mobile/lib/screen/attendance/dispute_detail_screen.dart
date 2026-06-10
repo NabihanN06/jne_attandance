@@ -31,6 +31,14 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
   static const Color zenOffWhite = Color(0xFFF8FAFC);
   static const Color zenSlate = Color(0xFF94A3B8);
 
+  // ── Theme-aware colors (dark/light) ──
+  bool get _isDark => context.read<AppProvider>().isDarkMode;
+  Color get _bg => _isDark ? const Color(0xFF0B1120) : zenOffWhite;
+  Color get _card => _isDark ? const Color(0xFF15203A) : Colors.white;
+  Color get _textPrimary => _isDark ? Colors.white : zenNavy;
+  Color get _fieldFill => _isDark ? Colors.white.withValues(alpha: 0.06) : zenOffWhite;
+  Color get _cardBorder => _isDark ? Colors.white.withValues(alpha: 0.07) : zenNavy.withValues(alpha: 0.04);
+
   final TextEditingController _replyController = TextEditingController();
   File? _attachedImage;
   bool _sending = false;
@@ -92,7 +100,7 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
   Future<void> _showResolutionDialog(DisputeRequest d) async {
     final action = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: _card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -113,7 +121,7 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
             Text(
               'APAKAH MASALAH SELESAI?',
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(color: zenNavy, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 2),
+              style: GoogleFonts.outfit(color: _textPrimary, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 2),
             ),
             const SizedBox(height: 8),
             Text(
@@ -173,6 +181,7 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSB) => Dialog(
+          backgroundColor: _card,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -181,7 +190,7 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
               children: [
                 Text(
                   'NILAI RESPON ADMIN',
-                  style: GoogleFonts.outfit(color: zenNavy, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 2),
+                  style: GoogleFonts.outfit(color: _textPrimary, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 2),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -202,12 +211,12 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                 TextField(
                   controller: feedbackCtl,
                   maxLines: 3,
-                  style: GoogleFonts.outfit(fontSize: 13, color: zenNavy),
+                  style: GoogleFonts.outfit(fontSize: 13, color: _textPrimary),
                   decoration: InputDecoration(
                     hintText: 'Komentar (opsional)',
                     hintStyle: GoogleFonts.outfit(color: zenSlate, fontSize: 12),
                     filled: true,
-                    fillColor: zenOffWhite,
+                    fillColor: _fieldFill,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
@@ -265,7 +274,7 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
     final d = _liveDispute(provider);
 
     return Scaffold(
-      backgroundColor: zenOffWhite,
+      backgroundColor: _bg,
       appBar: AppBar(
         backgroundColor: zenNavy,
         elevation: 0,
@@ -333,9 +342,9 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: zenNavy.withValues(alpha: 0.04)),
+        border: Border.all(color: _cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,12 +367,12 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
           const SizedBox(height: 12),
           Text(
             d.title,
-            style: GoogleFonts.outfit(color: zenNavy, fontSize: 15, fontWeight: FontWeight.w900),
+            style: GoogleFonts.outfit(color: _textPrimary, fontSize: 15, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 8),
           Text(
             d.description,
-            style: GoogleFonts.plusJakartaSans(color: zenNavy.withValues(alpha: 0.8), fontSize: 13, height: 1.5),
+            style: GoogleFonts.plusJakartaSans(color: _textPrimary.withValues(alpha: 0.8), fontSize: 13, height: 1.5),
           ),
           if (d.attachmentUrl != null) ...[
             const SizedBox(height: 12),
@@ -426,7 +435,7 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
           margin: const EdgeInsets.symmetric(vertical: 8),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: zenNavy.withValues(alpha: 0.05),
+            color: _isDark ? Colors.white.withValues(alpha: 0.08) : zenNavy.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -448,14 +457,14 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
             constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: isUser ? zenIndigo : Colors.white,
+              color: isUser ? zenIndigo : _card,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),
                 bottomLeft: Radius.circular(isUser ? 16 : 4),
                 bottomRight: Radius.circular(isUser ? 4 : 16),
               ),
-              border: isUser ? null : Border.all(color: zenNavy.withValues(alpha: 0.04)),
+              border: isUser ? null : Border.all(color: _cardBorder),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -488,7 +497,7 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                   Text(
                     m.text,
                     style: GoogleFonts.plusJakartaSans(
-                      color: isUser ? Colors.white : zenNavy,
+                      color: isUser ? Colors.white : _textPrimary,
                       fontSize: 13,
                       height: 1.4,
                     ),
@@ -670,10 +679,10 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: _card,
           boxShadow: [
             BoxShadow(
-              color: zenNavy.withValues(alpha: 0.04),
+              color: Colors.black.withValues(alpha: _isDark ? 0.25 : 0.04),
               blurRadius: 20,
               offset: const Offset(0, -4),
             ),
@@ -687,7 +696,7 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: zenOffWhite,
+                  color: _fieldFill,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -700,7 +709,7 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                     Expanded(
                       child: Text(
                         'Foto terlampir',
-                        style: GoogleFonts.outfit(color: zenNavy, fontSize: 11, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.outfit(color: _textPrimary, fontSize: 11, fontWeight: FontWeight.w700),
                       ),
                     ),
                     IconButton(
@@ -721,12 +730,12 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                     controller: _replyController,
                     minLines: 1,
                     maxLines: 4,
-                    style: GoogleFonts.outfit(fontSize: 13, color: zenNavy),
+                    style: GoogleFonts.outfit(fontSize: 13, color: _textPrimary),
                     decoration: InputDecoration(
                       hintText: 'Tulis balasan ke admin...',
                       hintStyle: GoogleFonts.outfit(color: zenSlate, fontSize: 12),
                       filled: true,
-                      fillColor: zenOffWhite,
+                      fillColor: _fieldFill,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                         borderSide: BorderSide.none,

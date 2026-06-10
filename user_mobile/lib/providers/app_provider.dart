@@ -47,6 +47,22 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   String _fortressStatus = '';
   String get fortressStatus => _fortressStatus;
 
+  // Surface Firestore stream errors to the UI so problems are visible on
+  // device (e.g. missing composite index → message includes a create-index
+  // URL) instead of silently showing empty data.
+  String? _dataError;
+  String? get dataError => _dataError;
+  void clearDataError() {
+    _dataError = null;
+    notifyListeners();
+  }
+
+  void _setDataError(String source, Object e) {
+    debugPrint('$source listener error: $e');
+    _dataError = '$source — $e';
+    _scheduleNotify();
+  }
+
   bool get isLoggedIn => _auth.currentUser != null;
 
   // Configuration
@@ -62,6 +78,30 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   String get hubName => _hubName;
   String get stationId => _stationId;
   TimeOfDay officeStartTime = const TimeOfDay(hour: 8, minute: 0);
+
+  // ── Attendance settings (dari admin settings/system → attendance) ──
+  // Default dipilih agar behavior lama tetap aman walau admin belum set.
+  bool _allowOfflineAttendance = true;
+  int _maxFaceAttempts = 3;
+  bool _courierBypassGeofence = false;
+
+  bool get allowOfflineAttendance => _allowOfflineAttendance;
+  int get maxFaceAttempts => _maxFaceAttempts;
+  bool get courierBypassGeofence => _courierBypassGeofence;
+
+  /// Karyawan terdeteksi sebagai kurir (dari department/position).
+  bool get isCourierUser {
+    final d = (_currentUser?.department ?? '').toLowerCase();
+    final p = (_currentUser?.position ?? '').toLowerCase();
+    const keys = ['kurir', 'courier', 'rider', 'driver', 'sigesit'];
+    return keys.any((k) => d.contains(k) || p.contains(k));
+  }
+
+  /// Boleh absen di luar radius kantor?
+  /// True jika flag per-user `allowRemoteAttendance` ON, ATAU bypass kurir global
+  /// aktif dan karyawan ini kurir.
+  bool get canBypassGeofence =>
+      (_currentUser?.allowRemoteAttendance ?? false) || (_courierBypassGeofence && isCourierUser);
 
   // ── Persisted User Preferences ──
   static const _kDarkModeKey = 'pref_dark_mode';
@@ -457,7 +497,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _attendanceRecords = snap.docs.map((doc) => AttendanceRecord.fromFirestore(doc)).toList();
       _scheduleNotify();
-    }, onError: (e) => debugPrint('Attendance listener error: $e'));
+    }, onError: (e) => _setDataError('Data absensi', e));
 
     _leaveSub = _db.collection('leaves')
         .where('userId', isEqualTo: _currentUser!.uid)
@@ -466,7 +506,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _leaveRequests = snap.docs.map((doc) => LeaveRequest.fromFirestore(doc)).toList();
       _scheduleNotify();
-    }, onError: (e) => debugPrint('Leave listener error: $e'));
+    }, onError: (e) => _setDataError('Data cuti', e));
 
     _overtimeSub = _db.collection('overtime')
         .where('userId', isEqualTo: _currentUser!.uid)
@@ -476,7 +516,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _overtimeRequests = snap.docs.map((doc) => OvertimeRequest.fromFirestore(doc)).toList();
       _scheduleNotify();
-    }, onError: (e) => debugPrint('Overtime listener error: $e'));
+    }, onError: (e) => _setDataError('Data lembur', e));
 
     // Disputes
     _disputeSub = _db.collection('disputes')
@@ -487,7 +527,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _disputeRequests = snap.docs.map((doc) => DisputeRequest.fromFirestore(doc)).toList();
       _scheduleNotify();
-    }, onError: (e) => debugPrint('Dispute listener error: $e'));
+    }, onError: (e) => _setDataError('Data sanggahan', e));
 
     // Leave balance from admin (collection: leave_balances/{uid})
     _leaveBalanceSub = _db.collection('leave_balances')
@@ -496,7 +536,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _firestoreLeaveBalance = snap.exists ? LeaveBalance.fromFirestore(snap) : null;
       _scheduleNotify();
-    }, onError: (e) => debugPrint('LeaveBalance listener error: $e'));
+    }, onError: (e) => _setDataError('Saldo cuti', e));
     _notifSub = _db.collection('userNotifications')
         .where('userId', isEqualTo: _currentUser!.uid)
         .orderBy('createdAt', descending: true)
@@ -504,7 +544,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .snapshots()
         .listen((snap) {
       _updateNotifications(snap, isBroadcast: false);
-    });
+    }, onError: (e) => _setDataError('Notifikasi', e));
 
     _broadcastSub = _db.collection('broadcasts')
         .orderBy('createdAt', descending: true)
@@ -512,7 +552,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .snapshots()
         .listen((snap) {
       _updateNotifications(snap, isBroadcast: true);
-    });
+    }, onError: (e) => _setDataError('Broadcast', e));
 
     _eventSub = _db.collection('calendarEvents')
         .where('startDate', isGreaterThanOrEqualTo: DateTime.now().subtract(const Duration(days: 30)))
@@ -520,7 +560,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _events = snap.docs.map((doc) => CalendarEvent.fromFirestore(doc)).toList();
       _scheduleNotify();
-    }, onError: (e) => debugPrint('Event listener error: $e'));
+    }, onError: (e) => _setDataError('Kalender', e));
   }
 
   void _updateNotifications(QuerySnapshot snap, {required bool isBroadcast}) {
@@ -580,7 +620,13 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   Future<void> _updatePresence(bool isOnline) async {
     if (_auth.currentUser == null) return;
     try {
-      PresenceService.start(deviceId: 'mobile_${_auth.currentUser!.uid}');
+      if (isOnline) {
+        PresenceService.start(deviceId: 'mobile_${_auth.currentUser!.uid}');
+      } else {
+        // Penting: saat app ke background, benar-benar set offline
+        // (sebelumnya keliru memanggil start() → malah online terus).
+        PresenceService.stop();
+      }
     } catch (e) {
       debugPrint('Presence update error: $e');
     }
@@ -625,7 +671,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .listen((snap) {
       _leaveRequests = snap.docs.map((doc) => LeaveRequest.fromFirestore(doc)).toList();
       notifyListeners();
-    });
+    }, onError: (e) => _setDataError('Data cuti', e));
   }
 
   // ── Auth Methods ──
@@ -682,6 +728,42 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     } catch (e) {
       debugPrint('Mark passwordChanged failed: $e');
       rethrow;
+    }
+  }
+
+  /// Upload foto profil baru dari galeri/kamera ke Storage lalu simpan
+  /// URL-nya ke `users/{uid}.photoUrl`. Path mengikuti storage.rules:
+  /// `profile_photos/{uid}.jpg`. Mengembalikan URL download yang baru.
+  Future<String> updateProfilePhoto(File imageFile) async {
+    if (_currentUser == null) {
+      throw Exception('Sesi tidak ditemukan. Silakan masuk kembali.');
+    }
+    _isProcessing = true;
+    notifyListeners();
+    try {
+      final uid = _currentUser!.uid;
+      final ref = FirebaseStorage.instance.ref().child('profile_photos/$uid.jpg');
+      await ref.putFile(
+        imageFile,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+      final url = await ref.getDownloadURL();
+      // Cache-buster supaya CachedNetworkImage memuat foto terbaru, bukan versi lama.
+      final freshUrl = '$url?v=${DateTime.now().millisecondsSinceEpoch}';
+
+      await _db.collection('users').doc(uid).update({
+        'photoUrl': freshUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      _currentUser = _currentUser!.copyWith(photoUrl: freshUrl);
+      return freshUrl;
+    } catch (e) {
+      debugPrint('updateProfilePhoto failed: $e');
+      throw Exception('Gagal mengunggah foto profil. Coba lagi.');
+    } finally {
+      _isProcessing = false;
+      notifyListeners();
     }
   }
 
@@ -778,6 +860,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           'employeeName': _currentUser!.name,
           'employeeId': _currentUser!.employeeId,
           'department': _currentUser!.department,
+          'date': dateStr,
           'attendanceDate': dateStr,
           'status': _mapMobileStatusToAdmin(status),
           'checkIn': {
@@ -835,12 +918,16 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         // Mark as synced immediately since we wrote directly
         await _db.collection('attendance').doc(docId).update({'syncStatus': 'synced'});
       } else {
+        if (!_allowOfflineAttendance) {
+          throw Exception('Absensi offline dinonaktifkan admin. Sambungkan internet untuk absen masuk.');
+        }
         final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
         final data = {
           'userId': _currentUser!.uid,
           'employeeName': _currentUser!.name,
           'employeeId': _currentUser!.employeeId,
           'department': _currentUser!.department,
+          'date': dateStr,
           'attendanceDate': dateStr,
           'status': _mapMobileStatusToAdmin(status),
           'checkIn': {
@@ -1026,7 +1113,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     try {
       final prefix = isCheckOut ? 'checkout' : 'checkin';
       final ref = FirebaseStorage.instance.ref().child('attendance_photos/${prefix}_$docId.jpg');
-      await ref.putFile(File(localPath));
+      await ref.putFile(File(localPath), SettableMetadata(contentType: 'image/jpeg'));
       final url = await ref.getDownloadURL();
 
       final field = isCheckOut ? 'checkOut.photoUrl' : 'checkIn.photoUrl';
@@ -1239,18 +1326,28 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
   void _listenToSettings() {
     _settingsSub = _db.collection('settings').doc('system').snapshots().listen((snap) {
-      if (snap.exists) {
-        final data = snap.data();
-        if (data != null && data['office'] != null) {
-          final office = data['office'] as Map<String, dynamic>;
-          _officeLat = (office['latitude'] ?? -3.4150).toDouble();
-          _officeLng = (office['longitude'] ?? 114.8465).toDouble();
-          _officeRadius = (office['radiusMeters'] ?? 500).toDouble();
-          _hubName = (office['name'] as String?) ?? _hubName;
-          _stationId = (office['stationId'] as String?) ?? _stationId;
-          notifyListeners();
-        }
+      if (!snap.exists) return;
+      final data = snap.data();
+      if (data == null) return;
+
+      final office = data['office'];
+      if (office is Map<String, dynamic>) {
+        _officeLat = (office['latitude'] ?? _officeLat).toDouble();
+        _officeLng = (office['longitude'] ?? _officeLng).toDouble();
+        _officeRadius = (office['radiusMeters'] ?? _officeRadius).toDouble();
+        _hubName = (office['name'] as String?) ?? _hubName;
+        _stationId = (office['stationId'] as String?) ?? _stationId;
       }
+
+      // Setting tab Absensi — sekarang benar-benar dipatuhi APK.
+      final att = data['attendance'];
+      if (att is Map<String, dynamic>) {
+        _allowOfflineAttendance = (att['allowOfflineAttendance'] as bool?) ?? _allowOfflineAttendance;
+        _maxFaceAttempts = (att['maxFaceAttempts'] as num?)?.toInt() ?? _maxFaceAttempts;
+        _courierBypassGeofence = (att['courierBypassGeofence'] as bool?) ?? _courierBypassGeofence;
+      }
+
+      notifyListeners();
     });
   }
 

@@ -15,3 +15,10 @@ Thumbs.db
 /npx
 /del
 /const
+
+# Firebase build/debug artifacts
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log

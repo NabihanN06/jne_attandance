@@ -26,6 +26,7 @@ import 'screen/statistic/statistic_page.dart';
 import 'screen/history/history_page.dart';
 import 'screen/profile/profile_page.dart';
 import 'screen/profile/id_card_page.dart';
+import 'screen/location/my_location_page.dart';
 import 'screen/notification/notification_page.dart';
 import 'screen/settings/settings_page.dart';
 import 'screen/overtime/overtime_page.dart';
@@ -106,6 +107,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await initializeDateFormatting('id', null);
+  await initializeDateFormatting('en', null);
 
   // Setup FCM
   await _setupFCM();
@@ -185,6 +187,7 @@ class MyApp extends StatelessWidget {
         '/history': (ctx) => const HistoryPage(),
         '/profile': (ctx) => const ProfilePage(),
         '/profile/id_card': (ctx) => const IDCardPage(),
+        '/lokasi': (ctx) => const MyLocationPage(),
         '/notification': (ctx) => const NotificationPage(),
         '/settings': (ctx) => const SettingsPage(),
         '/overtime': (ctx) => const OvertimePage(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../utils/app_strings.dart';
 
 class StatisticPage extends StatefulWidget {
   const StatisticPage({super.key});
@@ -10,14 +11,18 @@ class StatisticPage extends StatefulWidget {
 }
 
 class _StatisticPageState extends State<StatisticPage> {
-  static const Color jneBlue = Color(0xFF005596);
+  static const Color jneBlue = Color(0xFF4F46E5); // indigo accent (selaras tema app)
   static const Color jneRed = Color(0xFFE31E24);
-  static const Color bgLight = Color(0xFFF9F7F2);
+  static const Color bgLight = Color(0xFFF1F5F9);
+
+  // ── Theme-aware colors (mendukung dark/light mode) ──
+  bool get _isDark => context.read<AppProvider>().isDarkMode;
+  Color get _card => _isDark ? const Color(0xFF15203A) : Colors.white;
+  Color get _textPrimary => _isDark ? Colors.white : const Color(0xFF0F172A);
+  Color get _border => _isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9);
 
   int _bulan = DateTime.now().month;
   int _tahun = DateTime.now().year;
-
-  static const _months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
   /// % record yang check-in dalam radius kantor (distance <= officeRadius).
   /// Return null jika belum ada data, supaya UI bisa tampilkan "—" daripada
@@ -61,28 +66,29 @@ class _StatisticPageState extends State<StatisticPage> {
             floating: false,
             pinned: true,
             elevation: 0,
-            backgroundColor: Colors.white,
+            backgroundColor: _card,
+            surfaceTintColor: _card,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 20),
+              icon: Icon(Icons.arrow_back_ios_new_rounded, color: _textPrimary, size: 20),
               onPressed: () => Navigator.pop(context),
             ),
             flexibleSpace: FlexibleSpaceBar(
               centerTitle: true,
               title: Text(
-                'STATISTIK KERJA',
+                context.tr('work_statistics').toUpperCase(),
                 style: GoogleFonts.outfit(
-                  color: Colors.black,
+                  color: _textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 2,
                 ),
               ),
               background: Container(
-                color: Colors.white,
+                color: _card,
                 child: Center(
                   child: Opacity(
-                    opacity: 0.03,
-                    child: Icon(Icons.analytics_rounded, size: 200, color: jneBlue),
+                    opacity: _isDark ? 0.06 : 0.04,
+                    child: Icon(Icons.insights_rounded, size: 200, color: jneBlue),
                   ),
                 ),
               ),
@@ -110,16 +116,18 @@ class _StatisticPageState extends State<StatisticPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: _card,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFFF1F5F9)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              )
-            ],
+            border: Border.all(color: _border),
+            boxShadow: _isDark
+                ? null
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    )
+                  ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -131,9 +139,9 @@ class _StatisticPageState extends State<StatisticPage> {
                 }),
               ),
               Text(
-                '${_months[_bulan - 1]} $_tahun'.toUpperCase(),
+                '${AppStrings.months(provider.language)[_bulan - 1]} $_tahun'.toUpperCase(),
                 style: GoogleFonts.outfit(
-                  color: const Color(0xFF1E293B),
+                  color: _textPrimary,
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1,
@@ -160,10 +168,10 @@ class _StatisticPageState extends State<StatisticPage> {
               spacing: spacing,
               runSpacing: spacing,
               children: [
-                _buildBentoStat(stats['present'], 'Hari Hadir', Icons.check_circle_rounded, const Color(0xFF10B981), itemWidth),
-                _buildBentoStat(stats['leaves'], 'Izin/Sakit', Icons.assignment_rounded, const Color(0xFFF59E0B), itemWidth),
-                _buildBentoStat(stats['late'], 'Menit Telat', Icons.alarm_rounded, jneRed, itemWidth),
-                _buildBentoStat(stats['hours'], 'Total Jam', Icons.timer_rounded, const Color(0xFF3B82F6), itemWidth),
+                _buildBentoStat(stats['present'], context.tr('days_present'), Icons.check_circle_rounded, const Color(0xFF10B981), itemWidth),
+                _buildBentoStat(stats['leaves'], context.tr('leave_sick_label'), Icons.assignment_rounded, const Color(0xFFF59E0B), itemWidth),
+                _buildBentoStat(stats['late'], context.tr('late_minutes'), Icons.alarm_rounded, jneRed, itemWidth),
+                _buildBentoStat(stats['hours'], context.tr('total_hours'), Icons.timer_rounded, const Color(0xFF3B82F6), itemWidth),
               ],
             );
           },
@@ -186,16 +194,18 @@ class _StatisticPageState extends State<StatisticPage> {
       width: width,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _card,
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          )
-        ],
+        border: Border.all(color: _border),
+        boxShadow: _isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                )
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,7 +213,7 @@ class _StatisticPageState extends State<StatisticPage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.05),
+              color: color.withValues(alpha: _isDark ? 0.16 : 0.05),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -212,7 +222,7 @@ class _StatisticPageState extends State<StatisticPage> {
           Text(
             value,
             style: GoogleFonts.outfit(
-              color: const Color(0xFF0F172A),
+              color: _textPrimary,
               fontSize: 28,
               fontWeight: FontWeight.w900,
               letterSpacing: -1,
@@ -260,7 +270,7 @@ class _StatisticPageState extends State<StatisticPage> {
               const Icon(Icons.auto_awesome_rounded, color: Colors.amber, size: 20),
               const SizedBox(width: 12),
               Text(
-                'ANALISIS PERFORMA',
+                context.tr('performance_analysis').toUpperCase(),
                 style: GoogleFonts.outfit(
                   color: Colors.white,
                   fontSize: 14,
@@ -271,11 +281,11 @@ class _StatisticPageState extends State<StatisticPage> {
             ],
           ),
           const SizedBox(height: 32),
-          _buildAnalysisRow('Ketepatan Waktu', punctuality, const Color(0xFF10B981)),
+          _buildAnalysisRow(context.tr('punctuality_label'), punctuality, const Color(0xFF10B981)),
           const SizedBox(height: 24),
-          _buildAnalysisRow('Kepatuhan Lokasi', locationCompliance, const Color(0xFF3B82F6)),
+          _buildAnalysisRow(context.tr('location_compliance'), locationCompliance, const Color(0xFF3B82F6)),
           const SizedBox(height: 24),
-          _buildAnalysisRow('Efektivitas Jam', hourEffectiveness, const Color(0xFFF59E0B)),
+          _buildAnalysisRow(context.tr('hour_effectiveness'), hourEffectiveness, const Color(0xFFF59E0B)),
         ],
       ),
     );

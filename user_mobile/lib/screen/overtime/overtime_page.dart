@@ -3,6 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/ui_kit.dart';
+import '../../utils/app_strings.dart';
 
 class OvertimePage extends StatefulWidget {
   const OvertimePage({super.key});
@@ -12,8 +15,7 @@ class OvertimePage extends StatefulWidget {
 }
 
 class _OvertimePageState extends State<OvertimePage> {
-  static const Color jneBlue = Color(0xFF005596);
-  static const Color jneRed = Color(0xFFE31E24);
+  static const Color _accent = AppColors.blue;
   // Batas wajar lembur per bulan (40 jam ≈ standar industri).
   static const int _monthlyHourCap = 40;
 
@@ -48,42 +50,27 @@ class _OvertimePageState extends State<OvertimePage> {
 
   Future<void> _submit() async {
     final provider = context.read<AppProvider>();
-    final messenger = ScaffoldMessenger.of(context);
 
     if (_reasonCtrl.text.trim().isEmpty) {
-      messenger.showSnackBar(SnackBar(
-        content: Text('Mohon isi alasan lembur', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
-        backgroundColor: jneRed,
-        behavior: SnackBarBehavior.floating,
-      ));
+      showAppSnack(context, context.tr('fill_overtime_reason'), color: AppColors.brandRed);
       return;
     }
 
     if (_hasRequestForSelectedDate(provider)) {
-      messenger.showSnackBar(SnackBar(
-        content: Text(
-          'Sudah ada pengajuan lembur untuk tanggal ini.',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
-        ),
-        backgroundColor: jneRed,
-        behavior: SnackBarBehavior.floating,
-      ));
+      showAppSnack(context, context.tr('ot_exists_for_date'), color: AppColors.brandRed);
       return;
     }
 
     final projected = _approvedHoursThisMonth(provider) + _selectedHours;
     if (projected > _monthlyHourCap) {
-      messenger.showSnackBar(SnackBar(
-        content: Text(
-          'Melebihi batas $_monthlyHourCap jam/bulan. Sisa: ${(_monthlyHourCap - _approvedHoursThisMonth(provider)).clamp(0, _monthlyHourCap)} jam.',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
-        ),
-        backgroundColor: jneRed,
-        behavior: SnackBarBehavior.floating,
-      ));
+      final sisa = (_monthlyHourCap - _approvedHoursThisMonth(provider)).clamp(0, _monthlyHourCap);
+      showAppSnack(context, '${context.tr('exceed_limit')} $_monthlyHourCap ${context.tr('per_month')}. ${context.tr('remaining_word')}: $sisa ${context.tr('hours_word')}.',
+          color: AppColors.brandRed);
       return;
     }
 
+    final submittedMsg = context.tr('overtime_submitted');
+    final failPre = context.tr('fail_prefix');
     setState(() => _isLoading = true);
     try {
       await provider.submitOvertime(
@@ -93,18 +80,11 @@ class _OvertimePageState extends State<OvertimePage> {
       );
       if (!mounted) return;
       Navigator.pop(context);
-      messenger.showSnackBar(SnackBar(
-        content: Text('Pengajuan lembur terkirim', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
-        backgroundColor: const Color(0xFF10B981),
-        behavior: SnackBarBehavior.floating,
-      ));
+      showAppSnack(context, submittedMsg, color: AppColors.green);
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(
-        content: Text('Gagal: $e', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
-        backgroundColor: jneRed,
-        behavior: SnackBarBehavior.floating,
-      ));
+      showAppSnack(context, '$failPre: ${e.toString().replaceAll('Exception: ', '')}',
+          color: AppColors.brandRed);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -112,54 +92,58 @@ class _OvertimePageState extends State<OvertimePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<AppProvider>().isDarkMode;
+    final pal = context.palette;
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0B1120) : Colors.white,
+      backgroundColor: pal.bg,
       appBar: AppBar(
-        backgroundColor: jneBlue,
+        backgroundColor: pal.bg,
         elevation: 0,
-        title: Text('PENGAJUAN LEMBUR', style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1)),
+        scrolledUnderElevation: 0,
         centerTitle: true,
+        leading: const AppBackButton(),
+        title: Text(context.tr('overtime_request_title'),
+            style: GoogleFonts.plusJakartaSans(
+                color: pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildMonthlyUsageCard(),
+            _buildMonthlyUsageCard(pal),
             const SizedBox(height: 24),
-            _buildLabel('TANGGAL LEMBUR'),
-            const SizedBox(height: 12),
-            _buildDateSelector(),
-            const SizedBox(height: 24),
-            _buildLabel('DURASI (JAM)'),
-            const SizedBox(height: 12),
-            _buildHourSelector(),
-            const SizedBox(height: 24),
-            _buildLabel('ALASAN LEMBUR'),
-            const SizedBox(height: 12),
-            _buildReasonField(),
-            const SizedBox(height: 40),
-            _buildSubmitButton(),
+            SectionLabel(context.tr('ot_date')),
+            _buildDateSelector(pal),
+            const SizedBox(height: 22),
+            SectionLabel(context.tr('ot_duration')),
+            _buildHourSelector(pal),
+            const SizedBox(height: 22),
+            SectionLabel(context.tr('ot_reason')),
+            _buildReasonField(pal),
+            const SizedBox(height: 32),
+            PrimaryButton(
+              label: context.tr('submit_request').toUpperCase(),
+              icon: Icons.send_rounded,
+              color: _accent,
+              height: 56,
+              loading: _isLoading,
+              onTap: _submit,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMonthlyUsageCard() {
+  Widget _buildMonthlyUsageCard(AppPalette pal) {
     final provider = context.watch<AppProvider>();
     final used = _approvedHoursThisMonth(provider);
     final remaining = (_monthlyHourCap - used).clamp(0, _monthlyHourCap);
     final ratio = (used / _monthlyHourCap).clamp(0.0, 1.0);
     final overLimit = used >= _monthlyHourCap;
-    return Container(
+    return AppCard(
+      radius: 20,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: jneBlue.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: jneBlue.withValues(alpha: 0.1)),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -167,13 +151,14 @@ class _OvertimePageState extends State<OvertimePage> {
             children: [
               Icon(
                 overLimit ? Icons.warning_amber_rounded : Icons.timer_rounded,
-                color: overLimit ? jneRed : jneBlue,
+                color: overLimit ? AppColors.brandRed : _accent,
                 size: 18,
               ),
               const SizedBox(width: 8),
               Text(
-                'LEMBUR ${DateFormat('MMMM yyyy', 'id').format(_selectedDate).toUpperCase()}',
-                style: GoogleFonts.outfit(color: jneBlue, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.2),
+                '${context.tr('overtime_word').toUpperCase()} ${DateFormat('MMMM yyyy', context.read<AppProvider>().language).format(_selectedDate).toUpperCase()}',
+                style: GoogleFonts.plusJakartaSans(
+                    color: _accent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.0),
               ),
             ],
           ),
@@ -182,22 +167,20 @@ class _OvertimePageState extends State<OvertimePage> {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(
-                '$used',
-                style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1),
-              ),
-              Text(
-                ' / $_monthlyHourCap jam',
-                style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 13, fontWeight: FontWeight.w700),
-              ),
+              Text('$used',
+                  style: GoogleFonts.plusJakartaSans(
+                      color: pal.textPrimary, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1)),
+              Text(' / $_monthlyHourCap ${context.tr('hours_word')}',
+                  style: GoogleFonts.plusJakartaSans(
+                      color: pal.textSub, fontSize: 13, fontWeight: FontWeight.w700)),
               const Spacer(),
               Text(
-                overLimit ? 'BATAS TERCAPAI' : 'sisa $remaining jam',
-                style: GoogleFonts.outfit(
-                  color: overLimit ? jneRed : const Color(0xFF10B981),
+                overLimit ? context.tr('limit_reached').toUpperCase() : '${context.tr('remaining')} $remaining ${context.tr('hours_word')}',
+                style: GoogleFonts.plusJakartaSans(
+                  color: overLimit ? AppColors.brandRed : AppColors.green,
                   fontSize: 11,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 0.5,
+                  letterSpacing: 0.3,
                 ),
               ),
             ],
@@ -208,8 +191,8 @@ class _OvertimePageState extends State<OvertimePage> {
             child: LinearProgressIndicator(
               value: ratio,
               minHeight: 6,
-              backgroundColor: Colors.white,
-              color: overLimit ? jneRed : jneBlue,
+              backgroundColor: pal.cardAlt,
+              color: overLimit ? AppColors.brandRed : _accent,
             ),
           ),
         ],
@@ -217,29 +200,49 @@ class _OvertimePageState extends State<OvertimePage> {
     );
   }
 
-  Widget _buildLabel(String t) => Text(t, style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.5));
-
-  Widget _buildDateSelector() {
+  Widget _buildDateSelector(AppPalette pal) {
     return GestureDetector(
       onTap: () async {
-        final picked = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime.now().subtract(const Duration(days: 7)), lastDate: DateTime.now().add(const Duration(days: 30)));
+        final isDark = pal.isDark;
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: _selectedDate,
+          firstDate: DateTime.now().subtract(const Duration(days: 7)),
+          lastDate: DateTime.now().add(const Duration(days: 30)),
+          builder: (ctx, child) => Theme(
+            data: Theme.of(ctx).copyWith(
+              colorScheme: isDark
+                  ? const ColorScheme.dark(
+                      primary: _accent, onPrimary: Colors.white, surface: AppColors.darkCard, onSurface: Colors.white)
+                  : const ColorScheme.light(
+                      primary: _accent, onPrimary: Colors.white, surface: Colors.white, onSurface: Color(0xFF1E293B)),
+            ),
+            child: child!,
+          ),
+        );
         if (picked != null) setState(() => _selectedDate = picked);
       },
       child: Container(
         padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(
+          color: pal.cardAlt,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: pal.border),
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}', style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 15, fontWeight: FontWeight.w700)),
-            const Icon(Icons.calendar_today_rounded, color: jneBlue, size: 20),
+            Text('${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                style: GoogleFonts.plusJakartaSans(
+                    color: pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+            const Icon(Icons.calendar_today_rounded, color: _accent, size: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHourSelector() {
+  Widget _buildHourSelector(AppPalette pal) {
     return Row(
       children: List.generate(5, (index) {
         int hour = index + 1;
@@ -247,15 +250,19 @@ class _OvertimePageState extends State<OvertimePage> {
         return Expanded(
           child: GestureDetector(
             onTap: () => setState(() => _selectedHours = hour),
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
               margin: EdgeInsets.only(right: index == 4 ? 0 : 8),
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                color: isSelected ? jneBlue : const Color(0xFFF1F5F9),
+                color: isSelected ? _accent : pal.cardAlt,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: isSelected ? _accent : pal.border),
               ),
               child: Center(
-                child: Text('$hour', style: GoogleFonts.outfit(color: isSelected ? Colors.white : const Color(0xFF64748B), fontWeight: FontWeight.w800)),
+                child: Text('$hour',
+                    style: GoogleFonts.plusJakartaSans(
+                        color: isSelected ? Colors.white : pal.textSub, fontWeight: FontWeight.w800)),
               ),
             ),
           ),
@@ -264,37 +271,25 @@ class _OvertimePageState extends State<OvertimePage> {
     );
   }
 
-  Widget _buildReasonField() {
+  Widget _buildReasonField(AppPalette pal) {
     return Container(
-      decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: pal.cardAlt,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: pal.border),
+      ),
       child: TextField(
         controller: _reasonCtrl,
         maxLines: 4,
-        style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w600),
+        textCapitalization: TextCapitalization.sentences,
+        style: GoogleFonts.plusJakartaSans(
+            color: pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
         decoration: InputDecoration(
-          hintText: 'Contoh: Menyelesaikan pengiriman paket overload di area Martapura Kota.',
-          hintStyle: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w500),
+          hintText: context.tr('ot_reason_hint'),
+          hintStyle: GoogleFonts.plusJakartaSans(color: pal.textFaint, fontSize: 13, fontWeight: FontWeight.w500),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.all(20),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 60,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _submit,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: jneBlue,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 0,
-        ),
-        child: _isLoading 
-          ? const CircularProgressIndicator(color: Colors.white)
-          : Text('KIRIM PENGAJUAN', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 1)),
       ),
     );
   }

@@ -47,7 +47,12 @@ class ChatMessage {
       senderRole: data['senderRole'] ?? 'employee',
       receiverId: data['receiverId'] ?? '',
       receiverRole: data['receiverRole'] ?? 'admin',
-      timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      // Sender menulis ke field `createdAt` (serverTimestamp). Field
+      // `timestamp` lama tidak pernah diisi — kalau tetap dibaca dari sini,
+      // semua bubble jatuh ke DateTime.now() dan ordering kacau.
+      timestamp: (data['createdAt'] as Timestamp?)?.toDate()
+          ?? (data['timestamp'] as Timestamp?)?.toDate()
+          ?? DateTime.now(),
       status: MessageStatus.values.firstWhere(
         (e) => e.toString() == 'MessageStatus.${data['status'] ?? 'sent'}',
         orElse: () => MessageStatus.sent,
@@ -90,14 +95,17 @@ class ChatProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    // Listen to messages for this chat using chatId
+    // Room model: chatId == userId. Query cukup filter chatId (tanpa orderBy)
+    // supaya: (1) tidak butuh composite index, (2) query-safe terhadap rules
+    // (rules mengizinkan read bila chatId == uid). Urutkan di client.
     _messageSubscription = _db
         .collection('messages')
         .where('chatId', isEqualTo: chatId)
-        .orderBy('createdAt', descending: false)
         .snapshots()
         .listen((snapshot) {
-      _messages = snapshot.docs.map((doc) => ChatMessage.fromFirestore(doc)).toList();
+      final list = snapshot.docs.map((doc) => ChatMessage.fromFirestore(doc)).toList();
+      list.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+      _messages = list;
       _isLoading = false;
       notifyListeners();
 
@@ -107,6 +115,11 @@ class ChatProvider extends ChangeNotifier {
           _markAsRead(msg.id);
         }
       }
+    }, onError: (e) {
+      debugPrint('Chat listener error: $e');
+      _messages = [];
+      _isLoading = false;
+      notifyListeners();
     });
 
     _typingSubscription = _db
@@ -116,14 +129,14 @@ class ChatProvider extends ChangeNotifier {
         .doc('status')
         .snapshots()
         .listen((doc) {
+      // Mobile selalu pihak user → pantau apakah admin sedang mengetik.
       if (doc.exists) {
-        Map<String, dynamic> data = doc.data()!;
-        String otherUserId = chatId.split('_').firstWhere((id) => id != _auth.currentUser?.uid, orElse: () => '');
-        if (otherUserId.isNotEmpty) {
-          _otherUserTyping = data[otherUserId] ?? false;
-          notifyListeners();
-        }
+        final data = doc.data()!;
+        _otherUserTyping = data['admin'] ?? false;
+      } else {
+        _otherUserTyping = false;
       }
+      notifyListeners();
     });
   }
 
@@ -136,8 +149,9 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> updateTyping(String chatId, bool typing) async {
     if (_auth.currentUser == null) return;
+    // Key berbasis peran ('user' / 'admin') agar konsisten lintas-platform.
     await _db.collection('chats').doc(chatId).collection('typing').doc('status').set({
-      _auth.currentUser!.uid: typing,
+      'user': typing,
     }, SetOptions(merge: true));
   }
 
@@ -153,12 +167,16 @@ class ChatProvider extends ChangeNotifier {
 
     if (text.trim().isEmpty && imageUrl == null) return;
 
-    final chatId = getChatId(_auth.currentUser!.uid, receiverId);
+    // Room model: chatId == userId (room milik user). User cukup tahu room-nya
+    // sendiri — tidak perlu mencari admin tertentu.
+    final uid = _auth.currentUser!.uid;
+    final chatId = uid;
+    final senderName = senderInfo?['name'] ?? 'User';
 
     final messageData = {
       'text': text,
-      'senderId': _auth.currentUser!.uid,
-      'senderName': senderInfo?['name'] ?? 'Unknown',
+      'senderId': uid,
+      'senderName': senderName,
       'senderRole': senderInfo?['role'] ?? 'employee',
       'receiverId': receiverId,
       'receiverRole': receiverRole,
@@ -175,6 +193,14 @@ class ChatProvider extends ChangeNotifier {
 
     // Mark as delivered immediately (optimistic)
     await docRef.update({'status': 'delivered', 'deliveredAt': FieldValue.serverTimestamp()});
+
+    // Perbarui metadata room untuk inbox admin (preview pesan terakhir + urutan).
+    await _db.collection('chats').doc(chatId).set({
+      'userId': uid,
+      'userName': senderName,
+      'lastMessage': imageUrl != null ? '📷 Foto' : text,
+      'lastTimestamp': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   /// NEW: Mark message as delivered when received on device
