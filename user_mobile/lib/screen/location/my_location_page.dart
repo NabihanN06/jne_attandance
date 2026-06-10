@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/app_provider.dart';
 import '../../utils/geofence_service.dart';
+import '../../utils/app_strings.dart';
 import '../../widgets/live_location_map.dart';
 
 /// Full-screen live location screen — shows where the employee is relative to
@@ -75,7 +76,7 @@ class _MyLocationPageState extends State<MyLocationPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Lokasi Saya',
+                          context.tr('sec_location'),
                           style: GoogleFonts.outfit(
                               color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
                         ),
@@ -145,23 +146,23 @@ class _MyLocationPageState extends State<MyLocationPage> {
     if (mocked) {
       statusColor = zenAmber;
       statusIcon = Icons.gps_off_rounded;
-      statusTitle = 'Lokasi Palsu Terdeteksi';
-      statusSub = 'Nonaktifkan aplikasi lokasi palsu (fake GPS) untuk bisa absen.';
+      statusTitle = context.tr('mock_loc_title');
+      statusSub = context.tr('mock_loc_sub');
     } else if (inRange) {
       statusColor = zenGreen;
       statusIcon = Icons.verified_rounded;
-      statusTitle = 'Anda di Dalam Area Kantor';
-      statusSub = 'Posisi terverifikasi. Anda bisa melakukan absensi.';
+      statusTitle = context.tr('in_office_title');
+      statusSub = context.tr('in_office_sub');
     } else if (remoteAllowed) {
       statusColor = const Color(0xFF22D3EE);
       statusIcon = Icons.satellite_alt_rounded;
-      statusTitle = 'Absensi Luar Kantor Aktif';
-      statusSub = 'Anda diizinkan absen dari luar radius kantor.';
+      statusTitle = context.tr('remote_attendance_active');
+      statusSub = context.tr('remote_attendance_sub');
     } else {
       statusColor = zenRose;
       statusIcon = Icons.location_searching_rounded;
-      statusTitle = 'Anda di Luar Area Kantor';
-      statusSub = 'Mendekatlah ke kantor hingga masuk radius untuk absen.';
+      statusTitle = context.tr('out_office_title');
+      statusSub = context.tr('out_office_sub');
     }
 
     return Container(
@@ -224,10 +225,10 @@ class _MyLocationPageState extends State<MyLocationPage> {
           const SizedBox(height: 20),
           Row(
             children: [
-              _metric('Jarak ke Kantor', _fmtDistance(geo.distanceFromOffice),
+              _metric(context.tr('distance_to_office'), _fmtDistance(geo.distanceFromOffice),
                   Icons.straighten_rounded),
               const SizedBox(width: 12),
-              _metric('Radius Area', _fmtDistance(app.officeRadius),
+              _metric(context.tr('area_radius'), _fmtDistance(app.officeRadius),
                   Icons.adjust_rounded),
             ],
           ),
@@ -246,7 +247,7 @@ class _MyLocationPageState extends State<MyLocationPage> {
                   child: Text(
                     pos != null
                         ? '${pos.latitude.toStringAsFixed(6)}, ${pos.longitude.toStringAsFixed(6)}'
-                        : 'Menunggu sinyal GPS…',
+                        : context.tr('waiting_gps'),
                     style: GoogleFonts.robotoMono(
                         color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
                   ),

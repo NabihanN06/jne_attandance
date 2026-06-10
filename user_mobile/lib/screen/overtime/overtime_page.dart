@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
+import '../../utils/app_strings.dart';
 
 class OvertimePage extends StatefulWidget {
   const OvertimePage({super.key});
@@ -51,23 +52,25 @@ class _OvertimePageState extends State<OvertimePage> {
     final provider = context.read<AppProvider>();
 
     if (_reasonCtrl.text.trim().isEmpty) {
-      showAppSnack(context, 'Mohon isi alasan lembur', color: AppColors.brandRed);
+      showAppSnack(context, context.tr('fill_overtime_reason'), color: AppColors.brandRed);
       return;
     }
 
     if (_hasRequestForSelectedDate(provider)) {
-      showAppSnack(context, 'Sudah ada pengajuan lembur untuk tanggal ini.', color: AppColors.brandRed);
+      showAppSnack(context, context.tr('ot_exists_for_date'), color: AppColors.brandRed);
       return;
     }
 
     final projected = _approvedHoursThisMonth(provider) + _selectedHours;
     if (projected > _monthlyHourCap) {
       final sisa = (_monthlyHourCap - _approvedHoursThisMonth(provider)).clamp(0, _monthlyHourCap);
-      showAppSnack(context, 'Melebihi batas $_monthlyHourCap jam/bulan. Sisa: $sisa jam.',
+      showAppSnack(context, '${context.tr('exceed_limit')} $_monthlyHourCap ${context.tr('per_month')}. ${context.tr('remaining_word')}: $sisa ${context.tr('hours_word')}.',
           color: AppColors.brandRed);
       return;
     }
 
+    final submittedMsg = context.tr('overtime_submitted');
+    final failPre = context.tr('fail_prefix');
     setState(() => _isLoading = true);
     try {
       await provider.submitOvertime(
@@ -77,10 +80,10 @@ class _OvertimePageState extends State<OvertimePage> {
       );
       if (!mounted) return;
       Navigator.pop(context);
-      showAppSnack(context, 'Pengajuan lembur terkirim', color: AppColors.green);
+      showAppSnack(context, submittedMsg, color: AppColors.green);
     } catch (e) {
       if (!mounted) return;
-      showAppSnack(context, 'Gagal: ${e.toString().replaceAll('Exception: ', '')}',
+      showAppSnack(context, '$failPre: ${e.toString().replaceAll('Exception: ', '')}',
           color: AppColors.brandRed);
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -98,7 +101,7 @@ class _OvertimePageState extends State<OvertimePage> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leading: const AppBackButton(),
-        title: Text('Pengajuan Lembur',
+        title: Text(context.tr('overtime_request_title'),
             style: GoogleFonts.plusJakartaSans(
                 color: pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
       ),
@@ -109,17 +112,17 @@ class _OvertimePageState extends State<OvertimePage> {
           children: [
             _buildMonthlyUsageCard(pal),
             const SizedBox(height: 24),
-            const SectionLabel('Tanggal Lembur'),
+            SectionLabel(context.tr('ot_date')),
             _buildDateSelector(pal),
             const SizedBox(height: 22),
-            const SectionLabel('Durasi (Jam)'),
+            SectionLabel(context.tr('ot_duration')),
             _buildHourSelector(pal),
             const SizedBox(height: 22),
-            const SectionLabel('Alasan Lembur'),
+            SectionLabel(context.tr('ot_reason')),
             _buildReasonField(pal),
             const SizedBox(height: 32),
             PrimaryButton(
-              label: 'KIRIM PENGAJUAN',
+              label: context.tr('submit_request').toUpperCase(),
               icon: Icons.send_rounded,
               color: _accent,
               height: 56,
@@ -153,7 +156,7 @@ class _OvertimePageState extends State<OvertimePage> {
               ),
               const SizedBox(width: 8),
               Text(
-                'LEMBUR ${DateFormat('MMMM yyyy', 'id').format(_selectedDate).toUpperCase()}',
+                '${context.tr('overtime_word').toUpperCase()} ${DateFormat('MMMM yyyy', context.read<AppProvider>().language).format(_selectedDate).toUpperCase()}',
                 style: GoogleFonts.plusJakartaSans(
                     color: _accent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.0),
               ),
@@ -167,12 +170,12 @@ class _OvertimePageState extends State<OvertimePage> {
               Text('$used',
                   style: GoogleFonts.plusJakartaSans(
                       color: pal.textPrimary, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1)),
-              Text(' / $_monthlyHourCap jam',
+              Text(' / $_monthlyHourCap ${context.tr('hours_word')}',
                   style: GoogleFonts.plusJakartaSans(
                       color: pal.textSub, fontSize: 13, fontWeight: FontWeight.w700)),
               const Spacer(),
               Text(
-                overLimit ? 'BATAS TERCAPAI' : 'sisa $remaining jam',
+                overLimit ? context.tr('limit_reached').toUpperCase() : '${context.tr('remaining')} $remaining ${context.tr('hours_word')}',
                 style: GoogleFonts.plusJakartaSans(
                   color: overLimit ? AppColors.brandRed : AppColors.green,
                   fontSize: 11,
@@ -282,7 +285,7 @@ class _OvertimePageState extends State<OvertimePage> {
         style: GoogleFonts.plusJakartaSans(
             color: pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
         decoration: InputDecoration(
-          hintText: 'Contoh: Menyelesaikan pengiriman paket overload di area Martapura Kota.',
+          hintText: context.tr('ot_reason_hint'),
           hintStyle: GoogleFonts.plusJakartaSans(color: pal.textFaint, fontSize: 13, fontWeight: FontWeight.w500),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.all(20),

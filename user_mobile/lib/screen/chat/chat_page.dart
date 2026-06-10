@@ -14,6 +14,7 @@ import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
 import '../../utils/presence_service.dart';
+import '../../utils/app_strings.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -122,6 +123,7 @@ class _ChatPageState extends State<ChatPage> {
   static const int _maxImageBytes = 5 * 1024 * 1024; // 5MB
 
   Future<void> _pickImage() async {
+    final tooLargeMsg = context.tr('image_too_large');
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image == null) return;
     final file = File(image.path);
@@ -129,7 +131,7 @@ class _ChatPageState extends State<ChatPage> {
     if (size > _maxImageBytes) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ukuran gambar melebihi batas 5MB.')),
+        SnackBar(content: Text(tooLargeMsg)),
       );
       return;
     }
@@ -159,6 +161,8 @@ class _ChatPageState extends State<ChatPage> {
     _typingTimer?.cancel();
     if (_chatId != null) chat.updateTyping(_chatId!, false);
 
+    final uploadFailMsg = context.tr('upload_image_failed');
+    final sendFailPre = context.tr('send_failed');
     try {
       // Kalau ada gambar, upload dulu ke Storage. Tanpa upload, penerima
       // hanya menerima path lokal device pengirim → gambar tidak akan load.
@@ -166,7 +170,7 @@ class _ChatPageState extends State<ChatPage> {
       if (image != null) {
         uploadedUrl = await _uploadImage(image);
         if (uploadedUrl == null) {
-          throw Exception('Upload gambar gagal. Coba lagi.');
+          throw Exception(uploadFailMsg);
         }
       }
 
@@ -184,7 +188,7 @@ class _ChatPageState extends State<ChatPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal mengirim: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('$sendFailPre: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -242,12 +246,12 @@ class _ChatPageState extends State<ChatPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _targetAdmin?.name ?? 'Admin HR',
+                  _targetAdmin?.name ?? context.tr('admin_hr'),
                   style: GoogleFonts.plusJakartaSans(
                       color: pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w800),
                 ),
                 Text(
-                  online ? 'Online' : 'Offline',
+                  online ? context.tr('online_word') : context.tr('offline_word'),
                   style: GoogleFonts.plusJakartaSans(
                       color: online ? _accent : pal.textSub,
                       fontSize: 11,
@@ -264,11 +268,10 @@ class _ChatPageState extends State<ChatPage> {
             child: chat.isLoading
                 ? const Center(child: CircularProgressIndicator(color: _accent))
                 : chat.messages.isEmpty
-                    ? const EmptyState(
+                    ? EmptyState(
                         icon: Icons.forum_rounded,
-                        title: 'Mulai Percakapan',
-                        subtitle:
-                            'Sampaikan pertanyaan, kendala absensi, atau pengajuan langsung ke admin HUB.',
+                        title: context.tr('start_conversation'),
+                        subtitle: context.tr('start_conversation_sub'),
                       )
                     : ListView.builder(
                         controller: _scrollController,
@@ -304,7 +307,7 @@ class _ChatPageState extends State<ChatPage> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Admin sedang mengetik',
+            Text(context.tr('admin_typing'),
                 style: GoogleFonts.plusJakartaSans(
                     fontSize: 10, fontWeight: FontWeight.w600, color: pal.textSub)),
             const SizedBox(width: 8),
@@ -426,15 +429,15 @@ class _ChatPageState extends State<ChatPage> {
         backgroundColor: pal.card,
         surfaceTintColor: pal.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Hapus Pesan?',
+        title: Text(context.tr('delete_message_q'),
             style: GoogleFonts.plusJakartaSans(
                 fontWeight: FontWeight.w800, fontSize: 16, color: pal.textPrimary)),
-        content: Text('Pesan ini akan dihapus untuk semua orang.',
+        content: Text(context.tr('delete_message_desc'),
             style: GoogleFonts.plusJakartaSans(fontSize: 14, color: pal.textSub)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('BATAL',
+            child: Text(context.tr('cancel').toUpperCase(),
                 style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontWeight: FontWeight.bold)),
           ),
           TextButton(
@@ -444,7 +447,7 @@ class _ChatPageState extends State<ChatPage> {
                 Navigator.pop(context);
               }
             },
-            child: Text('HAPUS',
+            child: Text(context.tr('delete_word').toUpperCase(),
                 style: GoogleFonts.plusJakartaSans(
                     color: AppColors.brandRed, fontWeight: FontWeight.bold)),
           ),
@@ -481,7 +484,7 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text('Foto terpilih',
+                      child: Text(context.tr('photo_selected'),
                           style: GoogleFonts.plusJakartaSans(
                               fontSize: 12, fontWeight: FontWeight.w700, color: pal.textPrimary)),
                     ),
@@ -511,7 +514,7 @@ class _ChatPageState extends State<ChatPage> {
                           fontSize: 13, fontWeight: FontWeight.w600, color: pal.textPrimary),
                       onChanged: _onTypingChanged,
                       decoration: InputDecoration(
-                        hintText: 'Ketik pesan...',
+                        hintText: context.tr('type_message'),
                         hintStyle: GoogleFonts.plusJakartaSans(color: pal.textFaint),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

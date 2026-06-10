@@ -107,6 +107,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await initializeDateFormatting('id', null);
+  await initializeDateFormatting('en', null);
 
   // Setup FCM
   await _setupFCM();

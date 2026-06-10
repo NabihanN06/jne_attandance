@@ -9,6 +9,7 @@ import '../../utils/geofence_service.dart';
 import '../succeed/succeed_page.dart';
 import '../../widgets/package_loading.dart';
 import '../../widgets/live_location_map.dart';
+import '../../utils/app_strings.dart';
 
 class AttendancePage extends StatefulWidget {
   const AttendancePage({super.key});
@@ -59,10 +60,12 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   }
 
   Future<void> _initCamera() async {
+    final camNotDetected = context.tr('camera_not_detected');
+    final errPrefix = context.tr('error_occurred');
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
-        setState(() => _errorMessage = 'Kamera tidak terdeteksi');
+        setState(() => _errorMessage = camNotDetected);
         return;
       }
       final front = cameras.firstWhere(
@@ -81,15 +84,15 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     } on CameraException catch (e) {
       _handleCameraError(e);
     } catch (e) {
-      setState(() => _errorMessage = 'Terjadi kesalahan: $e');
+      setState(() => _errorMessage = '$errPrefix: $e');
     }
   }
 
   void _handleCameraError(CameraException e) {
     if (e.code == 'CameraAccessDenied') {
-      setState(() => _errorMessage = 'Akses kamera ditolak\n\nAktifkan izin kamera di pengaturan ponsel Anda.');
+      setState(() => _errorMessage = context.tr('camera_denied'));
     } else {
-      setState(() => _errorMessage = 'Gagal memulai kamera: ${e.description}');
+      setState(() => _errorMessage = '${context.tr('camera_start_failed')}: ${e.description}');
     }
   }
 
@@ -101,25 +104,41 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     final isRemoteAllowed = app.canBypassGeofence;
     
      if (geo.currentPosition == null) {
-       _showFeedback('Menunggu sinyal GPS...', zenNavy);
+       _showFeedback(context.tr('waiting_gps'), zenNavy);
        return;
      }
 
      if (geo.isLocationMocked) {
        _flashError();
-       _showFeedback('Lokasi palsu terdeteksi • absensi ditolak', zenRose);
+       _showFeedback(context.tr('mock_location_rejected'), zenRose);
        return;
      }
 
     if (!geo.isInRange && !isRemoteAllowed) {
       HapticFeedback.vibrate();
       _flashError();
-      _showFeedback('Di luar radius kantor (${(geo.distanceFromOffice/1000).toStringAsFixed(1)} km)', zenRose);
+      _showFeedback('${context.tr('out_of_radius_office')} (${(geo.distanceFromOffice/1000).toStringAsFixed(1)} km)', zenRose);
       return;
     }
 
     setState(() => _isCapturing = true);
     HapticFeedback.mediumImpact();
+
+    // Ambil teks terjemahan sebelum await (hindari pakai context lintas async gap).
+    final faceFailPre = context.tr('face_detect_failed');
+    final timesTryLater = context.tr('times_try_later');
+    final faceNotDetectedPre = context.tr('face_not_detected_pre');
+    final attemptsWord = context.tr('attempts_word');
+    final alreadyCheckedIn = context.tr('already_checked_in');
+    final noCheckinYet = context.tr('no_checkin_yet');
+    final connIssue = context.tr('connection_issue');
+    final saveFailed = context.tr('save_attendance_failed');
+    final checkInLabel = context.tr('check_in_label');
+    final checkOutLabel = context.tr('check_out_label');
+    final doneCheck = context.tr('done_check');
+    final lateCheck = context.tr('late_check');
+    final ontimeCheck = context.tr('ontime_check');
+    final outsideOfficeLoc = context.tr('outside_office_loc');
 
     try {
       final XFile photo = await _cameraController!.takePicture();
@@ -130,13 +149,13 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
         _faceAttempts++;
         _flashError();
         if (_faceAttempts >= app.maxFaceAttempts) {
-          _showFeedback('Gagal mendeteksi wajah $_faceAttempts kali. Coba lagi nanti.', zenRose);
+          _showFeedback('$faceFailPre $_faceAttempts $timesTryLater', zenRose);
           await Future.delayed(const Duration(milliseconds: 1300));
           if (mounted) Navigator.pop(context);
           return;
         }
         final sisa = app.maxFaceAttempts - _faceAttempts;
-        _showFeedback('Wajah tidak terdeteksi • sisa $sisa percobaan', zenRose);
+        _showFeedback('$faceNotDetectedPre $sisa $attemptsWord', zenRose);
       } else {
         _faceAttempts = 0; // reset saat berhasil
         if (!mounted) return;
@@ -163,10 +182,10 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => SucceedPage(
-              jenis: isCheckOut ? 'Absen Keluar' : 'Absen Masuk',
+              jenis: isCheckOut ? checkOutLabel : checkInLabel,
               waktu: '${now.hour.toString().padLeft(2,'0')}:${now.minute.toString().padLeft(2,'0')} WITA',
-              status: isCheckOut ? 'Selesai ✓' : (app.isLateForClockIn ? 'Terlambat ⚠' : 'Tepat Waktu ✓'),
-              lokasi: isRemoteAllowed ? 'Lokasi Luar Kantor' : app.hubName,
+              status: isCheckOut ? doneCheck : (app.isLateForClockIn ? lateCheck : ontimeCheck),
+              lokasi: isRemoteAllowed ? outsideOfficeLoc : app.hubName,
             )),
             (route) => route.isFirst,
           );
@@ -176,12 +195,12 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       _flashError();
       final raw = e.toString();
       final msg = raw.contains('sudah melakukan absensi')
-          ? 'Anda sudah absen masuk hari ini.'
+          ? alreadyCheckedIn
           : raw.contains('tidak ditemukan')
-              ? 'Belum ada absen masuk hari ini.'
+              ? noCheckinYet
               : raw.toLowerCase().contains('network') || raw.toLowerCase().contains('unavailable')
-                  ? 'Koneksi bermasalah. Periksa internet lalu coba lagi.'
-                  : 'Gagal menyimpan absensi. Coba lagi sebentar.';
+                  ? connIssue
+                  : saveFailed;
       _showFeedback(msg, zenRose);
     } finally {
       if (mounted) setState(() => _isCapturing = false);
@@ -260,8 +279,8 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   Widget _buildLoadingOverlay() {
     return Container(
       color: zenNavy.withValues(alpha: 0.85),
-      child: const PackageLoading(
-        message: 'Menyimpan absensi...',
+      child: PackageLoading(
+        message: context.tr('saving_attendance'),
         isLight: true,
       ),
     );
@@ -307,7 +326,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
                     child: Column(
                       children: [
                         Text(
-                          'Verifikasi Wajah',
+                          context.tr('face_verification'),
                           textAlign: TextAlign.center,
                           style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.3),
                         ),
@@ -349,7 +368,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Ketuk untuk peta',
+                  context.tr('tap_for_map'),
                   style: GoogleFonts.plusJakartaSans(
                     color: Colors.white60,
                     fontSize: 9.5,
@@ -414,7 +433,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
                       const Icon(Icons.info_outline_rounded, color: Colors.white54, size: 14),
                       const SizedBox(width: 12),
                       Text(
-                        _isCapturing ? 'Memproses...' : 'Posisikan wajah di dalam bingkai',
+                        _isCapturing ? context.tr('processing') : context.tr('position_face'),
                         style: GoogleFonts.plusJakartaSans(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     ],
@@ -437,13 +456,13 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     Color color = isAllowed ? zenCyan : zenRose;
 
     if (isRemoteAllowed) {
-      statusText = 'Absensi Luar Kantor Aktif';
+      statusText = context.tr('remote_attendance_active');
       icon = Icons.satellite_alt_rounded;
     } else if (geo.isInRange) {
-      statusText = '${app.hubName} • Dalam Area';
+      statusText = '${app.hubName} • ${context.tr('in_area')}';
       icon = Icons.location_on_rounded;
     } else {
-      statusText = 'Di Luar Area • ${(geo.distanceFromOffice/1000).toStringAsFixed(1)} km';
+      statusText = '${context.tr('out_of_area_label')} • ${(geo.distanceFromOffice/1000).toStringAsFixed(1)} km';
       icon = Icons.warning_amber_rounded;
     }
 

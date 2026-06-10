@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/app_strings.dart';
 import '../../widgets/package_loading.dart';
 import '../attendance/dispute_submission_screen.dart';
 import '../attendance/dispute_detail_screen.dart';
@@ -74,7 +75,7 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         ),
         title: Text(
-          'Riwayat Absensi',
+          context.tr('history_title'),
           style: GoogleFonts.outfit(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: 0.2),
         ),
         centerTitle: true,
@@ -103,11 +104,11 @@ class _HistoryPageState extends State<HistoryPage> {
                 const SizedBox(height: 28),
                 Row(
                   children: [
-                    _headerStat('Hadir', presentCount.toString().padLeft(2, '0'), zenCyan),
+                    _headerStat(context.tr('stat_present'), presentCount.toString().padLeft(2, '0'), zenCyan),
                     const SizedBox(width: 12),
-                    _headerStat('Izin/Cuti', leaveCount.toString().padLeft(2, '0'), zenIndigo),
+                    _headerStat(context.tr('leave_permit'), leaveCount.toString().padLeft(2, '0'), zenIndigo),
                     const SizedBox(width: 12),
-                    _headerStat('Telat', lateCount.toString().padLeft(2, '0'), zenRose),
+                    _headerStat(context.tr('stat_late'), lateCount.toString().padLeft(2, '0'), zenRose),
                   ],
                 ),
               ],
@@ -160,7 +161,7 @@ class _HistoryPageState extends State<HistoryPage> {
            const SizedBox(width: 16),
            Expanded(
              child: Text(
-               'Ada absensi yang belum tersinkron',
+               context.tr('unsynced_attendance'),
                style: GoogleFonts.plusJakartaSans(color: Colors.amber.shade900, fontSize: 12.5, fontWeight: FontWeight.w700),
              ),
            ),
@@ -193,10 +194,7 @@ class _HistoryPageState extends State<HistoryPage> {
    }
 
   Widget _buildDropdownMonth() {
-    final months = [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-    ];
+    final months = AppStrings.months(context.read<AppProvider>().language);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
@@ -286,7 +284,7 @@ class _HistoryPageState extends State<HistoryPage> {
           Icon(Icons.inventory_2_outlined, color: zenSlate.withValues(alpha: 0.2), size: 64),
           const SizedBox(height: 20),
           Text(
-            'Belum ada riwayat absensi',
+            context.tr('no_history'),
             style: GoogleFonts.plusJakartaSans(color: zenSlate.withValues(alpha: 0.6), fontSize: 13, fontWeight: FontWeight.w600),
           ),
         ],
@@ -303,11 +301,11 @@ class _HistoryPageState extends State<HistoryPage> {
     bool isLeave = r.status == 'leave';
     
     Color statusColor = zenEmerald;
-    String statusLabel = 'Hadir';
+    String statusLabel = context.tr('status_present');
 
-    if (isLate) { statusColor = zenRose; statusLabel = 'Terlambat'; }
-    if (isAbsent) { statusColor = zenRose; statusLabel = 'Tidak Hadir'; }
-    if (isLeave) { statusColor = zenIndigo; statusLabel = 'Izin / Cuti'; }
+    if (isLate) { statusColor = zenRose; statusLabel = context.tr('status_late'); }
+    if (isAbsent) { statusColor = zenRose; statusLabel = context.tr('status_absent_full'); }
+    if (isLeave) { statusColor = zenIndigo; statusLabel = context.tr('status_leave_full'); }
 
     String checkInTime = r.checkIn?.time != null ? DateFormat('HH:mm').format(r.checkIn!.time!) : '--:--';
     String checkOutTime = r.checkOut?.time != null ? DateFormat('HH:mm').format(r.checkOut!.time!) : '--:--';
@@ -327,7 +325,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        DateFormat('EEEE, d MMM yyyy', 'id').format(date),
+                        DateFormat('EEEE, d MMM yyyy', context.read<AppProvider>().language).format(date),
                         style: GoogleFonts.outfit(color: pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -0.2),
                       ),
                       const SizedBox(height: 6),
@@ -362,9 +360,9 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
               Row(
                 children: [
-                  _timeBox('Masuk', checkInTime, Icons.login_rounded, zenCyan, pal),
+                  _timeBox(context.tr('check_in'), checkInTime, Icons.login_rounded, zenCyan, pal),
                   const Spacer(),
-                  _timeBox('Keluar', checkOutTime, Icons.logout_rounded, zenIndigo, pal),
+                  _timeBox(context.tr('check_out'), checkOutTime, Icons.logout_rounded, zenIndigo, pal),
                   const SizedBox(width: 12),
                   if (dispute == null && (isLate || isAbsent))
                     GestureDetector(
@@ -384,7 +382,7 @@ class _HistoryPageState extends State<HistoryPage> {
                           ],
                         ),
                         child: Text(
-                          'Lapor',
+                          context.tr('report_btn'),
                           style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -452,7 +450,7 @@ class _HistoryPageState extends State<HistoryPage> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Status komplain: ${_disputeStatusLabel(dispute.status)}',
+                                '${context.tr('dispute_status_prefix')}: ${_disputeStatusLabel(context, dispute.status)}',
                                 style: GoogleFonts.plusJakartaSans(
                                   color: dispute.status == 'resolved' ? zenEmerald : (dispute.status == 'rejected' ? zenRose : Colors.amber.shade900),
                                   fontSize: 11.5,
@@ -468,7 +466,7 @@ class _HistoryPageState extends State<HistoryPage> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  'KONFIRMASI',
+                                  context.tr('confirm_badge'),
                                   style: GoogleFonts.outfit(color: Colors.white, fontSize: 7, fontWeight: FontWeight.w900, letterSpacing: 1),
                                 ),
                               ),
@@ -479,7 +477,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         if (dispute.adminResponse != null && dispute.adminResponse!.isNotEmpty) ...[
                           const SizedBox(height: 6),
                           Text(
-                            'Ketuk untuk buka percakapan dengan admin',
+                            context.tr('tap_open_chat_admin'),
                             style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontSize: 10, fontWeight: FontWeight.w600, height: 1.4),
                           ),
                         ],
@@ -493,20 +491,20 @@ class _HistoryPageState extends State<HistoryPage> {
         );
       }
 
-      String _disputeStatusLabel(String status) {
+      String _disputeStatusLabel(BuildContext context, String status) {
         switch (status) {
           case 'resolved':
-            return 'Selesai';
+            return context.tr('ds_resolved');
           case 'rejected':
-            return 'Ditolak';
+            return context.tr('ds_rejected');
           case 'in_review':
-            return 'Sedang Ditinjau';
+            return context.tr('ds_in_review');
           case 'reopened':
-            return 'Dibuka Kembali';
+            return context.tr('ds_reopened');
           case 'closed':
-            return 'Ditutup';
+            return context.tr('ds_closed');
           default:
-            return 'Menunggu';
+            return context.tr('ds_pending');
         }
       }
 

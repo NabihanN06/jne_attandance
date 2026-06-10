@@ -9,6 +9,7 @@ import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
+import '../../utils/app_strings.dart';
 import '../auth/login_page.dart';
 import '../enroll/enroll_page.dart';
 import '../help/faq_screen.dart';
@@ -42,7 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
         centerTitle: true,
         leading: const AppBackButton(),
         title: Text(
-          'Profil Saya',
+          context.tr('profile_title'),
           style: GoogleFonts.plusJakartaSans(
               color: pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800),
         ),
@@ -73,51 +74,51 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 24),
 
           // ── Account info ──
-          const SectionLabel('Informasi Akun'),
+          SectionLabel(context.tr('sec_account')),
           GlassCard(
             padding: EdgeInsets.zero,
             child:Column(children: [
-              AppInfoRow(icon: Icons.alternate_email_rounded, label: 'Email', value: user.email),
+              AppInfoRow(icon: Icons.alternate_email_rounded, label: context.tr('email'), value: user.email),
               const AppRowDivider(),
               AppInfoRow(
                   icon: Icons.phone_iphone_rounded,
-                  label: 'Nomor HP',
-                  value: user.phone.isEmpty ? 'Belum diatur' : user.phone),
+                  label: context.tr('phone'),
+                  value: user.phone.isEmpty ? context.tr('not_set') : user.phone),
               const AppRowDivider(),
               AppInfoRow(
                   icon: Icons.badge_outlined,
-                  label: 'ID Karyawan',
+                  label: context.tr('employee_id'),
                   value: user.employeeId.isEmpty ? '-' : user.employeeId),
             ]),
           ),
           const SizedBox(height: 24),
 
           // ── Services ──
-          const SectionLabel('Layanan'),
+          SectionLabel(context.tr('sec_services')),
           GlassCard(
             padding: EdgeInsets.zero,
             child:Column(children: [
               AppActionRow(
                 icon: Icons.assignment_outlined,
                 iconColor: AppColors.blue,
-                title: 'Pusat Pengajuan',
-                subtitle: 'Pantau cuti, lembur & komplain',
+                title: context.tr('request_center'),
+                subtitle: context.tr('request_center_sub'),
                 onTap: () => Navigator.pushNamed(context, '/my_requests'),
               ),
               const AppRowDivider(),
               AppActionRow(
                 icon: Icons.support_agent_rounded,
                 iconColor: AppColors.green,
-                title: 'Chat HR',
-                subtitle: 'Hubungi admin secara langsung',
+                title: context.tr('menu_chat'),
+                subtitle: context.tr('chat_hr_sub'),
                 onTap: () => Navigator.pushNamed(context, '/chat'),
               ),
               const AppRowDivider(),
               AppActionRow(
                 icon: Icons.help_outline_rounded,
                 iconColor: AppColors.amber,
-                title: 'Bantuan & FAQ',
-                subtitle: 'Pertanyaan yang sering diajukan',
+                title: context.tr('help_faq'),
+                subtitle: context.tr('help_faq_sub'),
                 onTap: () => Navigator.push(
                     context, MaterialPageRoute(builder: (_) => const FaqScreen())),
               ),
@@ -126,23 +127,23 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 24),
 
           // ── Card & biometric ──
-          const SectionLabel('Kartu & Biometrik'),
+          SectionLabel(context.tr('sec_card_bio')),
           GlassCard(
             padding: EdgeInsets.zero,
             child:Column(children: [
               AppActionRow(
                 icon: Icons.contact_mail_outlined,
                 iconColor: AppColors.brandRed,
-                title: 'Kartu Identitas',
-                subtitle: 'Kartu pegawai resmi JNE',
+                title: context.tr('id_card'),
+                subtitle: context.tr('id_card_sub'),
                 onTap: () => Navigator.pushNamed(context, '/profile/id_card'),
               ),
               const AppRowDivider(),
               AppActionRow(
                 icon: Icons.face_retouching_natural_rounded,
                 iconColor: AppColors.violet,
-                title: 'Daftar Ulang Wajah',
-                subtitle: 'Perbarui data pengenalan wajah',
+                title: context.tr('reenroll_face'),
+                subtitle: context.tr('reenroll_face_sub'),
                 onTap: () => Navigator.push(
                     context, MaterialPageRoute(builder: (_) => const EnrollPage())),
               ),
@@ -151,14 +152,14 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 24),
 
           // ── Security ──
-          const SectionLabel('Keamanan'),
+          SectionLabel(context.tr('sec_security')),
           GlassCard(
             padding: EdgeInsets.zero,
             child:AppActionRow(
               icon: Icons.lock_outline_rounded,
               iconColor: const Color(0xFF0EA5E9),
-              title: 'Ganti Kata Sandi',
-              subtitle: 'Perbarui kata sandi akun Anda',
+              title: context.tr('change_password'),
+              subtitle: context.tr('change_password_sub'),
               onTap: () => _showChangePasswordDialog(context, provider, pal.isDark),
             ),
           ),
@@ -180,7 +181,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   const Icon(Icons.logout_rounded, color: AppColors.brandRed, size: 19),
                   const SizedBox(width: 10),
-                  Text('Keluar',
+                  Text(context.tr('logout'),
                       style: GoogleFonts.plusJakartaSans(
                           color: AppColors.brandRed, fontSize: 15, fontWeight: FontWeight.w800)),
                 ],
@@ -190,7 +191,7 @@ class _ProfilePageState extends State<ProfilePage> {
           const SizedBox(height: 16),
           Center(
             child: Text(
-              'JNE Attendance • Martapura Hub',
+              context.tr('app_footer'),
               style: GoogleFonts.plusJakartaSans(
                   color: pal.textFaint, fontSize: 11, fontWeight: FontWeight.w600),
             ),
@@ -249,11 +250,11 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             child: Row(
               children: [
-                _heroStat('${stats['present']}', 'Hadir', Icons.check_circle_rounded, AppColors.green),
+                _heroStat('${stats['present']}', context.tr('stat_present'), Icons.check_circle_rounded, AppColors.green),
                 _heroDivider(),
-                _heroStat('${stats['late']}', 'Telat', Icons.alarm_rounded, AppColors.amber),
+                _heroStat('${stats['late']}', context.tr('stat_late'), Icons.alarm_rounded, AppColors.amber),
                 _heroDivider(),
-                _heroStat('${(punctuality * 100).toInt()}%', 'Tepat Waktu',
+                _heroStat('${(punctuality * 100).toInt()}%', context.tr('on_time'),
                     Icons.verified_rounded, AppColors.sky),
               ],
             ),
@@ -297,7 +298,7 @@ class _ProfilePageState extends State<ProfilePage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Sisa Cuti Tahunan',
+                  Text(context.tr('remaining_annual_leave'),
                       style: GoogleFonts.plusJakartaSans(
                           color: pal.textSub, fontSize: 12, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
@@ -312,7 +313,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               height: 1)),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 5, left: 5),
-                        child: Text('dari ${balance.annualQuota} hari',
+                        child: Text('${context.tr('of_days')} ${balance.annualQuota} ${context.tr('days')}',
                             style: GoogleFonts.plusJakartaSans(
                                 color: pal.textFaint, fontSize: 12, fontWeight: FontWeight.w600)),
                       ),
@@ -342,10 +343,10 @@ class _ProfilePageState extends State<ProfilePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _miniStat('Terpakai', '${balance.usedAnnual} hari', pal, pal.textPrimary),
-              _miniStat('Sakit', '${balance.usedSick} hari', pal, pal.textPrimary),
-              _miniStat('Izin', '${balance.usedPermission} hari', pal, pal.textPrimary),
-              _miniStat('Diajukan', '${balance.pendingDays} hari', pal, AppColors.amber),
+              _miniStat(context.tr('used2'), '${balance.usedAnnual} ${context.tr('days')}', pal, pal.textPrimary),
+              _miniStat(context.tr('sick2'), '${balance.usedSick} ${context.tr('days')}', pal, pal.textPrimary),
+              _miniStat(context.tr('permit'), '${balance.usedPermission} ${context.tr('days')}', pal, pal.textPrimary),
+              _miniStat(context.tr('submitted'), '${balance.pendingDays} ${context.tr('days')}', pal, AppColors.amber),
             ],
           ),
         ],
@@ -443,14 +444,14 @@ class _ProfilePageState extends State<ProfilePage> {
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
                 child: Row(
                   children: [
-                    Text('Ubah Foto Profil',
+                    Text(context.tr('change_photo'),
                         style: GoogleFonts.plusJakartaSans(
                             color: txt, fontWeight: FontWeight.w800, fontSize: 16)),
                   ],
                 ),
               ),
-              _sheetOption(ctx, Icons.photo_library_rounded, 'Pilih dari Galeri', txt, ImageSource.gallery),
-              _sheetOption(ctx, Icons.photo_camera_rounded, 'Ambil Foto', txt, ImageSource.camera),
+              _sheetOption(ctx, Icons.photo_library_rounded, context.tr('from_gallery'), txt, ImageSource.gallery),
+              _sheetOption(ctx, Icons.photo_camera_rounded, context.tr('take_photo'), txt, ImageSource.camera),
               const SizedBox(height: 4),
             ],
           ),
@@ -472,7 +473,7 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() => _uploading = true);
       await provider.updateProfilePhoto(File(picked.path));
       if (!mounted) return;
-      showAppSnack(context, 'Foto profil berhasil diperbarui', color: AppColors.green);
+      showAppSnack(context, context.tr('photo_updated'), color: AppColors.green);
     } catch (e) {
       if (!mounted) return;
       showAppSnack(context, e.toString().replaceAll('Exception: ', ''), color: AppColors.brandRed);
@@ -516,17 +517,17 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: card,
         surfaceTintColor: card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('Keluar dari akun?',
+        title: Text(context.tr('logout_confirm'),
             style: GoogleFonts.plusJakartaSans(color: txt, fontWeight: FontWeight.w800, fontSize: 18)),
         content: Text(
-          'Anda perlu masuk kembali untuk mengakses absensi dan data Anda.',
+          context.tr('logout_confirm_desc'),
           style: GoogleFonts.plusJakartaSans(color: sub, fontSize: 13.5, height: 1.5),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Batal',
+            child: Text(context.tr('cancel'),
                 style: GoogleFonts.plusJakartaSans(color: sub, fontWeight: FontWeight.w700)),
           ),
           ElevatedButton(
@@ -544,7 +545,7 @@ class _ProfilePageState extends State<ProfilePage> {
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            child: Text('Keluar',
+            child: Text(context.tr('logout'),
                 style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.w800)),
           ),
         ],
@@ -563,13 +564,13 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: card,
         surfaceTintColor: card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('Ganti Kata Sandi',
+        title: Text(context.tr('change_password'),
             style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 18, color: txt)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Masukkan kata sandi baru minimal 6 karakter.',
+            Text(context.tr('cp_desc'),
                 style: GoogleFonts.plusJakartaSans(color: sub, fontSize: 13.5, height: 1.5)),
             const SizedBox(height: 20),
             TextField(
@@ -577,7 +578,7 @@ class _ProfilePageState extends State<ProfilePage> {
               obscureText: true,
               style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: txt),
               decoration: InputDecoration(
-                hintText: 'Kata sandi baru',
+                hintText: context.tr('new_password_hint'),
                 hintStyle: GoogleFonts.plusJakartaSans(color: sub.withValues(alpha: 0.6), fontSize: 13.5),
                 prefixIcon: Icon(Icons.lock_outline_rounded, size: 19, color: sub),
                 filled: true,
@@ -593,21 +594,23 @@ class _ProfilePageState extends State<ProfilePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Batal',
+            child: Text(context.tr('cancel'),
                 style: GoogleFonts.plusJakartaSans(color: sub, fontWeight: FontWeight.w700)),
           ),
           ElevatedButton(
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
               final navigator = Navigator.of(ctx);
+              final minMsg = context.tr('cp_min');
+              final okMsg = context.tr('password_changed');
               if (controller.text.length < 6) {
-                messenger.showSnackBar(appSnack('Kata sandi minimal 6 karakter.', AppColors.brandRed));
+                messenger.showSnackBar(appSnack(minMsg, AppColors.brandRed));
                 return;
               }
               try {
                 await provider.changePassword(controller.text);
                 navigator.pop();
-                messenger.showSnackBar(appSnack('Kata sandi berhasil diubah', AppColors.green));
+                messenger.showSnackBar(appSnack(okMsg, AppColors.green));
               } catch (e) {
                 messenger.showSnackBar(
                     appSnack(e.toString().replaceAll('Exception: ', ''), AppColors.brandRed));
@@ -619,7 +622,7 @@ class _ProfilePageState extends State<ProfilePage> {
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            child: Text('Simpan',
+            child: Text(context.tr('save'),
                 style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.w800)),
           ),
         ],

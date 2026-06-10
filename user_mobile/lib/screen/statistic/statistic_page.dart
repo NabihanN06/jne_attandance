@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../utils/app_strings.dart';
 
 class StatisticPage extends StatefulWidget {
   const StatisticPage({super.key});
@@ -22,8 +23,6 @@ class _StatisticPageState extends State<StatisticPage> {
 
   int _bulan = DateTime.now().month;
   int _tahun = DateTime.now().year;
-
-  static const _months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
   /// % record yang check-in dalam radius kantor (distance <= officeRadius).
   /// Return null jika belum ada data, supaya UI bisa tampilkan "—" daripada
@@ -76,7 +75,7 @@ class _StatisticPageState extends State<StatisticPage> {
             flexibleSpace: FlexibleSpaceBar(
               centerTitle: true,
               title: Text(
-                'STATISTIK KERJA',
+                context.tr('work_statistics').toUpperCase(),
                 style: GoogleFonts.outfit(
                   color: _textPrimary,
                   fontSize: 14,
@@ -140,7 +139,7 @@ class _StatisticPageState extends State<StatisticPage> {
                 }),
               ),
               Text(
-                '${_months[_bulan - 1]} $_tahun'.toUpperCase(),
+                '${AppStrings.months(provider.language)[_bulan - 1]} $_tahun'.toUpperCase(),
                 style: GoogleFonts.outfit(
                   color: _textPrimary,
                   fontSize: 15,
@@ -169,10 +168,10 @@ class _StatisticPageState extends State<StatisticPage> {
               spacing: spacing,
               runSpacing: spacing,
               children: [
-                _buildBentoStat(stats['present'], 'Hari Hadir', Icons.check_circle_rounded, const Color(0xFF10B981), itemWidth),
-                _buildBentoStat(stats['leaves'], 'Izin/Sakit', Icons.assignment_rounded, const Color(0xFFF59E0B), itemWidth),
-                _buildBentoStat(stats['late'], 'Menit Telat', Icons.alarm_rounded, jneRed, itemWidth),
-                _buildBentoStat(stats['hours'], 'Total Jam', Icons.timer_rounded, const Color(0xFF3B82F6), itemWidth),
+                _buildBentoStat(stats['present'], context.tr('days_present'), Icons.check_circle_rounded, const Color(0xFF10B981), itemWidth),
+                _buildBentoStat(stats['leaves'], context.tr('leave_sick_label'), Icons.assignment_rounded, const Color(0xFFF59E0B), itemWidth),
+                _buildBentoStat(stats['late'], context.tr('late_minutes'), Icons.alarm_rounded, jneRed, itemWidth),
+                _buildBentoStat(stats['hours'], context.tr('total_hours'), Icons.timer_rounded, const Color(0xFF3B82F6), itemWidth),
               ],
             );
           },
@@ -271,7 +270,7 @@ class _StatisticPageState extends State<StatisticPage> {
               const Icon(Icons.auto_awesome_rounded, color: Colors.amber, size: 20),
               const SizedBox(width: 12),
               Text(
-                'ANALISIS PERFORMA',
+                context.tr('performance_analysis').toUpperCase(),
                 style: GoogleFonts.outfit(
                   color: Colors.white,
                   fontSize: 14,
@@ -282,11 +281,11 @@ class _StatisticPageState extends State<StatisticPage> {
             ],
           ),
           const SizedBox(height: 32),
-          _buildAnalysisRow('Ketepatan Waktu', punctuality, const Color(0xFF10B981)),
+          _buildAnalysisRow(context.tr('punctuality_label'), punctuality, const Color(0xFF10B981)),
           const SizedBox(height: 24),
-          _buildAnalysisRow('Kepatuhan Lokasi', locationCompliance, const Color(0xFF3B82F6)),
+          _buildAnalysisRow(context.tr('location_compliance'), locationCompliance, const Color(0xFF3B82F6)),
           const SizedBox(height: 24),
-          _buildAnalysisRow('Efektivitas Jam', hourEffectiveness, const Color(0xFFF59E0B)),
+          _buildAnalysisRow(context.tr('hour_effectiveness'), hourEffectiveness, const Color(0xFFF59E0B)),
         ],
       ),
     );

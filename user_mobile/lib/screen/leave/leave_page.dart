@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/app_strings.dart';
 import '../../widgets/ui_kit.dart';
 import '../../widgets/package_loading.dart';
 
@@ -83,14 +84,26 @@ class _LeavePageState extends State<LeavePage> {
     return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
   }
 
+  // Label tipe izin terlokalisasi (value tetap dipakai untuk submit ke backend).
+  String _leaveLabel(String value) {
+    switch (value) {
+      case 'annual': return context.tr('leave_annual');
+      case 'sick': return context.tr('lt_sick');
+      case 'permission': return context.tr('lt_permission');
+      case 'personal': return context.tr('lt_personal');
+      case 'urgent': return context.tr('lt_family');
+      default: return value;
+    }
+  }
+
   Future<void> _submit() async {
     final provider = context.read<AppProvider>();
     if (_fromDate == null || _toDate == null) {
-      showAppSnack(context, 'Pilih tanggal izin terlebih dahulu', color: AppColors.brandRed);
+      showAppSnack(context, context.tr('pick_leave_date_first'), color: AppColors.brandRed);
       return;
     }
     if (_reasonCtrl.text.trim().isEmpty) {
-      showAppSnack(context, 'Alasan izin tidak boleh kosong', color: AppColors.brandRed);
+      showAppSnack(context, context.tr('reason_required'), color: AppColors.brandRed);
       return;
     }
     setState(() => _loading = true);
@@ -103,12 +116,12 @@ class _LeavePageState extends State<LeavePage> {
         reason: _reasonCtrl.text.trim(),
       );
       if (!mounted) return;
-      showAppSnack(context, 'Pengajuan izin berhasil dikirim!', color: AppColors.green);
+      showAppSnack(context, context.tr('leave_submitted'), color: AppColors.green);
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      showAppSnack(context, 'Gagal mengirim: ${e.toString().replaceAll('Exception: ', '')}',
+      showAppSnack(context, '${context.tr('send_failed')}: ${e.toString().replaceAll('Exception: ', '')}',
           color: AppColors.brandRed);
     }
   }
@@ -126,7 +139,7 @@ class _LeavePageState extends State<LeavePage> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leading: const AppBackButton(),
-        title: Text('Pengajuan Izin',
+        title: Text(context.tr('leave_request_title'),
             style: GoogleFonts.plusJakartaSans(
                 color: pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
       ),
@@ -137,7 +150,7 @@ class _LeavePageState extends State<LeavePage> {
           _balanceSummary(balance),
           const SizedBox(height: 22),
           _buildSectionCard(
-            title: 'JENIS IZIN',
+            title: context.tr('sec_leave_type').toUpperCase(),
             icon: Icons.category_rounded,
             pal: pal,
             child: Wrap(
@@ -164,7 +177,7 @@ class _LeavePageState extends State<LeavePage> {
                         Icon(t.icon, color: selected ? Colors.white : t.color, size: 16),
                         const SizedBox(width: 8),
                         Text(
-                          t.label,
+                          _leaveLabel(t.value),
                           style: GoogleFonts.plusJakartaSans(
                             color: selected ? Colors.white : pal.textSub,
                             fontSize: 12,
@@ -180,14 +193,14 @@ class _LeavePageState extends State<LeavePage> {
           ),
           const SizedBox(height: 20),
           _buildSectionCard(
-            title: 'DURASI IZIN',
+            title: context.tr('sec_leave_duration').toUpperCase(),
             icon: Icons.calendar_month_rounded,
             pal: pal,
             child: Column(
               children: [
-                _dateField('Mulai Tanggal', _fmt(_fromDate), () => _pickDate(true), pal),
+                _dateField(context.tr('from_date'), _fmt(_fromDate), () => _pickDate(true), pal),
                 const SizedBox(height: 18),
-                _dateField('Sampai Tanggal', _fmt(_toDate), () => _pickDate(false), pal),
+                _dateField(context.tr('to_date'), _fmt(_toDate), () => _pickDate(false), pal),
                 if (_workDays > 0) ...[
                   const SizedBox(height: 18),
                   Container(
@@ -200,7 +213,7 @@ class _LeavePageState extends State<LeavePage> {
                     child: Row(children: [
                       const Icon(Icons.info_outline, color: _accent, size: 18),
                       const SizedBox(width: 12),
-                      Text('Total: $_workDays Hari Kerja Terhitung',
+                      Text('${context.tr('total')}: $_workDays ${context.tr('workdays_counted')}',
                           style: GoogleFonts.plusJakartaSans(
                               color: _accent, fontSize: 13, fontWeight: FontWeight.w800)),
                     ]),
@@ -211,7 +224,7 @@ class _LeavePageState extends State<LeavePage> {
           ),
           const SizedBox(height: 20),
           _buildSectionCard(
-            title: 'ALASAN & KETERANGAN',
+            title: context.tr('sec_leave_reason').toUpperCase(),
             icon: Icons.edit_note_rounded,
             pal: pal,
             child: TextField(
@@ -221,7 +234,7 @@ class _LeavePageState extends State<LeavePage> {
               style: GoogleFonts.plusJakartaSans(
                   color: pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
-                hintText: 'Tuliskan alasan lengkap Anda di sini...',
+                hintText: context.tr('reason_hint'),
                 hintStyle: GoogleFonts.plusJakartaSans(color: pal.textFaint, fontSize: 14),
                 border: InputBorder.none,
                 isCollapsed: true,
@@ -244,7 +257,7 @@ class _LeavePageState extends State<LeavePage> {
               child: Center(
                 child: _loading
                     ? const PackageLoading(isLight: true, size: 30)
-                    : Text('KIRIM PENGAJUAN SEKARANG',
+                    : Text(context.tr('submit_request_now').toUpperCase(),
                         style: GoogleFonts.plusJakartaSans(
                             color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1)),
               ),
@@ -271,7 +284,7 @@ class _LeavePageState extends State<LeavePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Sisa Cuti Tahunan',
+                    Text(context.tr('remaining_annual_leave'),
                         style: GoogleFonts.plusJakartaSans(
                             color: Colors.white60, fontSize: 12, fontWeight: FontWeight.w500)),
                     const SizedBox(height: 6),
@@ -283,7 +296,7 @@ class _LeavePageState extends State<LeavePage> {
                                 color: _accent, fontSize: 36, fontWeight: FontWeight.w800, height: 1)),
                         Padding(
                           padding: const EdgeInsets.only(bottom: 5, left: 6),
-                          child: Text('/ ${b.annualQuota} hari',
+                          child: Text('/ ${b.annualQuota} ${context.tr('days')}',
                               style: GoogleFonts.plusJakartaSans(
                                   color: Colors.white60, fontSize: 13, fontWeight: FontWeight.w600)),
                         ),
@@ -314,9 +327,9 @@ class _LeavePageState extends State<LeavePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _miniStat('Terpakai', '${b.usedAnnual}'),
-              _miniStat('Sakit', '${b.usedSick}'),
-              _miniStat('Izin', '${b.usedPermission}'),
+              _miniStat(context.tr('used2'), '${b.usedAnnual}'),
+              _miniStat(context.tr('sick2'), '${b.usedSick}'),
+              _miniStat(context.tr('permit'), '${b.usedPermission}'),
             ],
           ),
         ],
@@ -332,7 +345,7 @@ class _LeavePageState extends State<LeavePage> {
             style: GoogleFonts.plusJakartaSans(
                 color: Colors.white60, fontSize: 10, fontWeight: FontWeight.w600)),
         const SizedBox(height: 3),
-        Text('$value hari',
+        Text('$value ${context.tr('days')}',
             style: GoogleFonts.plusJakartaSans(
                 color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
       ],
@@ -383,7 +396,7 @@ class _LeavePageState extends State<LeavePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(val.isEmpty ? 'Pilih Tanggal' : val,
+                Text(val.isEmpty ? context.tr('pick_date') : val,
                     style: GoogleFonts.plusJakartaSans(
                         color: val.isEmpty ? pal.textFaint : pal.textPrimary,
                         fontSize: 15,

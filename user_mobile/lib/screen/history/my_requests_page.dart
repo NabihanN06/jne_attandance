@@ -7,6 +7,7 @@ import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
+import '../../utils/app_strings.dart';
 import '../attendance/dispute_detail_screen.dart';
 
 class MyRequestsPage extends StatefulWidget {
@@ -45,7 +46,7 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
         centerTitle: true,
         leading: const AppBackButton(),
         title: Text(
-          'Pusat Pengajuan',
+          context.tr('request_center'),
           style: GoogleFonts.plusJakartaSans(
               color: pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800),
         ),
@@ -58,10 +59,10 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
           unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w600),
           unselectedLabelColor: pal.textFaint,
           labelColor: pal.textPrimary,
-          tabs: const [
-            Tab(text: 'Cuti'),
-            Tab(text: 'Lembur'),
-            Tab(text: 'Komplain'),
+          tabs: [
+            Tab(text: context.tr('nav_leave')),
+            Tab(text: context.tr('overtime_word')),
+            Tab(text: context.tr('complaint_word')),
           ],
         ),
       ),
@@ -70,17 +71,17 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
         children: [
           _buildRequestList<LeaveRequest>(
             items: p.myLeaveRequests,
-            emptyLabel: 'pengajuan cuti',
+            emptyLabel: context.tr('empty_leave_req'),
             onCancel: (req) => p.cancelLeaveRequest(req.id),
           ),
           _buildRequestList<OvertimeRequest>(
             items: p.myOvertimeRequests,
-            emptyLabel: 'pengajuan lembur',
+            emptyLabel: context.tr('empty_ot_req'),
             onCancel: (req) => p.cancelOvertimeRequest(req.id),
           ),
           _buildRequestList<DisputeRequest>(
             items: p.myDisputeRequests,
-            emptyLabel: 'komplain',
+            emptyLabel: context.tr('empty_complaint'),
             onCancel: null, // Komplain tidak bisa dibatalkan
           ),
         ],
@@ -96,8 +97,8 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
     if (items.isEmpty) {
       return EmptyState(
         icon: Icons.inbox_rounded,
-        title: 'Belum Ada Pengajuan',
-        subtitle: 'Daftar $emptyLabel kamu akan muncul & terpantau statusnya di sini.',
+        title: context.tr('no_requests_yet'),
+        subtitle: '${context.tr('list_prefix')} $emptyLabel ${context.tr('list_suffix')}',
       );
     }
 
@@ -126,21 +127,23 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
 
   Future<void> _handleCancel<T>(T item, Future<void> Function(T) cancelFn) async {
     final pal = context.palette;
+    final okMsg = context.tr('request_cancelled');
+    final failPre = context.tr('fail_prefix');
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: pal.card,
         surfaceTintColor: pal.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('Batalkan Pengajuan?',
+        title: Text(context.tr('cancel_request_q'),
             style: GoogleFonts.plusJakartaSans(
                 fontWeight: FontWeight.w800, fontSize: 18, color: pal.textPrimary)),
-        content: Text('Yakin ingin menarik pengajuan ini? Tindakan tidak bisa dibatalkan.',
+        content: Text(context.tr('cancel_request_desc'),
             style: GoogleFonts.plusJakartaSans(fontSize: 14, color: pal.textSub, height: 1.5)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Tidak',
+            child: Text(context.tr('no'),
                 style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontWeight: FontWeight.w700)),
           ),
           ElevatedButton(
@@ -150,7 +153,7 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            child: Text('Ya, Batalkan',
+            child: Text(context.tr('yes_cancel'),
                 style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.w800)),
           ),
         ],
@@ -160,10 +163,10 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
     if (confirmed == true) {
       try {
         await cancelFn(item);
-        if (mounted) showAppSnack(context, 'Pengajuan berhasil dibatalkan', color: AppColors.green);
+        if (mounted) showAppSnack(context, okMsg, color: AppColors.green);
       } catch (e) {
         if (mounted) {
-          showAppSnack(context, 'Gagal: ${e.toString().replaceAll('Exception: ', '')}',
+          showAppSnack(context, '$failPre: ${e.toString().replaceAll('Exception: ', '')}',
               color: AppColors.brandRed);
         }
       }
@@ -171,27 +174,27 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
   }
 }
 
-String _leaveTypeLabel(String type) {
+String _leaveTypeLabel(BuildContext context, String type) {
   switch (type) {
-    case 'annual': return 'Cuti Tahunan';
-    case 'sick': return 'Sakit';
-    case 'permission': return 'Izin Mendadak';
-    case 'personal': return 'Keperluan Pribadi';
-    case 'urgent': return 'Keperluan Keluarga';
+    case 'annual': return context.tr('leave_annual');
+    case 'sick': return context.tr('lt_sick');
+    case 'permission': return context.tr('lt_permission');
+    case 'personal': return context.tr('lt_personal');
+    case 'urgent': return context.tr('lt_family');
     default: return type.toUpperCase();
   }
 }
 
-String _statusLabel(String s) {
+String _statusLabel(BuildContext context, String s) {
   switch (s) {
-    case 'approved': return 'Disetujui';
-    case 'rejected': return 'Ditolak';
-    case 'resolved': return 'Selesai';
-    case 'pending': return 'Menunggu';
-    case 'in_review': return 'Ditinjau';
-    case 'reopened': return 'Dibuka Lagi';
-    case 'closed': return 'Ditutup';
-    case 'cancelled': return 'Dibatalkan';
+    case 'approved': return context.tr('st_approved');
+    case 'rejected': return context.tr('st_rejected');
+    case 'resolved': return context.tr('st_resolved');
+    case 'pending': return context.tr('st_pending');
+    case 'in_review': return context.tr('st_in_review');
+    case 'reopened': return context.tr('st_reopened');
+    case 'closed': return context.tr('st_closed');
+    case 'cancelled': return context.tr('st_cancelled');
     default: return s.toUpperCase();
   }
 }
@@ -213,6 +216,7 @@ class _RequestCard<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pal = context.palette;
+    final lang = context.read<AppProvider>().language;
     String title = '';
     String subtitle = '';
     String status = '';
@@ -222,28 +226,28 @@ class _RequestCard<T> extends StatelessWidget {
     const fmt = 'dd MMM yyyy';
     if (item is LeaveRequest) {
       final req = item as LeaveRequest;
-      title = 'Cuti: ${_leaveTypeLabel(req.type)}';
+      title = '${context.tr('nav_leave')}: ${_leaveTypeLabel(context, req.type)}';
       subtitle = req.reason;
       status = req.status;
       final sameDay = req.startDate.year == req.endDate.year &&
           req.startDate.month == req.endDate.month &&
           req.startDate.day == req.endDate.day;
       dateStr = sameDay
-          ? DateFormat(fmt, 'id').format(req.startDate)
-          : '${DateFormat('dd MMM', 'id').format(req.startDate)} – ${DateFormat(fmt, 'id').format(req.endDate)}';
+          ? DateFormat(fmt, lang).format(req.startDate)
+          : '${DateFormat('dd MMM', lang).format(req.startDate)} – ${DateFormat(fmt, lang).format(req.endDate)}';
     } else if (item is OvertimeRequest) {
       final req = item as OvertimeRequest;
-      title = 'Lembur ${req.overtimeHours} jam';
+      title = '${context.tr('overtime_word')} ${req.overtimeHours} ${context.tr('hours_word')}';
       subtitle = req.reason;
       status = req.status;
-      dateStr = DateFormat(fmt, 'id').format(DateTime.tryParse(req.date) ?? DateTime.now());
+      dateStr = DateFormat(fmt, lang).format(DateTime.tryParse(req.date) ?? DateTime.now());
     } else if (item is DisputeRequest) {
       final req = item as DisputeRequest;
       isDispute = true;
-      title = 'Komplain: ${req.title}';
+      title = '${context.tr('complaint_word')}: ${req.title}';
       subtitle = req.description;
       status = req.status;
-      dateStr = DateFormat(fmt, 'id').format(req.createdAt);
+      dateStr = DateFormat(fmt, lang).format(req.createdAt);
     }
 
     final statusColor = _statusColor(status);
@@ -277,7 +281,7 @@ class _RequestCard<T> extends StatelessWidget {
                         border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                       ),
                       child: Text(
-                        _statusLabel(status),
+                        _statusLabel(context, status),
                         style: GoogleFonts.plusJakartaSans(
                             color: statusColor, fontSize: 10, fontWeight: FontWeight.w800),
                       ),
@@ -304,7 +308,7 @@ class _RequestCard<T> extends StatelessWidget {
                     children: [
                       Icon(Icons.forum_rounded, size: 13, color: AppColors.blue),
                       const SizedBox(width: 5),
-                      Text('Ketuk untuk lihat balasan admin',
+                      Text(context.tr('tap_see_admin_reply'),
                           style: GoogleFonts.plusJakartaSans(
                               color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w700)),
                     ],
@@ -321,7 +325,7 @@ class _RequestCard<T> extends StatelessWidget {
                       onPressed: onCancel,
                       icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.brandRed),
                       label: Text(
-                        'Tarik Pengajuan',
+                        context.tr('withdraw_request'),
                         style: GoogleFonts.plusJakartaSans(
                             color: AppColors.brandRed, fontSize: 12, fontWeight: FontWeight.w800),
                       ),

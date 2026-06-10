@@ -8,6 +8,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
+import '../../utils/app_strings.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -71,14 +72,14 @@ class _NotificationPageState extends State<NotificationPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'NOTIFIKASI',
+                    context.tr('notifications').toUpperCase(),
                     style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 2),
                   ),
                   if (unread > 0)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
-                        '$unread belum dibaca',
+                        '$unread ${context.tr('unread_word')}',
                         style: GoogleFonts.outfit(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w700),
                       ),
                     ),
@@ -88,13 +89,14 @@ class _NotificationPageState extends State<NotificationPage> {
             actions: [
               if (unread > 0)
                 IconButton(
-                  tooltip: 'Tandai semua dibaca',
+                  tooltip: context.tr('mark_all_read'),
                   icon: const Icon(Icons.done_all_rounded, color: Colors.white),
                   onPressed: () async {
                     final messenger = ScaffoldMessenger.of(context);
+                    final markedMsg = context.tr('all_marked_read');
                     await provider.markAllNotificationsRead();
                     messenger.showSnackBar(SnackBar(
-                      content: Text('Semua ditandai dibaca', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+                      content: Text(markedMsg, style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
                       behavior: SnackBarBehavior.floating,
                       duration: const Duration(seconds: 2),
                     ));
@@ -109,9 +111,9 @@ class _NotificationPageState extends State<NotificationPage> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Row(
                 children: [
-                  _filterChip('Semua', 'all', allNotifications.length),
+                  _filterChip(context.tr('filter_all'), 'all', allNotifications.length),
                   const SizedBox(width: 8),
-                  _filterChip('Belum Dibaca', 'unread', unread),
+                  _filterChip(context.tr('filter_unread'), 'unread', unread),
                 ],
               ),
             ),
@@ -209,7 +211,7 @@ class _NotificationPageState extends State<NotificationPage> {
           const Icon(Icons.auto_awesome_rounded, color: zenAmber, size: 16),
           const SizedBox(width: 8),
           Text(
-            'UNTUK ANDA',
+            context.tr('for_you').toUpperCase(),
             style: GoogleFonts.outfit(color: zenNavy, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.5),
           ),
           const SizedBox(width: 8),
@@ -273,7 +275,7 @@ class _NotificationPageState extends State<NotificationPage> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
-                          'PENTING',
+                          context.tr('important_badge').toUpperCase(),
                           style: GoogleFonts.outfit(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1),
                         ),
                       ),
@@ -304,11 +306,11 @@ class _NotificationPageState extends State<NotificationPage> {
 
   String _actionLabel(String action) {
     switch (action) {
-      case 'attendance': return 'Absen Sekarang →';
-      case 'leave_balance': return 'Lihat Saldo Cuti →';
-      case 'dispute': return 'Buka Komplain →';
-      case 'statistic': return 'Lihat Statistik →';
-      default: return 'Buka →';
+      case 'attendance': return context.tr('act_attendance');
+      case 'leave_balance': return context.tr('act_leave_balance');
+      case 'dispute': return context.tr('act_dispute');
+      case 'statistic': return context.tr('act_statistic');
+      default: return context.tr('act_open');
     }
   }
 
@@ -341,13 +343,13 @@ class _NotificationPageState extends State<NotificationPage> {
       final dt = DateTime(n.createdAt.year, n.createdAt.month, n.createdAt.day);
       String key;
       if (dt == today) {
-        key = 'Hari Ini';
+        key = 'grp_today';
       } else if (dt == yesterday) {
-        key = 'Kemarin';
+        key = 'grp_yesterday';
       } else if (dt.isAfter(weekAgo)) {
-        key = 'Minggu Ini';
+        key = 'grp_week';
       } else {
-        key = 'Lebih Lama';
+        key = 'grp_older';
       }
       (result[key] ??= []).add(n);
     }
@@ -355,7 +357,7 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   List<Widget> _buildGroupedSlivers(Map<String, List<AdminNotification>> grouped, AppProvider provider) {
-    final order = ['Hari Ini', 'Kemarin', 'Minggu Ini', 'Lebih Lama'];
+    final order = ['grp_today', 'grp_yesterday', 'grp_week', 'grp_older'];
     final out = <Widget>[];
     for (final key in order) {
       final items = grouped[key];
@@ -364,7 +366,7 @@ class _NotificationPageState extends State<NotificationPage> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
           child: Text(
-            key.toUpperCase(),
+            context.tr(key).toUpperCase(),
             style: GoogleFonts.outfit(color: zenSlate, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5),
           ),
         ),
@@ -412,14 +414,14 @@ class _NotificationPageState extends State<NotificationPage> {
             ),
             const SizedBox(height: 20),
             Text(
-              isFiltered ? 'Semua sudah dibaca' : 'Tidak ada notifikasi',
+              isFiltered ? context.tr('all_read_title') : context.tr('no_notif_title'),
               style: GoogleFonts.outfit(color: zenNavy, fontSize: 14, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 6),
             Text(
               isFiltered
-                  ? 'Inbox Anda bersih. Saatnya fokus kerja!'
-                  : 'Notifikasi penting akan muncul di sini.',
+                  ? context.tr('all_read_sub')
+                  : context.tr('no_notif_sub'),
               textAlign: TextAlign.center,
               style: GoogleFonts.outfit(color: zenSlate, fontSize: 12, fontWeight: FontWeight.w600),
             ),
@@ -560,7 +562,7 @@ class _NotificationPageState extends State<NotificationPage> {
               if (!notif.isRead)
                 ListTile(
                   leading: const Icon(Icons.mark_email_read_rounded, color: zenIndigo),
-                  title: Text('Tandai sudah dibaca', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: zenNavy)),
+                  title: Text(context.tr('mark_as_read'), style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: zenNavy)),
                   onTap: () async {
                     Navigator.pop(ctx);
                     await provider.markNotificationAsRead(notif.id);
@@ -568,7 +570,7 @@ class _NotificationPageState extends State<NotificationPage> {
                 ),
               ListTile(
                 leading: const Icon(Icons.close_rounded, color: zenSlate),
-                title: Text('Tutup', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: zenSlate)),
+                title: Text(context.tr('close'), style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: zenSlate)),
                 onTap: () => Navigator.pop(ctx),
               ),
             ],
@@ -644,10 +646,10 @@ class _NotificationPageState extends State<NotificationPage> {
   String _formatTime(DateTime dt) {
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inMinutes < 1) return 'baru saja';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-    if (diff.inHours < 24) return '${diff.inHours}j';
-    if (diff.inDays < 7) return '${diff.inDays}h';
-    return '${(diff.inDays / 7).floor()}mg';
+    if (diff.inMinutes < 1) return context.tr('just_now');
+    if (diff.inMinutes < 60) return '${diff.inMinutes}${context.tr('t_min')}';
+    if (diff.inHours < 24) return '${diff.inHours}${context.tr('t_hour')}';
+    if (diff.inDays < 7) return '${diff.inDays}${context.tr('t_day')}';
+    return '${(diff.inDays / 7).floor()}${context.tr('t_week')}';
   }
 }

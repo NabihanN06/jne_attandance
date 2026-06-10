@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
+import '../../utils/app_strings.dart';
 import '../home/home_screen.dart';
 import '../history/history_page.dart';
 
@@ -82,12 +83,12 @@ class _SucceedPageState extends State<SucceedPage> with SingleTickerProviderStat
               ),
               const SizedBox(height: 40),
               Text(
-                widget.isEnroll ? 'Wajah Terdaftar' : 'Absensi Berhasil',
+                widget.isEnroll ? context.tr('enroll_success_title') : context.tr('attendance_success_title'),
                 style: GoogleFonts.outfit(color: _textPrimary, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5),
               ),
               const SizedBox(height: 12),
               Text(
-                widget.isEnroll ? 'Data wajah Anda sudah aktif.' : 'Data absensi berhasil tersimpan.',
+                widget.isEnroll ? context.tr('enroll_success_sub') : context.tr('attendance_success_sub'),
                 textAlign: TextAlign.center,
                 style: GoogleFonts.plusJakartaSans(color: _textSub, fontSize: 14, fontWeight: FontWeight.w600),
               ),
@@ -105,13 +106,13 @@ class _SucceedPageState extends State<SucceedPage> with SingleTickerProviderStat
                   ),
                   child: Column(
                     children: [
-                      _row('Jenis Absen', widget.jenis),
+                      _row(context.tr('attendance_type'), widget.jenis),
                       _div(),
-                      _row('Waktu', _waktu),
+                      _row(context.tr('time_label'), _waktu),
                       _div(),
-                      _row('Status', widget.status, vc: zenEmerald),
+                      _row(context.tr('status_label'), widget.status, vc: zenEmerald),
                       _div(),
-                      _row('Lokasi', widget.lokasi),
+                      _row(context.tr('location'), widget.lokasi),
                     ],
                   ),
                 ),
@@ -127,13 +128,13 @@ class _SucceedPageState extends State<SucceedPage> with SingleTickerProviderStat
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     elevation: 0,
                   ),
-                  child: Text('Kembali ke Beranda', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.3)),
+                  child: Text(context.tr('back_to_home'), style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.3)),
                 ),
               ),
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryPage())),
-                child: Text('Lihat Riwayat Lengkap', style: GoogleFonts.plusJakartaSans(color: _textSub, fontSize: 13, fontWeight: FontWeight.w700)),
+                child: Text(context.tr('view_full_history'), style: GoogleFonts.plusJakartaSans(color: _textSub, fontSize: 13, fontWeight: FontWeight.w700)),
               ),
             ],
           ),

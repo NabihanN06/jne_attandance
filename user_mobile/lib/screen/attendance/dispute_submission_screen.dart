@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:animate_do/animate_do.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
+import '../../utils/app_strings.dart';
 import 'dispute_detail_screen.dart';
 
 class DisputeSubmissionScreen extends StatefulWidget {
@@ -32,6 +33,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
   static const int _maxImageBytes = 5 * 1024 * 1024; // 5MB
 
   Future<void> _pickImage() async {
+    final tooLargeMsg = context.tr('image_too_large');
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.camera, imageQuality: 50);
     if (pickedFile == null) return;
@@ -40,7 +42,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
     if (size > _maxImageBytes) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ukuran gambar melebihi batas 5MB.')),
+        SnackBar(content: Text(tooLargeMsg)),
       );
       return;
     }
@@ -50,16 +52,19 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
   Future<void> _handleSubmit() async {
     if (_reasonController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please provide a reason for the dispute')),
+        SnackBar(content: Text(context.tr('dispute_reason_required'))),
       );
       return;
     }
 
+    final disputeTitle = '${context.tr('dispute_title_prefix')} ${widget.record.date}';
+    final sentMsg = context.tr('dispute_sent');
+    final failPre = context.tr('failed_submit');
     setState(() => _isSubmitting = true);
     try {
       final disputeId = await context.read<AppProvider>().submitDispute(
         category: 'attendance_error',
-        title: 'Komplain absensi ${widget.record.date}',
+        title: disputeTitle,
         description: _reasonController.text.trim(),
         relatedAttendanceId: widget.record.id,
         evidenceFile: _imageFile,
@@ -81,7 +86,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                   employeeId: provider.currentUser?.employeeId ?? '',
                   department: provider.currentUser?.department ?? '',
                   category: 'attendance_error',
-                  title: 'Komplain absensi ${widget.record.date}',
+                  title: disputeTitle,
                   description: _reasonController.text.trim(),
                   relatedAttendanceId: widget.record.id,
                   status: 'pending',
@@ -90,7 +95,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                 ));
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Komplain terkirim. Lanjut ke percakapan dengan admin.')),
+        SnackBar(content: Text(sentMsg)),
       );
 
       if (dispute != null) {
@@ -104,7 +109,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to submit: $e')),
+          SnackBar(content: Text('$failPre: $e')),
         );
       }
     } finally {
@@ -123,7 +128,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
         backgroundColor: zenNavy,
         elevation: 0,
         title: Text(
-          'REPORT ANOMALY',
+          context.tr('report_anomaly').toUpperCase(),
           style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3),
         ),
         centerTitle: true,
@@ -164,12 +169,12 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            DateFormat('EEEE, d MMMM yyyy').format(date),
+                            DateFormat('EEEE, d MMMM yyyy', context.read<AppProvider>().language).format(date),
                             style: GoogleFonts.outfit(color: zenNavy, fontSize: 14, fontWeight: FontWeight.w900),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Status: ${widget.record.status.toUpperCase()}',
+                            '${context.tr('status_label')}: ${widget.record.status.toUpperCase()}',
                             style: GoogleFonts.outfit(color: zenSlate, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1),
                           ),
                         ],
@@ -183,7 +188,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
             FadeInUp(
               delay: const Duration(milliseconds: 200),
               child: Text(
-                'COMPLAINT DETAILS',
+                context.tr('complaint_details').toUpperCase(),
                 style: GoogleFonts.outfit(color: zenSlate, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
               ),
             ),
@@ -195,7 +200,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                 maxLines: 5,
                 style: GoogleFonts.outfit(color: zenNavy, fontSize: 14, fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  hintText: 'Explain why you are disputing this attendance record...',
+                  hintText: context.tr('dispute_explain_hint'),
                   hintStyle: GoogleFonts.outfit(color: zenSlate.withValues(alpha: 0.5), fontSize: 14),
                   filled: true,
                   fillColor: Colors.white,
@@ -218,7 +223,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
             FadeInUp(
               delay: const Duration(milliseconds: 400),
               child: Text(
-                'ATTACH EVIDENCE (OPTIONAL)',
+                context.tr('attach_evidence').toUpperCase(),
                 style: GoogleFonts.outfit(color: zenSlate, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
               ),
             ),
@@ -246,7 +251,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                           Icon(Icons.add_a_photo_rounded, color: zenIndigo.withValues(alpha: 0.4), size: 40),
                           const SizedBox(height: 12),
                           Text(
-                            'Tap to capture photo',
+                            context.tr('tap_capture_photo'),
                             style: GoogleFonts.outfit(color: zenSlate, fontSize: 12, fontWeight: FontWeight.w700),
                           ),
                         ],
@@ -271,7 +276,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                   child: _isSubmitting
                     ? const CircularProgressIndicator(color: Colors.white)
                     : Text(
-                        'SUBMIT COMPLAINT',
+                        context.tr('submit_complaint').toUpperCase(),
                         style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 2),
                       ),
                 ),

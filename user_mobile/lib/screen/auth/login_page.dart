@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import '../../providers/app_provider.dart';
+import '../../utils/app_strings.dart';
 import '../home/home_screen.dart';
 import 'change_password_required_screen.dart';
 import 'report_login_issue_screen.dart';
@@ -44,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
       email = '$email@jne.mtp.com';
     }
     if (email.isEmpty || password.isEmpty) {
-      _showSnack('Email dan kata sandi wajib diisi', isError: true);
+      _showSnack(context.tr('email_pass_required'), isError: true);
       return;
     }
 
@@ -121,27 +122,27 @@ class _LoginPageState extends State<LoginPage> {
               ),
 
               const SizedBox(height: 40),
-              Text('Masuk',
+              Text(context.tr('login_title'),
                   style: GoogleFonts.outfit(color: textHi, fontSize: 32, fontWeight: FontWeight.w700, letterSpacing: -0.5)),
               const SizedBox(height: 8),
               Text(
-                'Gunakan akun karyawan JNE Martapura\nuntuk melanjutkan.',
+                context.tr('login_subtitle'),
                 style: GoogleFonts.plusJakartaSans(color: textLo, fontSize: 14, height: 1.5, fontWeight: FontWeight.w400),
               ),
 
               const SizedBox(height: 40),
 
-              _label('Email atau ID Karyawan'),
+              _label(context.tr('email_or_id')),
               const SizedBox(height: 8),
               _field(_emailCtrl, 'budi  ·  budi@jne.mtp.com', keyboard: TextInputType.emailAddress),
 
               const SizedBox(height: 22),
 
-              _label('Kata Sandi'),
+              _label(context.tr('password_label')),
               const SizedBox(height: 8),
               _field(
                 _passCtrl,
-                'Masukkan kata sandi',
+                context.tr('enter_password'),
                 obscure: _obscurePass,
                 suffix: IconButton(
                   splashRadius: 20,
@@ -159,7 +160,7 @@ class _LoginPageState extends State<LoginPage> {
                     MaterialPageRoute(builder: (_) => const ReportLoginIssueScreen()),
                   ),
                   child: Text(
-                    'Lupa sandi / tidak bisa masuk?',
+                    context.tr('forgot_login'),
                     style: GoogleFonts.plusJakartaSans(color: jneOrange, fontSize: 13, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -182,14 +183,14 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   child: _isLoading
                       ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                      : Text('Masuk', style: GoogleFonts.outfit(fontSize: 15.5, fontWeight: FontWeight.w700)),
+                      : Text(context.tr('login_title'), style: GoogleFonts.outfit(fontSize: 15.5, fontWeight: FontWeight.w700)),
                 ),
               ),
 
               const SizedBox(height: 28),
               Center(
                 child: Text(
-                  'JNE Martapura · Absensi Karyawan',
+                  context.tr('login_footer'),
                   style: GoogleFonts.plusJakartaSans(color: textLo.withValues(alpha: 0.6), fontSize: 11.5, fontWeight: FontWeight.w500),
                 ),
               ),

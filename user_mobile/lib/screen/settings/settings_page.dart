@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
+import '../../utils/app_strings.dart';
 import '../help/faq_screen.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -52,7 +53,7 @@ class _SettingsPageState extends State<SettingsPage> {
         scrolledUnderElevation: 0,
         leading: const AppBackButton(),
         title: Text(
-          'Pengaturan',
+          context.tr('settings_title'),
           style: GoogleFonts.plusJakartaSans(color: _textColor, fontSize: 17, fontWeight: FontWeight.w800),
         ),
         centerTitle: true,
@@ -63,14 +64,14 @@ class _SettingsPageState extends State<SettingsPage> {
           if (user != null) _accountHeader(user.name, user.email, user.role),
           const SizedBox(height: 28),
 
-          _sectionTitle('Tampilan & Bahasa'),
+          _sectionTitle(context.tr('set_display_lang')),
           const SizedBox(height: 12),
           _card([
             _switchItem(
               icon: Icons.dark_mode_outlined,
               iconColor: zenIndigo,
-              title: 'Mode Gelap',
-              subtitle: 'Tampilan tema gelap untuk mata yang lebih nyaman',
+              title: context.tr('set_dark_mode'),
+              subtitle: context.tr('set_dark_mode_sub'),
               value: provider.isDarkMode,
               onChanged: (v) => provider.setDarkMode(v),
             ),
@@ -78,79 +79,78 @@ class _SettingsPageState extends State<SettingsPage> {
             _tapItem(
               icon: Icons.language_rounded,
               iconColor: zenEmerald,
-              title: 'Bahasa',
+              title: context.tr('set_language'),
               subtitle: _languageLabel(provider.language),
               onTap: () => _showLanguagePicker(provider),
             ),
           ]),
           const SizedBox(height: 24),
 
-          _sectionTitle('Notifikasi'),
+          _sectionTitle(context.tr('set_notif')),
           const SizedBox(height: 12),
           _card([
             _switchItem(
               icon: Icons.notifications_active_outlined,
               iconColor: zenAmber,
-              title: 'Notifikasi Push',
-              subtitle: 'Terima broadcast & balasan komplain',
+              title: context.tr('set_push_notif'),
+              subtitle: context.tr('set_push_notif_sub'),
               value: provider.notificationsEnabled,
               onChanged: (v) async {
+                final msg = v ? context.tr('notif_on') : context.tr('notif_off');
                 await provider.setNotificationsEnabled(v);
-                if (mounted) {
-                  _toast(v ? 'Notifikasi aktif' : 'Notifikasi dimatikan');
-                }
+                if (mounted) _toast(msg);
               },
             ),
             _divider(),
             _switchItem(
               icon: Icons.access_time_rounded,
               iconColor: zenIndigo,
-              title: 'Pengingat Absensi',
-              subtitle: 'Reminder otomatis sebelum jam masuk',
+              title: context.tr('set_reminder'),
+              subtitle: context.tr('set_reminder_sub'),
               value: provider.reminderEnabled,
               onChanged: (v) => provider.setReminderEnabled(v),
             ),
           ]),
           const SizedBox(height: 24),
 
-          _sectionTitle('Lokasi Kantor'),
+          _sectionTitle(context.tr('set_office_loc')),
           const SizedBox(height: 12),
           _card([
             _infoItem(
               icon: Icons.location_on_outlined,
               iconColor: zenRose,
-              title: 'Titik Kantor',
+              title: context.tr('office_point'),
               value: '${provider.officeLat.toStringAsFixed(4)}, ${provider.officeLng.toStringAsFixed(4)}',
               onCopy: () {
                 Clipboard.setData(ClipboardData(text: '${provider.officeLat}, ${provider.officeLng}'));
-                _toast('Koordinat disalin');
+                _toast(context.tr('coord_copied'));
               },
             ),
             _divider(),
             _infoItem(
               icon: Icons.radar_rounded,
               iconColor: zenEmerald,
-              title: 'Radius Absensi',
-              value: '${provider.officeRadius.toStringAsFixed(0)} meter',
+              title: context.tr('office_radius_label'),
+              value: '${provider.officeRadius.toStringAsFixed(0)} ${context.tr('meters')}',
             ),
             _divider(),
             _infoItem(
               icon: Icons.schedule_rounded,
               iconColor: zenAmber,
-              title: 'Jam Masuk',
+              title: context.tr('start_time_label'),
               value: '${provider.officeStartTime.hour.toString().padLeft(2, '0')}:${provider.officeStartTime.minute.toString().padLeft(2, '0')} WIB',
             ),
           ]),
           const SizedBox(height: 24),
 
-          _sectionTitle('Bantuan & Dukungan'),
+          _sectionTitle(context.tr('set_help_support')),
           const SizedBox(height: 12),
           _card([
             _tapItem(
               icon: Icons.help_outline_rounded,
               iconColor: zenIndigo,
-              title: 'Pusat Bantuan & FAQ',
-              subtitle: 'Cek pertanyaan umum dulu sebelum komplain',
+              title: context.tr('help_center_faq'),
+              subtitle: context.tr('help_center_faq_sub'),
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const FaqScreen()),
@@ -160,66 +160,66 @@ class _SettingsPageState extends State<SettingsPage> {
             _tapItem(
               icon: Icons.support_agent_rounded,
               iconColor: zenEmerald,
-              title: 'Hubungi Admin',
-              subtitle: 'Chat langsung dengan admin HUB',
+              title: context.tr('contact_admin'),
+              subtitle: context.tr('contact_admin_sub'),
               onTap: () => Navigator.pushNamed(context, '/chat'),
             ),
           ]),
           const SizedBox(height: 24),
 
-          _sectionTitle('Akun & Keamanan'),
+          _sectionTitle(context.tr('set_account_security')),
           const SizedBox(height: 12),
           _card([
             _tapItem(
               icon: Icons.lock_reset_rounded,
               iconColor: zenAmber,
-              title: 'Ganti Password',
-              subtitle: 'Atur ulang kata sandi akun',
+              title: context.tr('change_password2'),
+              subtitle: context.tr('change_password2_sub'),
               onTap: () => _showChangePasswordDialog(provider),
             ),
             _divider(),
             _tapItem(
               icon: Icons.cleaning_services_rounded,
               iconColor: zenIndigo,
-              title: 'Bersihkan Cache',
-              subtitle: 'Hapus data sementara untuk troubleshoot',
+              title: context.tr('clear_cache'),
+              subtitle: context.tr('clear_cache_sub'),
               onTap: () => _confirmClearCache(),
             ),
             _divider(),
             _tapItem(
               icon: Icons.logout_rounded,
               iconColor: zenRose,
-              title: 'Keluar',
-              subtitle: 'Logout dari akun saat ini',
+              title: context.tr('logout'),
+              subtitle: context.tr('logout_sub'),
               onTap: () => _confirmLogout(provider),
             ),
           ]),
           const SizedBox(height: 24),
 
-          _sectionTitle('Tentang'),
+          _sectionTitle(context.tr('set_about')),
           const SizedBox(height: 12),
           _card([
             _infoItem(
               icon: Icons.info_outline_rounded,
               iconColor: zenIndigo,
-              title: 'Versi Aplikasi',
+              title: context.tr('app_version'),
               value: _appVersion,
             ),
             _divider(),
             _tapItem(
               icon: Icons.policy_outlined,
               iconColor: zenEmerald,
-              title: 'Kebijakan Privasi',
-              subtitle: 'Bagaimana kami menangani data Anda',
-              onTap: () => _showLegalSheet(_privacyTitle, _privacyContent),
+              title: context.tr('privacy_policy'),
+              subtitle: context.tr('privacy_policy_sub'),
+              onTap: () => _showLegalSheet(context.tr('privacy_policy'), _privacyContent),
             ),
             _divider(),
             _tapItem(
               icon: Icons.description_outlined,
               iconColor: zenAmber,
-              title: 'Syarat & Ketentuan',
-              subtitle: 'Aturan penggunaan aplikasi',
-              onTap: () => _showLegalSheet(_termsTitle, _termsContent),
+              title: context.tr('terms_conditions'),
+              subtitle: context.tr('terms_conditions_sub'),
+              onTap: () => _showLegalSheet(context.tr('terms_conditions'), _termsContent),
             ),
           ]),
 
@@ -488,7 +488,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
               ),
               Text(
-                'PILIH BAHASA',
+                context.tr('choose_language').toUpperCase(),
                 style: GoogleFonts.outfit(color: _textColor, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 2),
               ),
               const SizedBox(height: 12),
@@ -501,7 +501,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
     if (code != null && code != provider.language) {
       await provider.setLanguage(code);
-      if (mounted) _toast('Bahasa: ${_languageLabel(code)}');
+      if (mounted) _toast('${context.tr('set_language')}: ${_languageLabel(code)}');
     }
   }
 
@@ -569,7 +569,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Berlaku efektif: 15 Mei 2026',
+                context.tr('effective_date'),
                 style: GoogleFonts.outfit(color: _subColor, fontSize: 11, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 16),
@@ -600,7 +600,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   child: Text(
-                    'MENGERTI',
+                    context.tr('understood').toUpperCase(),
                     style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2),
                   ),
                 ),
@@ -625,7 +625,7 @@ class _SettingsPageState extends State<SettingsPage> {
           backgroundColor: _cardColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(
-            'Ganti Password',
+            context.tr('change_password2'),
             style: GoogleFonts.outfit(color: _textColor, fontSize: 16, fontWeight: FontWeight.w900),
           ),
           content: Form(
@@ -636,11 +636,11 @@ class _SettingsPageState extends State<SettingsPage> {
               autofocus: true,
               style: GoogleFonts.outfit(color: _textColor, fontSize: 14),
               validator: (v) {
-                if (v == null || v.length < 6) return 'Minimal 6 karakter';
+                if (v == null || v.length < 6) return context.tr('min_6_chars');
                 return null;
               },
               decoration: InputDecoration(
-                hintText: 'Password baru',
+                hintText: context.tr('new_password_hint2'),
                 hintStyle: GoogleFonts.outfit(color: _subColor, fontSize: 13),
                 prefixIcon: Icon(Icons.lock_outline_rounded, color: _subColor, size: 18),
                 suffixIcon: IconButton(
@@ -657,7 +657,7 @@ class _SettingsPageState extends State<SettingsPage> {
           actions: [
             TextButton(
               onPressed: processing ? null : () => Navigator.pop(ctx),
-              child: Text('Batal', style: GoogleFonts.outfit(color: _subColor, fontWeight: FontWeight.w700)),
+              child: Text(context.tr('cancel'), style: GoogleFonts.outfit(color: _subColor, fontWeight: FontWeight.w700)),
             ),
             ElevatedButton(
               onPressed: processing
@@ -666,12 +666,13 @@ class _SettingsPageState extends State<SettingsPage> {
                       if (!formKey.currentState!.validate()) return;
                       setSB(() => processing = true);
                       final messenger = ScaffoldMessenger.of(context);
+                      final okMsg = context.tr('password_changed2');
                       try {
                         await provider.changePassword(ctrl.text);
                         if (!ctx.mounted) return;
                         Navigator.pop(ctx);
                         messenger.showSnackBar(SnackBar(
-                          content: Text('Password berhasil diubah', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+                          content: Text(okMsg, style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
                           backgroundColor: zenEmerald,
                           behavior: SnackBarBehavior.floating,
                         ));
@@ -693,7 +694,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               child: processing
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text('Simpan', style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
+                  : Text(context.tr('save'), style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
             ),
           ],
         ),
@@ -708,15 +709,15 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Bersihkan Cache?', style: GoogleFonts.outfit(color: _textColor, fontSize: 16, fontWeight: FontWeight.w900)),
+        title: Text(context.tr('clear_cache_confirm'), style: GoogleFonts.outfit(color: _textColor, fontSize: 16, fontWeight: FontWeight.w900)),
         content: Text(
-          'Data sementara akan dihapus. Preferensi (mode gelap, bahasa, dll) tetap tersimpan.',
+          context.tr('clear_cache_confirm_desc'),
           style: GoogleFonts.outfit(color: _subColor, fontSize: 13, fontWeight: FontWeight.w500),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Batal', style: GoogleFonts.outfit(color: _subColor, fontWeight: FontWeight.w700)),
+            child: Text(context.tr('cancel'), style: GoogleFonts.outfit(color: _subColor, fontWeight: FontWeight.w700)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -726,7 +727,7 @@ class _SettingsPageState extends State<SettingsPage> {
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text('Bersihkan', style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
+            child: Text(context.tr('clear_btn'), style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
           ),
         ],
       ),
@@ -737,7 +738,7 @@ class _SettingsPageState extends State<SettingsPage> {
     await Future.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
     messenger.showSnackBar(SnackBar(
-      content: Text('Cache dibersihkan', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+      content: Text(context.tr('cache_cleared'), style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
       backgroundColor: zenEmerald,
       behavior: SnackBarBehavior.floating,
     ));
@@ -749,15 +750,15 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Keluar dari Akun?', style: GoogleFonts.outfit(color: _textColor, fontSize: 16, fontWeight: FontWeight.w900)),
+        title: Text(context.tr('logout_confirm'), style: GoogleFonts.outfit(color: _textColor, fontSize: 16, fontWeight: FontWeight.w900)),
         content: Text(
-          'Anda perlu login ulang dengan email & password untuk masuk kembali.',
+          context.tr('logout_confirm_desc'),
           style: GoogleFonts.outfit(color: _subColor, fontSize: 13, fontWeight: FontWeight.w500),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Batal', style: GoogleFonts.outfit(color: _subColor, fontWeight: FontWeight.w700)),
+            child: Text(context.tr('cancel'), style: GoogleFonts.outfit(color: _subColor, fontWeight: FontWeight.w700)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -767,7 +768,7 @@ class _SettingsPageState extends State<SettingsPage> {
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text('Keluar', style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
+            child: Text(context.tr('logout'), style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
           ),
         ],
       ),
@@ -780,9 +781,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // ── Legal copy ──────────────────────────────────────────────
-
-  static const _privacyTitle = 'Kebijakan Privasi';
-  static const _termsTitle = 'Syarat & Ketentuan';
 
   static const _privacyContent = '''
 JNE Attendance Mobile menghargai privasi Anda. Dokumen ini menjelaskan data apa yang kami kumpulkan, untuk apa, dan bagaimana kami melindunginya.
