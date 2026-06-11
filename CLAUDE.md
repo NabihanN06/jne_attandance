@@ -81,7 +81,7 @@ In `admin/functions/src/index.ts`. Firestore triggers fire on document changes, 
 These caused real outages; preserve them:
 - **Chat** uses a flat `messages` collection with a `chatId` field (not a `chats/{id}/messages` subcollection). Message time field is `createdAt`. Status is `'sent' | 'delivered' | 'read'`.
 - **Attendance** docs must carry **both** `date` and `attendanceDate` — admin queries by `date`, mobile historically wrote only `attendanceDate`.
-- **Leave** `type` is one of `sick | annual | personal | permission`; handle `personal` everywhere.
+- **Leave** `type` is one of `sick | annual | personal | permission | urgent`; handle `personal` everywhere. (Mobile offers all five; admin `LEAVE_TYPES` map + `LeaveType` cover them.)
 - Chat/proof images must be uploaded to Storage and stored as download URLs, never local device paths.
 
 Department-specific rules (start times, courier package targets, night-shift past-midnight duration, lateness-as-reduced-hours) are core domain logic — see `admin/README.md` and `admin/src/lib/departmentRules.ts`. The root `FIRESTORE_SCHEMA.md`, `PRD.md`, and `SDD.md` document collections and requirements in depth.

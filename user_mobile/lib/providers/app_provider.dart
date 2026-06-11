@@ -196,6 +196,24 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
+  /// Kirim email reset password (Firebase Auth). Return null jika sukses, atau
+  /// pesan error singkat. Demi keamanan, email tak terdaftar tetap dianggap
+  /// sukses (tidak membocorkan email mana yang ada).
+  Future<String?> sendPasswordReset(String email) async {
+    final e = email.trim();
+    if (e.isEmpty) return 'need_email';
+    try {
+      await _auth.sendPasswordResetEmail(email: e);
+      return null;
+    } on FirebaseAuthException catch (err) {
+      if (err.code == 'invalid-email') return 'invalid_email';
+      if (err.code == 'user-not-found') return null; // jangan bocorkan
+      return err.message ?? 'failed';
+    } catch (_) {
+      return 'failed';
+    }
+  }
+
   Future<void> setLanguage(String code) async {
     _language = code;
     notifyListeners();
@@ -813,6 +831,12 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   void logout() async {
     _stopHeartbeat();
     _cancelAllSubscriptions();
+    // Matikan pengingat absensi terjadwal agar tidak nyala setelah logout.
+    await AttendanceReminderScheduler.sync(
+      enabled: false,
+      checkIn: officeStartTime,
+      checkOut: officeEndTime,
+    );
     await _auth.signOut();
     _currentUser = null;
     _attendanceRecords.clear();

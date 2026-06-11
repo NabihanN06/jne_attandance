@@ -301,7 +301,7 @@ class LeaveRequest {
   final String employeeName;
   final String employeeId;
   final String department;
-  final String type; // 'personal' | 'sick' | 'vacation'
+  final String type; // 'annual' | 'sick' | 'permission' | 'personal' | 'urgent'
   final String status; // 'pending' | 'approved' | 'rejected'
   final DateTime startDate;
   final DateTime endDate;

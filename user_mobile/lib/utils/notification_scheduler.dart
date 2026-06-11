@@ -4,12 +4,12 @@ import 'package:timezone/timezone.dart' as tz;
 
 /// Penjadwal pengingat absensi lokal (tetap jalan walau aplikasi ditutup).
 ///
-/// Mengirim 3 notifikasi sebelum jam **masuk** dan 3 sebelum jam **keluar**,
-/// pada 20, 10, dan 3 menit sebelum waktunya. Memakai `zonedSchedule` dengan
-/// `matchDateTimeComponents: time` sehingga otomatis berulang setiap hari.
+/// Mengirim pengingat 20, 10, dan 3 menit sebelum jam **masuk** dan sebelum jam
+/// **keluar**, hanya pada **hari kerja** (Senin–Sabtu; Minggu dilewati). Memakai
+/// `zonedSchedule` dengan `matchDateTimeComponents: dayOfWeekAndTime` sehingga
+/// otomatis berulang mingguan pada hari & jam yang sama.
 ///
-/// Plugin `FlutterLocalNotificationsPlugin()` bersifat singleton, jadi instance
-/// di sini sama dengan yang sudah di-`initialize()` di `main.dart`.
+/// `FlutterLocalNotificationsPlugin()` singleton → instance sama dgn `main.dart`.
 class AttendanceReminderScheduler {
   AttendanceReminderScheduler._();
 
@@ -21,9 +21,17 @@ class AttendanceReminderScheduler {
   static const String _channelDesc =
       'Pengingat otomatis sebelum jam masuk & keluar';
 
-  // ID tetap 0..2 = pengingat masuk, 3..5 = pengingat keluar.
-  static const List<int> _checkInIds = [9101, 9102, 9103];
-  static const List<int> _checkOutIds = [9104, 9105, 9106];
+  /// Hari kerja (DateTime.monday=1 .. saturday=6). Minggu (7) dilewati.
+  /// Ubah di sini kalau Sabtu juga libur (mis. [1,2,3,4,5]).
+  static const List<int> _workdays = [
+    DateTime.monday,
+    DateTime.tuesday,
+    DateTime.wednesday,
+    DateTime.thursday,
+    DateTime.friday,
+    DateTime.saturday,
+  ];
+
   static const List<int> _offsetsMinutes = [20, 10, 3]; // menit sebelum
 
   static const NotificationDetails _details = NotificationDetails(
@@ -38,8 +46,12 @@ class AttendanceReminderScheduler {
     iOS: DarwinNotificationDetails(),
   );
 
-  /// Buat channel Android lebih awal agar importance benar sejak awal.
-  /// Dipanggil sekali dari `main()` setelah plugin di-initialize.
+  // Rentang ID yang dipakai (untuk dibatalkan saat sync). Lihat _idFor().
+  // checkIn: 9000+day*10+i, checkOut: 9300+day*10+i  (day 1..6, i 0..2).
+  static int _idFor({required bool checkIn, required int day, required int i}) =>
+      (checkIn ? 9000 : 9300) + day * 10 + i;
+
+  /// Buat channel Android lebih awal. Dipanggil sekali dari `main()`.
   static Future<void> init() async {
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
@@ -64,47 +76,55 @@ class AttendanceReminderScheduler {
   }
 
   /// Sinkronkan jadwal dengan setting terbaru. Selalu membatalkan jadwal lama
-  /// dulu agar tidak dobel saat jam berubah. Jika [enabled] false → hanya
-  /// membatalkan (mematikan pengingat).
+  /// dulu agar tidak dobel. Jika [enabled] false → hanya membatalkan.
   static Future<void> sync({
     required bool enabled,
     required TimeOfDay checkIn,
     required TimeOfDay checkOut,
   }) async {
     try {
-      for (final id in [..._checkInIds, ..._checkOutIds]) {
-        await _plugin.cancel(id);
+      // Bersihkan semua ID yang mungkin pernah dijadwalkan.
+      for (final day in _workdays) {
+        for (var i = 0; i < _offsetsMinutes.length; i++) {
+          await _plugin.cancel(_idFor(checkIn: true, day: day, i: i));
+          await _plugin.cancel(_idFor(checkIn: false, day: day, i: i));
+        }
       }
       if (!enabled) return;
 
       await requestPermissions();
 
-      for (var i = 0; i < _offsetsMinutes.length; i++) {
-        final m = _offsetsMinutes[i];
-        await _scheduleDaily(
-          id: _checkInIds[i],
-          at: _subtract(checkIn, m),
-          title: 'Pengingat absen masuk',
-          body: m == 3
-              ? 'Sebentar lagi jam masuk (${_fmt(checkIn)}). Siapkan absen masuk.'
-              : '$m menit lagi jam masuk (${_fmt(checkIn)}). Jangan sampai telat!',
-        );
-        await _scheduleDaily(
-          id: _checkOutIds[i],
-          at: _subtract(checkOut, m),
-          title: 'Pengingat absen keluar',
-          body: m == 3
-              ? 'Sebentar lagi jam pulang (${_fmt(checkOut)}). Jangan lupa absen keluar.'
-              : '$m menit lagi jam pulang (${_fmt(checkOut)}). Siapkan absen keluar.',
-        );
+      for (final day in _workdays) {
+        for (var i = 0; i < _offsetsMinutes.length; i++) {
+          final m = _offsetsMinutes[i];
+          await _scheduleWeekly(
+            id: _idFor(checkIn: true, day: day, i: i),
+            day: day,
+            at: _subtract(checkIn, m),
+            title: 'Pengingat absen masuk',
+            body: m == 3
+                ? 'Sebentar lagi jam masuk (${_fmt(checkIn)}). Siapkan absen masuk.'
+                : '$m menit lagi jam masuk (${_fmt(checkIn)}). Jangan sampai telat!',
+          );
+          await _scheduleWeekly(
+            id: _idFor(checkIn: false, day: day, i: i),
+            day: day,
+            at: _subtract(checkOut, m),
+            title: 'Pengingat absen keluar',
+            body: m == 3
+                ? 'Sebentar lagi jam pulang (${_fmt(checkOut)}). Jangan lupa absen keluar.'
+                : '$m menit lagi jam pulang (${_fmt(checkOut)}). Siapkan absen keluar.',
+          );
+        }
       }
     } catch (e) {
       debugPrint('AttendanceReminderScheduler.sync error: $e');
     }
   }
 
-  static Future<void> _scheduleDaily({
+  static Future<void> _scheduleWeekly({
     required int id,
+    required int day,
     required TimeOfDay at,
     required String title,
     required String body,
@@ -113,18 +133,26 @@ class AttendanceReminderScheduler {
       id,
       title,
       body,
-      _nextInstanceOf(at),
+      _nextInstanceOfDayTime(day, at),
       _details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents: DateTimeComponents.time, // ulang tiap hari
+      matchDateTimeComponents:
+          DateTimeComponents.dayOfWeekAndTime, // ulang tiap minggu di hari ini
     );
   }
 
-  /// Instance [t] berikutnya pada zona lokal. Kalau hari ini sudah lewat,
-  /// jadwalkan untuk besok.
-  static tz.TZDateTime _nextInstanceOf(TimeOfDay t) {
+  /// Kemunculan berikutnya untuk [weekday] (1=Senin..7=Minggu) pada jam [t].
+  static tz.TZDateTime _nextInstanceOfDayTime(int weekday, TimeOfDay t) {
+    var scheduled = _nextInstanceOfTime(t);
+    while (scheduled.weekday != weekday) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+    return scheduled;
+  }
+
+  static tz.TZDateTime _nextInstanceOfTime(TimeOfDay t) {
     final now = tz.TZDateTime.now(tz.local);
     var scheduled =
         tz.TZDateTime(tz.local, now.year, now.month, now.day, t.hour, t.minute);

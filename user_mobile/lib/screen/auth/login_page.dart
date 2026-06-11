@@ -93,6 +93,99 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  /// Pilihan saat "Lupa Password": reset via email atau lapor ke admin.
+  void _showForgotSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 14),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(height: 10),
+            ListTile(
+              leading: const Icon(Icons.mark_email_read_outlined, color: jneOrange),
+              title: Text(context.tr('reset_via_email'),
+                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+              subtitle: Text(context.tr('reset_via_email_sub')),
+              onTap: () {
+                Navigator.pop(ctx);
+                _resetPasswordDialog();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.support_agent_rounded, color: jneOrange),
+              title: Text(context.tr('report_to_admin'),
+                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+              subtitle: Text(context.tr('report_to_admin_sub')),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ReportLoginIssueScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Dialog input email → kirim link reset password lewat Firebase.
+  Future<void> _resetPasswordDialog() async {
+    final ctrl = TextEditingController(text: _emailCtrl.text.trim());
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.tr('reset_password')),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: TextInputType.emailAddress,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: context.tr('email'),
+            hintText: 'email@jne.mtp.com',
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(context.tr('cancel'))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: Text(context.tr('send'))),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (!mounted || result == null) return;
+    var email = result.trim();
+    if (email.isNotEmpty && !email.contains('@')) email = '$email@jne.mtp.com';
+    final err = await context.read<AppProvider>().sendPasswordReset(email);
+    if (!mounted) return;
+    final msg = switch (err) {
+      null => context.tr('reset_sent'),
+      'need_email' => context.tr('reset_need_email'),
+      'invalid_email' => context.tr('reset_invalid_email'),
+      _ => context.tr('reset_failed'),
+    };
+    _showSnack(msg, isError: err != null);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -155,10 +248,7 @@ class _LoginPageState extends State<LoginPage> {
               Align(
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ReportLoginIssueScreen()),
-                  ),
+                  onTap: _showForgotSheet,
                   child: Text(
                     context.tr('forgot_login'),
                     style: GoogleFonts.plusJakartaSans(color: jneOrange, fontSize: 13, fontWeight: FontWeight.w600),
