@@ -19,10 +19,9 @@ class Onboarding1 extends StatelessWidget {
             children: [
               const SizedBox(height: 80),
               FadeInDown(
-                child: Container(
-                  width: 280, height: 280,
-                  decoration: BoxDecoration(color: jneBlue.withValues(alpha: 0.05), shape: BoxShape.circle),
-                  child: const Icon(Icons.location_on_rounded, color: jneBlue, size: 100),
+                child: Image.asset(
+                  'assets/images/gambarHp/icon4.png',
+                  width: 280, height: 280, fit: BoxFit.contain,
                 ),
               ),
               const SizedBox(height: 60),

@@ -9,7 +9,6 @@ class Onboarding2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color jneBlue = Color(0xFF005596);
-    const Color jneRed = Color(0xFFE31E24);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -20,10 +19,9 @@ class Onboarding2 extends StatelessWidget {
             children: [
               const SizedBox(height: 80),
               FadeInDown(
-                child: Container(
-                  width: 280, height: 280,
-                  decoration: BoxDecoration(color: jneRed.withValues(alpha: 0.05), shape: BoxShape.circle),
-                  child: const Icon(Icons.face_retouching_natural_rounded, color: jneRed, size: 100),
+                child: Image.asset(
+                  'assets/images/gambarHp/icon2.png',
+                  width: 280, height: 280, fit: BoxFit.contain,
                 ),
               ),
               const SizedBox(height: 60),

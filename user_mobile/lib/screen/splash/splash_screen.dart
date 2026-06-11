@@ -78,7 +78,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Image.asset(
-                        'assets/images/jne.png',
+                        'assets/images/gambarHp/icon.png',
                         fit: BoxFit.contain,
                         errorBuilder: (_, _, _) => const Icon(Icons.local_shipping_rounded, color: jneOrange, size: 50),
                       ),

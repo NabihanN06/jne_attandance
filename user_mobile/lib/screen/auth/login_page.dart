@@ -115,7 +115,7 @@ class _LoginPageState extends State<LoginPage> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Image.asset(
-                  'assets/images/jne.png',
+                  'assets/images/gambarHp/icon.png',
                   fit: BoxFit.contain,
                   errorBuilder: (_, _, _) => const Icon(Icons.local_shipping_rounded, color: jneOrange, size: 30),
                 ),
