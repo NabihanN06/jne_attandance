@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Pengingat absensi terjadwal (Android 13+ butuh izin notifikasi) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <!-- Camera feature declaration -->
     <uses-feature android:name="android.hardware.camera" android:required="false"/>

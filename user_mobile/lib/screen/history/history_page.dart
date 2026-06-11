@@ -24,7 +24,8 @@ class _HistoryPageState extends State<HistoryPage> {
   static const Color zenNavy = Color(0xFF121826);
   static const Color zenIndigo = Color(0xFF4F46E5);
   static const Color zenCyan = Color(0xFF22D3EE);
-  static const Color zenRose = Color(0xFFF43F5E);
+  // Status negatif (telat/absen) memakai brand red yang sama dengan admin (#E31E24).
+  static const Color zenRose = AppColors.brandRed;
   static const Color zenEmerald = Color(0xFF10B981);
   static const Color zenOffWhite = Color(0xFFF8FAFC);
   static const Color zenSlate = Color(0xFF94A3B8);

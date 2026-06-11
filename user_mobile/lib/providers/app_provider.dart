@@ -17,6 +17,7 @@ import '../utils/offline_service.dart';
 import '../utils/connectivity_service.dart';
 import '../utils/fortress_utils.dart';
 import '../utils/presence_service.dart';
+import '../utils/notification_scheduler.dart';
 
 class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -78,6 +79,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   String get hubName => _hubName;
   String get stationId => _stationId;
   TimeOfDay officeStartTime = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay officeEndTime = const TimeOfDay(hour: 17, minute: 0);
 
   // ── Attendance settings (dari admin settings/system → attendance) ──
   // Default dipilih agar behavior lama tetap aman walau admin belum set.
@@ -129,6 +131,13 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       _reminderEnabled = prefs.getBool(_kReminderEnabledKey) ?? true;
       _language = prefs.getString(_kLanguageKey) ?? 'id';
       notifyListeners();
+      // Jadwalkan pengingat absensi sesuai preferensi. Jam masih default di
+      // sini; akan disinkronkan ulang otomatis saat setting kantor termuat.
+      await AttendanceReminderScheduler.sync(
+        enabled: _reminderEnabled,
+        checkIn: officeStartTime,
+        checkOut: officeEndTime,
+      );
     } catch (e) {
       debugPrint('Load preferences error: $e');
     }
@@ -177,6 +186,11 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool(_kReminderEnabledKey, value);
+      await AttendanceReminderScheduler.sync(
+        enabled: value,
+        checkIn: officeStartTime,
+        checkOut: officeEndTime,
+      );
     } catch (e) {
       debugPrint('Reminder toggle error: $e');
     }
@@ -488,6 +502,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   void _listenToMyData() {
     if (_currentUser == null) return;
     _cancelAllSubscriptions();
+
+    // Ambil jam shift user agar pengingat absensi pakai jam masuk/keluar asli.
+    _loadUserShiftTimes();
 
     _attendanceSub = _db.collection('attendance')
         .where('userId', isEqualTo: _currentUser!.uid)
@@ -1337,6 +1354,13 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         _officeRadius = (office['radiusMeters'] ?? _officeRadius).toDouble();
         _hubName = (office['name'] as String?) ?? _hubName;
         _stationId = (office['stationId'] as String?) ?? _stationId;
+        // Jam masuk/keluar dari admin (kalau tersedia) untuk pengingat absensi.
+        officeStartTime =
+            _parseTimeOfDay(office['startTime'] ?? office['checkInTime']) ??
+                officeStartTime;
+        officeEndTime =
+            _parseTimeOfDay(office['endTime'] ?? office['checkOutTime']) ??
+                officeEndTime;
       }
 
       // Setting tab Absensi — sekarang benar-benar dipatuhi APK.
@@ -1348,7 +1372,52 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       }
 
       notifyListeners();
+      // Sinkronkan ulang pengingat dengan jam kantor terbaru.
+      AttendanceReminderScheduler.sync(
+        enabled: _reminderEnabled,
+        checkIn: officeStartTime,
+        checkOut: officeEndTime,
+      );
     });
+  }
+
+  /// Parse "HH:mm" → TimeOfDay; null jika format tidak valid.
+  TimeOfDay? _parseTimeOfDay(dynamic v) {
+    if (v is! String) return null;
+    final parts = v.split(':');
+    if (parts.length < 2) return null;
+    final h = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    if (h == null || m == null || h < 0 || h > 23 || m < 0 || m > 59) {
+      return null;
+    }
+    return TimeOfDay(hour: h, minute: m);
+  }
+
+  /// Ambil jam masuk/keluar dari shift (jamKerja) user untuk pengingat absensi
+  /// yang akurat. Gagal/ tidak ada → tetap pakai jam default/office.
+  Future<void> _loadUserShiftTimes() async {
+    final shiftId = _currentUser?.jamKerjaId;
+    if (shiftId == null || shiftId.isEmpty) return;
+    try {
+      final snap = await _db.collection('shifts').doc(shiftId).get();
+      final data = snap.data();
+      if (data == null) return;
+      final ci = _parseTimeOfDay(data['checkInTime'] ?? data['startTime']);
+      final co = _parseTimeOfDay(data['checkOutTime'] ?? data['endTime']);
+      if (ci != null) officeStartTime = ci;
+      if (co != null) officeEndTime = co;
+      if (ci != null || co != null) {
+        notifyListeners();
+        await AttendanceReminderScheduler.sync(
+          enabled: _reminderEnabled,
+          checkIn: officeStartTime,
+          checkOut: officeEndTime,
+        );
+      }
+    } catch (e) {
+      debugPrint('Load shift times error: $e');
+    }
   }
 
   Future<void> registerFace(String localPath) async {

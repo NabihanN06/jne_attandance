@@ -6,6 +6,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
+import 'utils/notification_scheduler.dart';
 import 'providers/app_provider.dart';
 import 'providers/chat_provider.dart';
 import 'utils/connectivity_service.dart';
@@ -109,8 +112,15 @@ void main() async {
   await initializeDateFormatting('id', null);
   await initializeDateFormatting('en', null);
 
+  // Timezone untuk pengingat absensi terjadwal (WITA — Asia/Makassar, UTC+8).
+  tzdata.initializeTimeZones();
+  tz.setLocalLocation(tz.getLocation('Asia/Makassar'));
+
   // Setup FCM
   await _setupFCM();
+
+  // Channel + permission untuk pengingat absensi lokal.
+  await AttendanceReminderScheduler.init();
 
   // Background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
