@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'holidays.dart';
 
 /// Penjadwal pengingat absensi lokal (tetap jalan walau aplikasi ditutup).
 ///
 /// Mengirim pengingat 20, 10, dan 3 menit sebelum jam **masuk** dan sebelum jam
-/// **keluar**, hanya pada **hari kerja** (Senin–Sabtu; Minggu dilewati). Memakai
-/// `zonedSchedule` dengan `matchDateTimeComponents: dayOfWeekAndTime` sehingga
-/// otomatis berulang mingguan pada hari & jam yang sama.
-///
-/// `FlutterLocalNotificationsPlugin()` singleton → instance sama dgn `main.dart`.
+/// **keluar**, hanya pada **hari kerja** (Senin–Sabtu; Minggu & libur nasional
+/// dilewati). Pakai pendekatan *rolling window*: menjadwalkan beberapa hari
+/// kerja ke depan sebagai notifikasi sekali-tembak, lalu dijadwalkan ulang
+/// setiap aplikasi dibuka (sync dipanggil saat startup, login, setting kantor
+/// berubah, dan toggle pengingat) — sehingga bisa melewati tanggal libur
+/// tertentu (tidak bisa dilakukan dengan repeat mingguan).
 class AttendanceReminderScheduler {
   AttendanceReminderScheduler._();
 
@@ -21,18 +23,13 @@ class AttendanceReminderScheduler {
   static const String _channelDesc =
       'Pengingat otomatis sebelum jam masuk & keluar';
 
-  /// Hari kerja (DateTime.monday=1 .. saturday=6). Minggu (7) dilewati.
-  /// Ubah di sini kalau Sabtu juga libur (mis. [1,2,3,4,5]).
-  static const List<int> _workdays = [
-    DateTime.monday,
-    DateTime.tuesday,
-    DateTime.wednesday,
-    DateTime.thursday,
-    DateTime.friday,
-    DateTime.saturday,
-  ];
-
+  /// Berapa hari KERJA ke depan dijadwalkan (≈2 minggu kalender).
+  static const int _workdayCount = 10;
   static const List<int> _offsetsMinutes = [20, 10, 3]; // menit sebelum
+
+  // Slot ID: 9000 + indeksHariKerja*10 + indeksReminder (0..2 masuk, 3..5 keluar).
+  static int _id(int dayIdx, int reminderIdx) =>
+      9000 + dayIdx * 10 + reminderIdx;
 
   static const NotificationDetails _details = NotificationDetails(
     android: AndroidNotificationDetails(
@@ -45,11 +42,6 @@ class AttendanceReminderScheduler {
     ),
     iOS: DarwinNotificationDetails(),
   );
-
-  // Rentang ID yang dipakai (untuk dibatalkan saat sync). Lihat _idFor().
-  // checkIn: 9000+day*10+i, checkOut: 9300+day*10+i  (day 1..6, i 0..2).
-  static int _idFor({required bool checkIn, required int day, required int i}) =>
-      (checkIn ? 9000 : 9300) + day * 10 + i;
 
   /// Buat channel Android lebih awal. Dipanggil sekali dari `main()`.
   static Future<void> init() async {
@@ -75,92 +67,99 @@ class AttendanceReminderScheduler {
     await ios?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
-  /// Sinkronkan jadwal dengan setting terbaru. Selalu membatalkan jadwal lama
-  /// dulu agar tidak dobel. Jika [enabled] false → hanya membatalkan.
+  /// Sinkronkan jadwal. Selalu membatalkan jadwal lama dulu. Jika [enabled]
+  /// false → hanya membatalkan.
   static Future<void> sync({
     required bool enabled,
     required TimeOfDay checkIn,
     required TimeOfDay checkOut,
   }) async {
     try {
-      // Bersihkan semua ID yang mungkin pernah dijadwalkan.
-      for (final day in _workdays) {
-        for (var i = 0; i < _offsetsMinutes.length; i++) {
-          await _plugin.cancel(_idFor(checkIn: true, day: day, i: i));
-          await _plugin.cancel(_idFor(checkIn: false, day: day, i: i));
-        }
-      }
+      await _cancelAllSlots();
       if (!enabled) return;
 
       await requestPermissions();
 
-      for (final day in _workdays) {
-        for (var i = 0; i < _offsetsMinutes.length; i++) {
-          final m = _offsetsMinutes[i];
-          await _scheduleWeekly(
-            id: _idFor(checkIn: true, day: day, i: i),
-            day: day,
-            at: _subtract(checkIn, m),
-            title: 'Pengingat absen masuk',
-            body: m == 3
-                ? 'Sebentar lagi jam masuk (${_fmt(checkIn)}). Siapkan absen masuk.'
-                : '$m menit lagi jam masuk (${_fmt(checkIn)}). Jangan sampai telat!',
-          );
-          await _scheduleWeekly(
-            id: _idFor(checkIn: false, day: day, i: i),
-            day: day,
-            at: _subtract(checkOut, m),
-            title: 'Pengingat absen keluar',
-            body: m == 3
-                ? 'Sebentar lagi jam pulang (${_fmt(checkOut)}). Jangan lupa absen keluar.'
-                : '$m menit lagi jam pulang (${_fmt(checkOut)}). Siapkan absen keluar.',
-          );
+      final now = tz.TZDateTime.now(tz.local);
+      var cursor = tz.TZDateTime(tz.local, now.year, now.month, now.day);
+      var dayIdx = 0;
+      var safety = 0; // cegah loop tak terbatas
+
+      while (dayIdx < _workdayCount && safety < 40) {
+        safety++;
+        if (_isWorkday(cursor)) {
+          for (var i = 0; i < _offsetsMinutes.length; i++) {
+            final m = _offsetsMinutes[i];
+            final inAt = _at(cursor, _subtract(checkIn, m));
+            if (inAt.isAfter(now)) {
+              await _scheduleOnce(
+                id: _id(dayIdx, i),
+                when: inAt,
+                title: 'Pengingat absen masuk',
+                body: m == 3
+                    ? 'Sebentar lagi jam masuk (${_fmt(checkIn)}). Siapkan absen masuk.'
+                    : '$m menit lagi jam masuk (${_fmt(checkIn)}). Jangan sampai telat!',
+              );
+            }
+            final outAt = _at(cursor, _subtract(checkOut, m));
+            if (outAt.isAfter(now)) {
+              await _scheduleOnce(
+                id: _id(dayIdx, i + 3),
+                when: outAt,
+                title: 'Pengingat absen keluar',
+                body: m == 3
+                    ? 'Sebentar lagi jam pulang (${_fmt(checkOut)}). Jangan lupa absen keluar.'
+                    : '$m menit lagi jam pulang (${_fmt(checkOut)}). Siapkan absen keluar.',
+              );
+            }
+          }
+          dayIdx++;
         }
+        cursor = cursor.add(const Duration(days: 1));
       }
     } catch (e) {
       debugPrint('AttendanceReminderScheduler.sync error: $e');
     }
   }
 
-  static Future<void> _scheduleWeekly({
+  /// Hari kerja = bukan Minggu DAN bukan libur nasional.
+  static bool _isWorkday(tz.TZDateTime d) =>
+      d.weekday != DateTime.sunday && !IndonesianHolidays.isHoliday(d);
+
+  static Future<void> _scheduleOnce({
     required int id,
-    required int day,
-    required TimeOfDay at,
+    required tz.TZDateTime when,
     required String title,
     required String body,
   }) async {
+    // Sekali-tembak (tanpa matchDateTimeComponents) → bisa lewati tanggal libur.
     await _plugin.zonedSchedule(
       id,
       title,
       body,
-      _nextInstanceOfDayTime(day, at),
+      when,
       _details,
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
-      matchDateTimeComponents:
-          DateTimeComponents.dayOfWeekAndTime, // ulang tiap minggu di hari ini
     );
   }
 
-  /// Kemunculan berikutnya untuk [weekday] (1=Senin..7=Minggu) pada jam [t].
-  static tz.TZDateTime _nextInstanceOfDayTime(int weekday, TimeOfDay t) {
-    var scheduled = _nextInstanceOfTime(t);
-    while (scheduled.weekday != weekday) {
-      scheduled = scheduled.add(const Duration(days: 1));
+  /// Batalkan semua slot yang mungkin dipakai (skema baru 9000–9095 + sisa
+  /// skema mingguan lama 9300–9369 agar tidak menumpuk saat upgrade).
+  static Future<void> _cancelAllSlots() async {
+    for (var d = 0; d < _workdayCount; d++) {
+      for (var r = 0; r < 6; r++) {
+        await _plugin.cancel(_id(d, r));
+      }
     }
-    return scheduled;
+    for (var id = 9300; id <= 9369; id++) {
+      await _plugin.cancel(id);
+    }
   }
 
-  static tz.TZDateTime _nextInstanceOfTime(TimeOfDay t) {
-    final now = tz.TZDateTime.now(tz.local);
-    var scheduled =
-        tz.TZDateTime(tz.local, now.year, now.month, now.day, t.hour, t.minute);
-    if (!scheduled.isAfter(now)) {
-      scheduled = scheduled.add(const Duration(days: 1));
-    }
-    return scheduled;
-  }
+  static tz.TZDateTime _at(tz.TZDateTime date, TimeOfDay t) =>
+      tz.TZDateTime(tz.local, date.year, date.month, date.day, t.hour, t.minute);
 
   /// Kurangi [minutes] dari jam, dibungkus aman dalam 24 jam.
   static TimeOfDay _subtract(TimeOfDay t, int minutes) {

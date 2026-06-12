@@ -21,6 +21,7 @@ import '../utils/connectivity_service.dart';
 import '../utils/fortress_utils.dart';
 import '../utils/presence_service.dart';
 import '../utils/notification_scheduler.dart';
+import '../utils/holidays.dart';
 
 class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -346,7 +347,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     // Tip 1: Belum absen masuk hari ini & sudah lewat jam masuk
     final officeStart = DateTime(now.year, now.month, now.day, officeStartTime.hour, officeStartTime.minute);
     final hasCheckInToday = _attendanceRecords.any((r) => r.date == today && r.checkIn != null);
-    if (!hasCheckInToday && now.isAfter(officeStart) && now.weekday != DateTime.saturday && now.weekday != DateTime.sunday) {
+    if (!hasCheckInToday && now.isAfter(officeStart) && now.weekday != DateTime.saturday && now.weekday != DateTime.sunday && !IndonesianHolidays.isHoliday(now)) {
       final lateBy = now.difference(officeStart);
       tips.add(SmartTip(
         id: 'clock_in_reminder',
