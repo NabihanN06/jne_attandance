@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
@@ -109,6 +110,15 @@ Future<void> _setupFCM() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  // Crash reporting (Crashlytics): tangkap error Flutter & async fatal supaya
+  // crash di HP karyawan kerekam di Firebase Console.
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
   await initializeDateFormatting('id', null);
   await initializeDateFormatting('en', null);
 
