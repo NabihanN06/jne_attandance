@@ -93,23 +93,6 @@ class AppPalette {
   Color get glassBorder =>
       isDark ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.7);
 
-  /// Hero gradient brand JNE (oranye → merah) dengan glow kuat.
-  BoxDecoration brandHeroDecoration({double radius = 28}) => BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: AppColors.brandGradient,
-        ),
-        borderRadius: BorderRadius.circular(radius),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.brandRed.withValues(alpha: 0.45),
-            blurRadius: 32,
-            offset: const Offset(0, 16),
-          ),
-        ],
-      );
-
   /// Dekorasi hero navy SOLID (untuk header utama tiap layar). Tanpa gradient.
   BoxDecoration heroDecoration({double radius = 28}) => BoxDecoration(
         color: AppColors.darkCard,

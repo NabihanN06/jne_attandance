@@ -315,7 +315,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ─────────────────────────────────────────── Attendance hero (bold gradient)
+  // ─────────────────────────────────────────── Attendance hero (solid navy)
   Widget _attendanceHero(AppProvider p, GeofenceService geo) {
     final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     AttendanceRecord? todayRec;
@@ -491,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 10),
           Text(value, style: GoogleFonts.plusJakartaSans(color: pal.textPrimary, fontSize: 20, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 1),
+          const SizedBox(height: 4),
           Text(label, style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontSize: 10.5, fontWeight: FontWeight.w600)),
         ]),
       ),
