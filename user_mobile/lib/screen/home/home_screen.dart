@@ -356,25 +356,6 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: context.palette.heroDecoration(radius: 30),
       child: Stack(
         children: [
-          // dekor lingkaran translucent untuk kedalaman
-          Positioned(
-            top: -40,
-            right: -30,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.08)),
-            ),
-          ),
-          Positioned(
-            bottom: -50,
-            left: -20,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withValues(alpha: 0.06)),
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.all(22),
             child: Column(
