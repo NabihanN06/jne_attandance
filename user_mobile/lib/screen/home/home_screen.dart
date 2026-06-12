@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
@@ -22,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _isNavigating = false;
+  bool _forceUpdateShown = false;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +31,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final geo = context.watch<GeofenceService>();
     final conn = context.watch<ConnectivityService>();
     final pal = context.palette;
+
+    if (p.forceUpdate && !_forceUpdateShown) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showForceUpdate(p));
+    }
 
     final user = p.currentUser;
     final firstName = (user?.name.trim().isNotEmpty ?? false) ? user!.name.trim().split(' ').first : context.tr('buddy');
@@ -52,6 +58,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         _header(firstName, pal, p.unreadNotificationCount),
                         const SizedBox(height: 22),
+                        if (p.updateAvailable) ...[
+                          _updateBanner(p, pal),
+                          const SizedBox(height: 18),
+                        ],
                         FadeInDown(
                           duration: const Duration(milliseconds: 500),
                           child: _attendanceHero(p, geo),
@@ -155,6 +165,96 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ─────────────────────────────────────────── Header
+  // ── Banner update (APK sideload, lihat AppProvider._checkAppUpdate) ──
+  Widget _updateBanner(AppProvider p, AppPalette pal) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.blue.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.blue.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.blue.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.system_update_rounded,
+                color: AppColors.blue, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(context.tr('update_available'),
+                    style: GoogleFonts.plusJakartaSans(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                        color: pal.textPrimary)),
+                const SizedBox(height: 2),
+                Text('v${p.latestVersionName}',
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        color: pal.textPrimary.withValues(alpha: 0.6))),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: () => _launchUpdate(p.updateApkUrl),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.blue,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(context.tr('update_now'),
+                style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w700, fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _launchUpdate(String url) async {
+    if (url.isEmpty) return;
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _showForceUpdate(AppProvider p) {
+    if (_forceUpdateShown || !mounted) return;
+    _forceUpdateShown = true;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          title: Text(context.tr('update_force_title')),
+          content: Text(context.tr('update_force_desc')),
+          actions: [
+            ElevatedButton(
+              onPressed: () => _launchUpdate(p.updateApkUrl),
+              child: Text(context.tr('update_now')),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _header(String firstName, AppPalette pal, int unread) {
     final hour = DateTime.now().hour;
     final greeting = hour < 11

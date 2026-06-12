@@ -203,7 +203,9 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.info_outline_rounded,
               iconColor: zenIndigo,
               title: context.tr('app_version'),
-              value: _appVersion,
+              value: provider.appVersionLabel.isNotEmpty
+                  ? provider.appVersionLabel
+                  : _appVersion,
             ),
             _divider(),
             _tapItem(

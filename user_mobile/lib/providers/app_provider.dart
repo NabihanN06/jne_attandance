@@ -4,7 +4,10 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -123,6 +126,46 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   String _language = 'id';
   String get language => _language;
 
+  // ── Cek update aplikasi (APK sideload tidak auto-update lewat Play) ──
+  // Baca metadata versi terbaru dari Storage (URL tetap, no-cache).
+  static const String _appLatestUrl =
+      'https://storage.googleapis.com/admin-absensi-jne-mtp.firebasestorage.app/public/app-latest.json';
+  String _appVersionLabel = '';
+  int _currentBuild = 0;
+  int _latestBuild = 0;
+  String _latestVersionName = '';
+  String _updateApkUrl = '';
+  bool _forceUpdate = false;
+  String get appVersionLabel => _appVersionLabel;
+  bool get updateAvailable =>
+      _latestBuild > _currentBuild && _updateApkUrl.isNotEmpty;
+  bool get forceUpdate => updateAvailable && _forceUpdate;
+  String get updateApkUrl => _updateApkUrl;
+  String get latestVersionName => _latestVersionName;
+
+  /// Bandingkan versi terpasang dengan metadata di Storage. Aman gagal
+  /// (offline → tidak menampilkan apa-apa).
+  Future<void> _checkAppUpdate() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      _currentBuild = int.tryParse(info.buildNumber) ?? 0;
+      _appVersionLabel = '${info.version}+${info.buildNumber}';
+      notifyListeners();
+      final res = await http
+          .get(Uri.parse(_appLatestUrl))
+          .timeout(const Duration(seconds: 8));
+      if (res.statusCode != 200) return;
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      _latestBuild = (data['buildNumber'] as num?)?.toInt() ?? 0;
+      _latestVersionName = (data['versionName'] as String?) ?? '';
+      _updateApkUrl = (data['apkUrl'] as String?) ?? '';
+      _forceUpdate = (data['forceUpdate'] as bool?) ?? false;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('App update check error: $e');
+    }
+  }
+
   Future<void> _loadPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -138,6 +181,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         checkIn: officeStartTime,
         checkOut: officeEndTime,
       );
+      // Cek update APK di latar belakang (tidak memblokir startup).
+      _checkAppUpdate();
     } catch (e) {
       debugPrint('Load preferences error: $e');
     }
