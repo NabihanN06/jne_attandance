@@ -47,6 +47,15 @@ class OptionPage extends StatelessWidget {
             const SizedBox(height: 16),
             _buildFeatureCard(
               context,
+              'Recap Bulanan',
+              'Ringkasan kinerja & kehadiran bulan ini.',
+              Icons.insights_rounded,
+              const Color(0xFFE31E24),
+              () => Navigator.pushNamed(context, '/recap'),
+            ),
+            const SizedBox(height: 16),
+            _buildFeatureCard(
+              context,
               'Pengajuan Izin',
               'Kirim permohonan cuti, sakit, atau dinas.',
               Icons.assignment_turned_in_rounded,

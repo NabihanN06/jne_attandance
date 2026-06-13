@@ -34,6 +34,7 @@ import 'screen/location/my_location_page.dart';
 import 'screen/notification/notification_page.dart';
 import 'screen/settings/settings_page.dart';
 import 'screen/overtime/overtime_page.dart';
+import 'screen/recap/recap_page.dart';
 import 'screen/chat/chat_page.dart';
 import 'screen/calendar/calendar_page.dart';
 import 'screen/history/my_requests_page.dart';
@@ -204,6 +205,7 @@ class MyApp extends StatelessWidget {
         '/attendance': (ctx) => const AttendancePage(),
         '/leave': (ctx) => const LeavePage(),
         '/statistic': (ctx) => const StatisticPage(),
+        '/recap': (ctx) => const RecapPage(),
         '/history': (ctx) => const HistoryPage(),
         '/profile': (ctx) => const ProfilePage(),
         '/profile/id_card': (ctx) => const IDCardPage(),
