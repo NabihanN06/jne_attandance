@@ -31,6 +31,7 @@
 
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: ['selector', '[data-theme="dark"]'] };</script>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,6 +40,10 @@
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- GSAP Animation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 
   <style>
     :root {
@@ -144,16 +149,7 @@
       transform: translateX(100%);
     }
 
-    /* Scroll reveal */
-    .reveal {
-      opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.8s ease-out;
-    }
-    .reveal.active {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    /* Scroll reveal kini ditangani GSAP ScrollTrigger (lihat skrip di bawah) */
     
     /* Fix for section scroll padding */
     section {
@@ -348,7 +344,7 @@
 
   <!-- HERO -->
   <main>
-    <section class="relative min-h-[85vh] md:min-h-screen flex items-center pt-20 sm:pt-24 md:pt-32 overflow-hidden">
+    <section id="hero" class="relative min-h-[85vh] md:min-h-screen flex items-center pt-20 sm:pt-24 md:pt-32 overflow-hidden">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center">
         <!-- Text Content -->
         <div class="max-w-4xl mx-auto mb-10 md:mb-16">
@@ -404,7 +400,7 @@
                 </div>
                 <div class="text-right">
                   <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Safe Delivery</p>
-                  <p class="text-3xl font-black text-slate-900 leading-none mt-1 italic tracking-tighter">99.9%</p>
+                  <p id="stat-accuracy" class="text-3xl font-black text-slate-900 leading-none mt-1 italic tracking-tighter">99.9%</p>
                 </div>
              </div>
              <img src="assets/JNE-logo-orang-paket.svg"
@@ -461,23 +457,28 @@
           </div>
         </div>
 
+          <p id="resi-error" class="hidden max-w-2xl mx-auto mb-2 text-xs sm:text-sm font-bold text-red-600 flex items-center justify-center gap-2">
+            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+            <span id="resi-error-text">Nomor resi belum valid.</span>
+          </p>
+
           <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5 mt-8 md:mt-12">
-          <div class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group">
+          <div id="card-ongkir" role="button" tabindex="0" class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group">
             <i data-lucide="map-pin" class="mx-auto mb-2 text-(--text-dim) group-hover:text-red-500 transition-colors w-5 h-5"></i>
             <p class="text-[9px] font-black text-(--text-main) uppercase tracking-widest">Cek Ongkir</p>
             <p class="mt-1 text-[10px] text-(--text-dim)">Hitung tarif JNE berdasarkan kota asal, tujuan, dan berat paket.</p>
           </div>
-          <div class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group">
+          <div id="card-agen" role="button" tabindex="0" class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group">
             <i data-lucide="navigation" class="mx-auto mb-2 text-(--text-dim) group-hover:text-red-500 transition-colors w-5 h-5"></i>
             <p class="text-[9px] font-black text-(--text-main) uppercase tracking-widest">Peta Agen</p>
             <p class="mt-1 text-[10px] text-(--text-dim)">Temukan agen/cabang JNE terdekat dari lokasi Anda.</p>
           </div>
-          <div class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group">
+          <div id="card-faq" role="button" tabindex="0" class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group">
             <i data-lucide="help-circle" class="mx-auto mb-2 text-(--text-dim) group-hover:text-red-500 transition-colors w-5 h-5"></i>
             <p class="text-[9px] font-black text-(--text-main) uppercase tracking-widest">FAQ</p>
             <p class="mt-1 text-[10px] text-(--text-dim)">Panduan packing, barang terlarang, dan tips kirim aman.</p>
           </div>
-          <div class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group">
+          <div id="card-callcenter" role="button" tabindex="0" class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group">
             <i data-lucide="phone" class="mx-auto mb-2 text-(--text-dim) group-hover:text-red-500 transition-colors w-5 h-5"></i>
             <p class="text-[9px] font-black text-(--text-main) uppercase tracking-widest">Call Center</p>
             <p class="mt-1 text-[10px] text-(--text-dim)">021-2927-8888 · Customer Care JNE Pusat.</p>
@@ -504,7 +505,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-7 md:gap-10">
           <!-- YES -->
-          <article class="glass-card p-8 md:p-10 rounded-3xl md:rounded-[3rem] relative overflow-hidden">
+          <article data-service="YES (Yakin Esok Sampai)" class="glass-card p-8 md:p-10 rounded-3xl md:rounded-[3rem] relative overflow-hidden cursor-pointer">
             <div class="absolute top-0 right-0 w-20 h-20 bg-amber-400/10 rounded-bl-[3rem]"></div>
             <div class="w-14 h-14 md:w-16 md:h-16 rounded-3xl bg-amber-400 flex items-center justify-center mb-6 md:mb-8 shadow-xl shadow-amber-500/20">
               <i data-lucide="zap" class="text-white w-7 h-7"></i>
@@ -531,7 +532,7 @@
           </article>
 
           <!-- REG -->
-          <article class="glass-card p-8 md:p-10 rounded-3xl md:rounded-[3rem] relative overflow-hidden border-red-100 shadow-red-500/5">
+          <article data-service="JNE Reguler" class="glass-card p-8 md:p-10 rounded-3xl md:rounded-[3rem] relative overflow-hidden border-red-100 shadow-red-500/5 cursor-pointer">
             <div class="absolute top-0 right-0 w-20 h-20 premium-gradient opacity-5 rounded-bl-[3rem]"></div>
             <div class="w-14 h-14 md:w-16 md:h-16 rounded-3xl premium-gradient flex items-center justify-center mb-6 md:mb-8 shadow-xl shadow-red-500/20">
               <i data-lucide="package" class="text-white w-7 h-7"></i>
@@ -558,7 +559,7 @@
           </article>
 
           <!-- JTR -->
-          <article class="glass-card p-8 md:p-10 rounded-3xl md:rounded-[3rem] relative overflow-hidden">
+          <article data-service="JTR (JNE Trucking)" class="glass-card p-8 md:p-10 rounded-3xl md:rounded-[3rem] relative overflow-hidden cursor-pointer">
             <div class="absolute top-0 right-0 w-20 h-20 bg-blue-600/8 rounded-bl-[3rem]"></div>
             <div class="w-14 h-14 md:w-16 md:h-16 rounded-3xl bg-blue-600 flex items-center justify-center mb-6 md:mb-8 shadow-xl shadow-blue-500/20">
               <i data-lucide="truck" class="text-white w-7 h-7"></i>
@@ -763,14 +764,14 @@
         </div>
 
         <div class="flex flex-wrap justify-center gap-6 md:gap-10">
-          <a href="#" class="text-[10px] font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors italic">
+          <a href="https://www.instagram.com/jne_id/" target="_blank" rel="noopener" class="text-[10px] font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors italic">
             Instagram
           </a>
-          <a href="#" class="text-[10px] font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors italic">
+          <a href="https://www.facebook.com/JNE" target="_blank" rel="noopener" class="text-[10px] font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors italic">
             Facebook
           </a>
-          <a href="#" class="text-[10px] font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors italic">
-            Twitter
+          <a href="https://x.com/jne_id" target="_blank" rel="noopener" class="text-[10px] font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors italic">
+            Twitter / X
           </a>
         </div>
 
@@ -830,17 +831,7 @@
     overlay.addEventListener('click', closeMenu);
     mobileLinks.forEach(link => link.addEventListener('click', closeMenu));
 
-    // Scroll reveal
-    const reveals = document.querySelectorAll('.reveal');
-    function checkReveal() {
-      const triggerBottom = window.innerHeight * 0.85;
-      reveals.forEach(r => {
-        const top = r.getBoundingClientRect().top;
-        if (top < triggerBottom) r.classList.add('active');
-      });
-    }
-    window.addEventListener('scroll', checkReveal);
-    checkReveal();
+    // (Scroll reveal kini ditangani GSAP ScrollTrigger di blok bawah)
 
     // Theme Toggle Logic
     const themeToggle = document.getElementById('theme-toggle');
@@ -898,19 +889,20 @@
       e.preventDefault();
       const resiValue = inputResi.value.trim();
       
-      if (resiValue.length < 5) {
-        alert('Mohon masukkan nomor resi yang valid.');
+      if (resiValue.replace(/\s+/g, '').length < 8) {
+        showResiError('Nomor resi belum valid — biasanya 10–16 karakter. Cek lagi ya.');
         return;
       }
+      resiError?.classList.add('hidden');
 
       setTrackLoading(true);
       
       // Real JNE Tracking Redirect
       setTimeout(() => {
         setTrackLoading(false);
-        const trackingUrl = `https://www.jne.co.id/id/tracking/trace/${resiValue}`;
+        const trackingUrl = `https://www.jne.co.id/id/tracking/trace/${encodeURIComponent(resiValue.replace(/\s+/g, ''))}`;
         window.open(trackingUrl, '_blank');
-      }, 1500);
+      }, 1200);
     });
 
     // Page loader demo (show sebentar pas awal)
@@ -922,6 +914,103 @@
         pageLoader.style.opacity = '0';
         pageLoader.style.pointerEvents = 'none';
       }, 900);
+    }
+
+    // ---------- Error resi + tombol fungsional ----------
+    const resiError = document.getElementById('resi-error');
+    const resiErrorText = document.getElementById('resi-error-text');
+    const waBase = 'https://wa.me/6285167394246';
+
+    function showResiError(msg) {
+      if (resiErrorText) resiErrorText.textContent = msg;
+      resiError?.classList.remove('hidden');
+      if (window.gsap) gsap.fromTo('#input-resi', { x: -8 }, { x: 0, duration: 0.5, ease: 'elastic.out(1, 0.4)' });
+      if (window.lucide) lucide.createIcons();
+    }
+
+    inputResi?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); btnTrack?.click(); } });
+    inputResi?.addEventListener('input', () => resiError?.classList.add('hidden'));
+
+    // Kartu utilitas — Cek Ongkir / Peta Agen / FAQ / Call Center
+    document.getElementById('card-ongkir')?.addEventListener('click', () => {
+      window.open(waBase + '?text=' + encodeURIComponent('Halo JNE Martapura, saya mau cek ongkir.\nKota asal: \nKota tujuan: \nBerat (kg): '), '_blank');
+    });
+    document.getElementById('card-agen')?.addEventListener('click', () => {
+      window.open('https://www.google.com/maps/search/?api=1&query=JNE+terdekat', '_blank');
+    });
+    document.getElementById('card-faq')?.addEventListener('click', () => {
+      document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
+    });
+    document.getElementById('card-callcenter')?.addEventListener('click', () => {
+      window.location.href = 'tel:02129278888';
+    });
+    document.querySelectorAll('#card-ongkir, #card-agen, #card-faq, #card-callcenter').forEach((c) => {
+      c.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.click(); } });
+    });
+
+    // Kartu layanan — klik buka WhatsApp dengan layanan terpilih
+    document.querySelectorAll('[data-service]').forEach((card) => {
+      card.addEventListener('click', () => {
+        const svc = card.getAttribute('data-service');
+        window.open(waBase + '?text=' + encodeURIComponent('Halo JNE Martapura, saya ingin kirim paket menggunakan layanan ' + svc + '. Mohon info tarif & estimasinya.'), '_blank');
+      });
+    });
+
+    // ---------- GSAP ANIMATION ----------
+    function countUpStat() {
+      const el = document.getElementById('stat-accuracy');
+      if (!el || !window.gsap) return;
+      const obj = { val: 0 };
+      gsap.to(obj, { val: 99.9, duration: 1.6, ease: 'power2.out', onUpdate: () => { el.textContent = obj.val.toFixed(1) + '%'; } });
+    }
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (window.gsap && window.ScrollTrigger && !reduceMotion) {
+      gsap.registerPlugin(ScrollTrigger);
+
+      // Nav + intro hero
+      gsap.from('nav > div', { opacity: 0, y: -16, duration: 0.7, ease: 'power3.out' });
+      gsap.set('#hero .max-w-4xl > *', { opacity: 0, y: 42 });
+      gsap.set('#hero .reveal', { opacity: 0, y: 56, scale: 0.97 });
+
+      const intro = gsap.timeline({ delay: 0.9 });
+      intro
+        .to('#hero .max-w-4xl > *', { opacity: 1, y: 0, duration: 0.85, stagger: 0.12, ease: 'power3.out' })
+        .to('#hero .reveal', { opacity: 1, y: 0, scale: 1, duration: 1, ease: 'power3.out' }, '-=0.5')
+        .add(countUpStat, '-=0.7');
+
+      gsap.from('a[aria-label="WhatsApp JNE Martapura"]', { scale: 0, opacity: 0, duration: 0.5, delay: 1.5, ease: 'back.out(2.2)' });
+
+      // Tracking
+      gsap.from('#tracking h2, #tracking h2 + p', { opacity: 0, y: 30, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#tracking', start: 'top 75%' } });
+      gsap.from('#tracking .max-w-2xl', { opacity: 0, y: 28, duration: 0.7, ease: 'power3.out', scrollTrigger: { trigger: '#tracking', start: 'top 72%' } });
+      gsap.from('#tracking .grid > div', { opacity: 0, y: 24, duration: 0.55, stagger: 0.08, ease: 'power2.out', scrollTrigger: { trigger: '#tracking .grid', start: 'top 88%' } });
+
+      // Layanan
+      gsap.from('#layanan .text-center > *', { opacity: 0, y: 28, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#layanan', start: 'top 75%' } });
+      gsap.from('#layanan article', { opacity: 0, y: 60, duration: 0.8, stagger: 0.16, ease: 'power3.out', scrollTrigger: { trigger: '#layanan .grid', start: 'top 80%' } });
+
+      // Profil cabang
+      gsap.from('#profil h2, #profil h2 + p', { opacity: 0, y: 28, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#profil', start: 'top 72%' } });
+      gsap.from('#profil .space-y-7 > div', { opacity: 0, x: -28, duration: 0.65, stagger: 0.12, ease: 'power2.out', scrollTrigger: { trigger: '#profil .space-y-7', start: 'top 80%' } });
+      gsap.from('#profil .aspect-4\\/3', { opacity: 0, scale: 0.92, duration: 0.9, ease: 'power3.out', scrollTrigger: { trigger: '#profil .aspect-4\\/3', start: 'top 85%' } });
+
+      // FAQ
+      gsap.from('#faq .text-center > *', { opacity: 0, y: 24, duration: 0.6, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#faq', start: 'top 80%' } });
+      gsap.from('#faq details', { opacity: 0, y: 24, duration: 0.55, stagger: 0.1, ease: 'power2.out', scrollTrigger: { trigger: '#faq .space-y-4', start: 'top 85%' } });
+
+      // Footer
+      gsap.from('footer > div', { opacity: 0, y: 24, duration: 0.7, ease: 'power3.out', scrollTrigger: { trigger: 'footer', start: 'top 92%' } });
+
+      // Parallax blob (halus)
+      gsap.to('.blob-1', { yPercent: 38, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: 1 } });
+      gsap.to('.blob-2', { yPercent: -28, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: 1 } });
+
+      window.addEventListener('load', () => ScrollTrigger.refresh());
+    } else {
+      const st = document.getElementById('stat-accuracy');
+      if (st) st.textContent = '99.9%';
     }
   </script>
 </body>
