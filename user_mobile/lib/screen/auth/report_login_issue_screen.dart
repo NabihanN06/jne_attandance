@@ -59,14 +59,16 @@ class _ReportLoginIssueScreenState extends State<ReportLoginIssueScreen> {
     HapticFeedback.mediumImpact();
     try {
       await context.read<AppProvider>().submitLoginIssue(
-            name: name,
-            emailOrEmployeeId: email,
-            description: desc,
-            phone: phone.isEmpty ? null : phone,
-          );
+        name: name,
+        emailOrEmployeeId: email,
+        description: desc,
+        phone: phone.isEmpty ? null : phone,
+      );
       if (!mounted) return;
-      _showSnack('Laporan diterima. Admin akan kontak kamu segera.',
-          isError: false);
+      _showSnack(
+        'Laporan diterima. Admin akan kontak kamu segera.',
+        isError: false,
+      );
       await Future.delayed(const Duration(milliseconds: 800));
       if (!mounted) return;
       Navigator.pop(context);
@@ -74,17 +76,19 @@ class _ReportLoginIssueScreenState extends State<ReportLoginIssueScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       _showSnack(
-          'Gagal kirim laporan: ${e.toString().replaceAll('Exception: ', '')}',
-          isError: true);
+        'Gagal kirim laporan: ${e.toString().replaceAll('Exception: ', '')}',
+        isError: true,
+      );
     }
   }
 
   void _showSnack(String msg, {required bool isError}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg,
-            style:
-                GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 13)),
+        content: Text(
+          msg,
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 13),
+        ),
         backgroundColor: isError ? zenRose : zenEmerald,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(20),
@@ -101,17 +105,21 @@ class _ReportLoginIssueScreenState extends State<ReportLoginIssueScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: zenNavy, size: 18),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: zenNavy,
+            size: 18,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'LAPOR MASALAH LOGIN',
           style: GoogleFonts.outfit(
-              color: zenNavy,
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 2),
+            color: zenNavy,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
+          ),
         ),
         centerTitle: true,
       ),
@@ -134,8 +142,11 @@ class _ReportLoginIssueScreenState extends State<ReportLoginIssueScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.support_agent_rounded,
-                        color: zenIndigo, size: 22),
+                    const Icon(
+                      Icons.support_agent_rounded,
+                      color: zenIndigo,
+                      size: 22,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -202,7 +213,8 @@ class _ReportLoginIssueScreenState extends State<ReportLoginIssueScreen> {
                     backgroundColor: zenNavy,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18)),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
                     elevation: 0,
                   ),
                   child: _isLoading
@@ -210,13 +222,17 @@ class _ReportLoginIssueScreenState extends State<ReportLoginIssueScreen> {
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 3))
+                            color: Colors.white,
+                            strokeWidth: 3,
+                          ),
+                        )
                       : Text(
                           'KIRIM LAPORAN',
                           style: GoogleFonts.outfit(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 2),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
+                          ),
                         ),
                 ),
               ),
@@ -229,16 +245,17 @@ class _ReportLoginIssueScreenState extends State<ReportLoginIssueScreen> {
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 10, left: 4),
-        child: Text(
-          text,
-          style: GoogleFonts.outfit(
-              color: zenSlate,
-              fontSize: 9,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.5),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 10, left: 4),
+    child: Text(
+      text,
+      style: GoogleFonts.outfit(
+        color: zenSlate,
+        fontSize: 9,
+        fontWeight: FontWeight.w900,
+        letterSpacing: 1.5,
+      ),
+    ),
+  );
 
   Widget _field({
     required TextEditingController ctrl,
@@ -258,24 +275,28 @@ class _ReportLoginIssueScreenState extends State<ReportLoginIssueScreen> {
         keyboardType: keyboard,
         maxLines: maxLines,
         style: GoogleFonts.outfit(
-            color: zenNavy,
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.2),
+          color: zenNavy,
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.2,
+        ),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.outfit(
-              color: zenSlate.withValues(alpha: 0.4),
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              height: 1.4),
+            color: zenSlate.withValues(alpha: 0.4),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            height: 1.4,
+          ),
           prefixIcon: Padding(
             padding: EdgeInsets.only(bottom: maxLines > 1 ? 60 : 0),
             child: Icon(icon, color: zenIndigo, size: 20),
           ),
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 18,
+          ),
         ),
       ),
     );

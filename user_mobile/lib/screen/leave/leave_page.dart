@@ -24,12 +24,38 @@ class _LeavePageState extends State<LeavePage> {
   String _type = 'annual';
 
   // Tipe izin — value harus match dengan label di admin panel.
-  static const List<({String value, String label, IconData icon, Color color})> _leaveTypes = [
-    (value: 'annual', label: 'Cuti Tahunan', icon: Icons.beach_access_rounded, color: Color(0xFF0EA5E9)),
-    (value: 'sick', label: 'Sakit', icon: Icons.medical_services_rounded, color: Color(0xFFEF4444)),
-    (value: 'permission', label: 'Izin Mendadak', icon: Icons.flash_on_rounded, color: Color(0xFFF59E0B)),
-    (value: 'personal', label: 'Keperluan Pribadi', icon: Icons.person_rounded, color: Color(0xFF8B5CF6)),
-    (value: 'urgent', label: 'Keperluan Keluarga', icon: Icons.family_restroom_rounded, color: Color(0xFFEC4899)),
+  static const List<({String value, String label, IconData icon, Color color})>
+  _leaveTypes = [
+    (
+      value: 'annual',
+      label: 'Cuti Tahunan',
+      icon: Icons.beach_access_rounded,
+      color: Color(0xFF0EA5E9),
+    ),
+    (
+      value: 'sick',
+      label: 'Sakit',
+      icon: Icons.medical_services_rounded,
+      color: Color(0xFFEF4444),
+    ),
+    (
+      value: 'permission',
+      label: 'Izin Mendadak',
+      icon: Icons.flash_on_rounded,
+      color: Color(0xFFF59E0B),
+    ),
+    (
+      value: 'personal',
+      label: 'Keperluan Pribadi',
+      icon: Icons.person_rounded,
+      color: Color(0xFF8B5CF6),
+    ),
+    (
+      value: 'urgent',
+      label: 'Keperluan Keluarga',
+      icon: Icons.family_restroom_rounded,
+      color: Color(0xFFEC4899),
+    ),
   ];
 
   @override
@@ -43,7 +69,9 @@ class _LeavePageState extends State<LeavePage> {
     int count = 0;
     var d = _fromDate!;
     while (!d.isAfter(_toDate!)) {
-      if (d.weekday != DateTime.saturday && d.weekday != DateTime.sunday) count++;
+      if (d.weekday != DateTime.saturday && d.weekday != DateTime.sunday) {
+        count++;
+      }
       d = d.add(const Duration(days: 1));
     }
     return count;
@@ -60,9 +88,17 @@ class _LeavePageState extends State<LeavePage> {
         data: Theme.of(ctx).copyWith(
           colorScheme: isDark
               ? const ColorScheme.dark(
-                  primary: _accent, onPrimary: Colors.white, surface: AppColors.darkCard, onSurface: Colors.white)
+                  primary: _accent,
+                  onPrimary: Colors.white,
+                  surface: AppColors.darkCard,
+                  onSurface: Colors.white,
+                )
               : const ColorScheme.light(
-                  primary: _accent, onPrimary: Colors.white, surface: Colors.white, onSurface: Color(0xFF1E293B)),
+                  primary: _accent,
+                  onPrimary: Colors.white,
+                  surface: Colors.white,
+                  onSurface: Color(0xFF1E293B),
+                ),
         ),
         child: child!,
       ),
@@ -87,23 +123,37 @@ class _LeavePageState extends State<LeavePage> {
   // Label tipe izin terlokalisasi (value tetap dipakai untuk submit ke backend).
   String _leaveLabel(String value) {
     switch (value) {
-      case 'annual': return context.tr('leave_annual');
-      case 'sick': return context.tr('lt_sick');
-      case 'permission': return context.tr('lt_permission');
-      case 'personal': return context.tr('lt_personal');
-      case 'urgent': return context.tr('lt_family');
-      default: return value;
+      case 'annual':
+        return context.tr('leave_annual');
+      case 'sick':
+        return context.tr('lt_sick');
+      case 'permission':
+        return context.tr('lt_permission');
+      case 'personal':
+        return context.tr('lt_personal');
+      case 'urgent':
+        return context.tr('lt_family');
+      default:
+        return value;
     }
   }
 
   Future<void> _submit() async {
     final provider = context.read<AppProvider>();
     if (_fromDate == null || _toDate == null) {
-      showAppSnack(context, context.tr('pick_leave_date_first'), color: AppColors.brandRed);
+      showAppSnack(
+        context,
+        context.tr('pick_leave_date_first'),
+        color: AppColors.brandRed,
+      );
       return;
     }
     if (_reasonCtrl.text.trim().isEmpty) {
-      showAppSnack(context, context.tr('reason_required'), color: AppColors.brandRed);
+      showAppSnack(
+        context,
+        context.tr('reason_required'),
+        color: AppColors.brandRed,
+      );
       return;
     }
     setState(() => _loading = true);
@@ -116,13 +166,20 @@ class _LeavePageState extends State<LeavePage> {
         reason: _reasonCtrl.text.trim(),
       );
       if (!mounted) return;
-      showAppSnack(context, context.tr('leave_submitted'), color: AppColors.green);
+      showAppSnack(
+        context,
+        context.tr('leave_submitted'),
+        color: AppColors.green,
+      );
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      showAppSnack(context, '${context.tr('send_failed')}: ${e.toString().replaceAll('Exception: ', '')}',
-          color: AppColors.brandRed);
+      showAppSnack(
+        context,
+        '${context.tr('send_failed')}: ${e.toString().replaceAll('Exception: ', '')}',
+        color: AppColors.brandRed,
+      );
     }
   }
 
@@ -139,9 +196,14 @@ class _LeavePageState extends State<LeavePage> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leading: const AppBackButton(),
-        title: Text(context.tr('leave_request_title'),
-            style: GoogleFonts.plusJakartaSans(
-                color: pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
+        title: Text(
+          context.tr('leave_request_title'),
+          style: GoogleFonts.plusJakartaSans(
+            color: pal.textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       body: ListView(
         physics: const BouncingScrollPhysics(),
@@ -162,7 +224,10 @@ class _LeavePageState extends State<LeavePage> {
                   onTap: () => setState(() => _type = t.value),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: selected ? t.color : pal.cardAlt,
                       borderRadius: BorderRadius.circular(14),
@@ -174,7 +239,11 @@ class _LeavePageState extends State<LeavePage> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(t.icon, color: selected ? Colors.white : t.color, size: 16),
+                        Icon(
+                          t.icon,
+                          color: selected ? Colors.white : t.color,
+                          size: 16,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           _leaveLabel(t.value),
@@ -198,25 +267,51 @@ class _LeavePageState extends State<LeavePage> {
             pal: pal,
             child: Column(
               children: [
-                _dateField(context.tr('from_date'), _fmt(_fromDate), () => _pickDate(true), pal),
+                _dateField(
+                  context.tr('from_date'),
+                  _fmt(_fromDate),
+                  () => _pickDate(true),
+                  pal,
+                ),
                 const SizedBox(height: 18),
-                _dateField(context.tr('to_date'), _fmt(_toDate), () => _pickDate(false), pal),
+                _dateField(
+                  context.tr('to_date'),
+                  _fmt(_toDate),
+                  () => _pickDate(false),
+                  pal,
+                ),
                 if (_workDays > 0) ...[
                   const SizedBox(height: 18),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: _accent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: _accent.withValues(alpha: 0.25)),
+                      border: Border.all(
+                        color: _accent.withValues(alpha: 0.25),
+                      ),
                     ),
-                    child: Row(children: [
-                      const Icon(Icons.info_outline, color: _accent, size: 18),
-                      const SizedBox(width: 12),
-                      Text('${context.tr('total')}: $_workDays ${context.tr('workdays_counted')}',
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.info_outline,
+                          color: _accent,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          '${context.tr('total')}: $_workDays ${context.tr('workdays_counted')}',
                           style: GoogleFonts.plusJakartaSans(
-                              color: _accent, fontSize: 13, fontWeight: FontWeight.w800)),
-                    ]),
+                            color: _accent,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ],
@@ -232,10 +327,16 @@ class _LeavePageState extends State<LeavePage> {
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
               style: GoogleFonts.plusJakartaSans(
-                  color: pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
+                color: pal.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
               decoration: InputDecoration(
                 hintText: context.tr('reason_hint'),
-                hintStyle: GoogleFonts.plusJakartaSans(color: pal.textFaint, fontSize: 14),
+                hintStyle: GoogleFonts.plusJakartaSans(
+                  color: pal.textFaint,
+                  fontSize: 14,
+                ),
                 border: InputBorder.none,
                 isCollapsed: true,
               ),
@@ -251,15 +352,25 @@ class _LeavePageState extends State<LeavePage> {
                 color: _accent,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(color: _accent.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 8)),
+                  BoxShadow(
+                    color: _accent.withValues(alpha: 0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
                 ],
               ),
               child: Center(
                 child: _loading
                     ? const PackageLoading(isLight: true, size: 30)
-                    : Text(context.tr('submit_request_now').toUpperCase(),
+                    : Text(
+                        context.tr('submit_request_now').toUpperCase(),
                         style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -284,21 +395,37 @@ class _LeavePageState extends State<LeavePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(context.tr('remaining_annual_leave'),
-                        style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white60, fontSize: 12, fontWeight: FontWeight.w500)),
+                    Text(
+                      context.tr('remaining_annual_leave'),
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white60,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     const SizedBox(height: 6),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('${b.remainingAnnual}',
-                            style: GoogleFonts.plusJakartaSans(
-                                color: _accent, fontSize: 36, fontWeight: FontWeight.w800, height: 1)),
+                        Text(
+                          '${b.remainingAnnual}',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: _accent,
+                            fontSize: 36,
+                            fontWeight: FontWeight.w800,
+                            height: 1,
+                          ),
+                        ),
                         Padding(
                           padding: const EdgeInsets.only(bottom: 5, left: 6),
-                          child: Text('/ ${b.annualQuota} ${context.tr('days')}',
-                              style: GoogleFonts.plusJakartaSans(
-                                  color: Colors.white60, fontSize: 13, fontWeight: FontWeight.w600)),
+                          child: Text(
+                            '/ ${b.annualQuota} ${context.tr('days')}',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: Colors.white60,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -308,8 +435,14 @@ class _LeavePageState extends State<LeavePage> {
               Container(
                 padding: const EdgeInsets.all(11),
                 decoration: BoxDecoration(
-                    color: _accent.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.event_available_rounded, color: _accent, size: 22),
+                  color: _accent.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.event_available_rounded,
+                  color: _accent,
+                  size: 22,
+                ),
               ),
             ],
           ),
@@ -341,19 +474,33 @@ class _LeavePageState extends State<LeavePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: GoogleFonts.plusJakartaSans(
-                color: Colors.white60, fontSize: 10, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            color: Colors.white60,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 3),
-        Text('$value ${context.tr('days')}',
-            style: GoogleFonts.plusJakartaSans(
-                color: Colors.white, fontSize: 13, fontWeight: FontWeight.w800)),
+        Text(
+          '$value ${context.tr('days')}',
+          style: GoogleFonts.plusJakartaSans(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildSectionCard(
-      {required String title, required IconData icon, required Widget child, required AppPalette pal}) {
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required Widget child,
+    required AppPalette pal,
+  }) {
     return AppCard(
       radius: 24,
       padding: const EdgeInsets.all(22),
@@ -364,9 +511,15 @@ class _LeavePageState extends State<LeavePage> {
             children: [
               Icon(icon, color: _accent, size: 20),
               const SizedBox(width: 12),
-              Text(title,
-                  style: GoogleFonts.plusJakartaSans(
-                      color: pal.textSub, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+              Text(
+                title,
+                style: GoogleFonts.plusJakartaSans(
+                  color: pal.textSub,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -376,13 +529,24 @@ class _LeavePageState extends State<LeavePage> {
     );
   }
 
-  Widget _dateField(String label, String val, VoidCallback onTap, AppPalette pal) {
+  Widget _dateField(
+    String label,
+    String val,
+    VoidCallback onTap,
+    AppPalette pal,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: GoogleFonts.plusJakartaSans(
-                color: pal.textSub, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            color: pal.textSub,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
+          ),
+        ),
         const SizedBox(height: 10),
         GestureDetector(
           onTap: onTap,
@@ -396,12 +560,19 @@ class _LeavePageState extends State<LeavePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(val.isEmpty ? context.tr('pick_date') : val,
-                    style: GoogleFonts.plusJakartaSans(
-                        color: val.isEmpty ? pal.textFaint : pal.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800)),
-                const Icon(Icons.calendar_today_rounded, color: _accent, size: 18),
+                Text(
+                  val.isEmpty ? context.tr('pick_date') : val,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: val.isEmpty ? pal.textFaint : pal.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const Icon(
+                  Icons.calendar_today_rounded,
+                  color: _accent,
+                  size: 18,
+                ),
               ],
             ),
           ),

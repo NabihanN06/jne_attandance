@@ -7,7 +7,7 @@ enum ConnectionStatus { wifi, mobile, none }
 class ConnectivityService extends ChangeNotifier {
   ConnectionStatus _status = ConnectionStatus.none;
   ConnectionStatus get status => _status;
-  
+
   bool get isOnline => _status != ConnectionStatus.none;
 
   final Connectivity _connectivity = Connectivity();

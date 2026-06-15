@@ -30,8 +30,18 @@ class _FaqScreenState extends State<FaqScreen> {
 
   static const _categories = <_FaqCategory>[
     _FaqCategory('all', 'Semua', Icons.apps_rounded, zenIndigo),
-    _FaqCategory('attendance', 'Absensi', Icons.fingerprint_rounded, zenEmerald),
-    _FaqCategory('leave', 'Izin & Cuti', Icons.event_available_rounded, zenAmber),
+    _FaqCategory(
+      'attendance',
+      'Absensi',
+      Icons.fingerprint_rounded,
+      zenEmerald,
+    ),
+    _FaqCategory(
+      'leave',
+      'Izin & Cuti',
+      Icons.event_available_rounded,
+      zenAmber,
+    ),
     _FaqCategory('overtime', 'Lembur', Icons.timer_rounded, zenIndigo),
     _FaqCategory('account', 'Akun', Icons.person_rounded, zenRose),
   ];
@@ -113,9 +123,12 @@ class _FaqScreenState extends State<FaqScreen> {
   List<_FaqItem> get _filtered {
     final lower = _query.toLowerCase();
     return _items.where((it) {
-      if (_activeCategory != 'all' && it.category != _activeCategory) return false;
+      if (_activeCategory != 'all' && it.category != _activeCategory) {
+        return false;
+      }
       if (lower.isEmpty) return true;
-      return it.q.toLowerCase().contains(lower) || it.a.toLowerCase().contains(lower);
+      return it.q.toLowerCase().contains(lower) ||
+          it.a.toLowerCase().contains(lower);
     }).toList();
   }
 
@@ -130,7 +143,12 @@ class _FaqScreenState extends State<FaqScreen> {
         elevation: 0,
         title: Text(
           'PUSAT BANTUAN',
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3),
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 3,
+          ),
         ),
         centerTitle: true,
         leading: IconButton(
@@ -153,11 +171,20 @@ class _FaqScreenState extends State<FaqScreen> {
                   child: TextField(
                     controller: _search,
                     onChanged: (v) => setState(() => _query = v),
-                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 13),
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 13,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Cari pertanyaan...',
-                      hintStyle: GoogleFonts.outfit(color: Colors.white54, fontSize: 13),
-                      prefixIcon: const Icon(Icons.search_rounded, color: Colors.white54),
+                      hintStyle: GoogleFonts.outfit(
+                        color: Colors.white54,
+                        fontSize: 13,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search_rounded,
+                        color: Colors.white54,
+                      ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -176,14 +203,23 @@ class _FaqScreenState extends State<FaqScreen> {
                       return GestureDetector(
                         onTap: () => setState(() => _activeCategory = c.key),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
-                            color: active ? c.color : Colors.white.withValues(alpha: 0.06),
+                            color: active
+                                ? c.color
+                                : Colors.white.withValues(alpha: 0.06),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             children: [
-                              Icon(c.icon, size: 14, color: active ? Colors.white : Colors.white54),
+                              Icon(
+                                c.icon,
+                                size: 14,
+                                color: active ? Colors.white : Colors.white54,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 c.label,
@@ -209,19 +245,34 @@ class _FaqScreenState extends State<FaqScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.search_off_rounded, size: 56, color: zenSlate.withValues(alpha: 0.4)),
+                        Icon(
+                          Icons.search_off_rounded,
+                          size: 56,
+                          color: zenSlate.withValues(alpha: 0.4),
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           'Tidak ada hasil. Coba kata kunci lain.',
-                          style: GoogleFonts.outfit(color: zenSlate, fontSize: 12, fontWeight: FontWeight.w700),
+                          style: GoogleFonts.outfit(
+                            color: zenSlate,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         TextButton.icon(
                           onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.support_agent_rounded, color: zenIndigo),
+                          icon: const Icon(
+                            Icons.support_agent_rounded,
+                            color: zenIndigo,
+                          ),
                           label: Text(
                             'Tanya admin langsung',
-                            style: GoogleFonts.outfit(color: zenIndigo, fontSize: 12, fontWeight: FontWeight.w900),
+                            style: GoogleFonts.outfit(
+                              color: zenIndigo,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                         ),
                       ],
@@ -256,7 +307,8 @@ class _FaqScreenState extends State<FaqScreen> {
           tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
           childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           leading: Container(
-            width: 36, height: 36,
+            width: 36,
+            height: 36,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: cat.color.withValues(alpha: 0.1),
@@ -266,7 +318,12 @@ class _FaqScreenState extends State<FaqScreen> {
           ),
           title: Text(
             item.q,
-            style: GoogleFonts.outfit(color: zenNavy, fontSize: 13, fontWeight: FontWeight.w800, height: 1.4),
+            style: GoogleFonts.outfit(
+              color: zenNavy,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              height: 1.4,
+            ),
           ),
           children: [
             Text(

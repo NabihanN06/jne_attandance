@@ -69,7 +69,10 @@ class _MyLocationPageState extends State<MyLocationPage> {
               ),
               child: Row(
                 children: [
-                  _circleButton(Icons.chevron_left_rounded, () => Navigator.pop(context)),
+                  _circleButton(
+                    Icons.chevron_left_rounded,
+                    () => Navigator.pop(context),
+                  ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -78,14 +81,18 @@ class _MyLocationPageState extends State<MyLocationPage> {
                         Text(
                           context.tr('sec_location'),
                           style: GoogleFonts.outfit(
-                              color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                         Text(
                           app.hubName,
                           style: GoogleFonts.plusJakartaSans(
-                              color: const Color(0xFF22D3EE),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600),
+                            color: const Color(0xFF22D3EE),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -112,12 +119,17 @@ class _MyLocationPageState extends State<MyLocationPage> {
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6)),
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
                   ],
                 ),
-                child: const Icon(Icons.my_location_rounded, color: zenIndigo, size: 24),
+                child: const Icon(
+                  Icons.my_location_rounded,
+                  color: zenIndigo,
+                  size: 24,
+                ),
               ),
             ),
           ),
@@ -134,7 +146,12 @@ class _MyLocationPageState extends State<MyLocationPage> {
     );
   }
 
-  Widget _infoCard(GeofenceService geo, AppProvider app, bool remoteAllowed, dynamic pos) {
+  Widget _infoCard(
+    GeofenceService geo,
+    AppProvider app,
+    bool remoteAllowed,
+    dynamic pos,
+  ) {
     final inRange = geo.isInRange;
     final mocked = geo.isLocationMocked;
 
@@ -172,9 +189,10 @@ class _MyLocationPageState extends State<MyLocationPage> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 30,
-              offset: const Offset(0, -10)),
+            color: Colors.black.withValues(alpha: 0.4),
+            blurRadius: 30,
+            offset: const Offset(0, -10),
+          ),
         ],
       ),
       child: Column(
@@ -186,7 +204,9 @@ class _MyLocationPageState extends State<MyLocationPage> {
               width: 44,
               height: 4,
               decoration: BoxDecoration(
-                  color: Colors.white24, borderRadius: BorderRadius.circular(10)),
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
           const SizedBox(height: 22),
@@ -205,18 +225,24 @@ class _MyLocationPageState extends State<MyLocationPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(statusTitle,
-                        style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w800)),
+                    Text(
+                      statusTitle,
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                     const SizedBox(height: 3),
-                    Text(statusSub,
-                        style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white60,
-                            fontSize: 12,
-                            height: 1.4,
-                            fontWeight: FontWeight.w500)),
+                    Text(
+                      statusSub,
+                      style: GoogleFonts.plusJakartaSans(
+                        color: Colors.white60,
+                        fontSize: 12,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -225,11 +251,17 @@ class _MyLocationPageState extends State<MyLocationPage> {
           const SizedBox(height: 20),
           Row(
             children: [
-              _metric(context.tr('distance_to_office'), _fmtDistance(geo.distanceFromOffice),
-                  Icons.straighten_rounded),
+              _metric(
+                context.tr('distance_to_office'),
+                _fmtDistance(geo.distanceFromOffice),
+                Icons.straighten_rounded,
+              ),
               const SizedBox(width: 12),
-              _metric(context.tr('area_radius'), _fmtDistance(app.officeRadius),
-                  Icons.adjust_rounded),
+              _metric(
+                context.tr('area_radius'),
+                _fmtDistance(app.officeRadius),
+                Icons.adjust_rounded,
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -241,7 +273,11 @@ class _MyLocationPageState extends State<MyLocationPage> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.place_rounded, color: Colors.white38, size: 16),
+                const Icon(
+                  Icons.place_rounded,
+                  color: Colors.white38,
+                  size: 16,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -249,11 +285,18 @@ class _MyLocationPageState extends State<MyLocationPage> {
                         ? '${pos.latitude.toStringAsFixed(6)}, ${pos.longitude.toStringAsFixed(6)}'
                         : context.tr('waiting_gps'),
                     style: GoogleFonts.robotoMono(
-                        color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
+                      color: Colors.white70,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 if (geo.errorMessage.isEmpty && pos != null)
-                  const Icon(Icons.gps_fixed_rounded, color: zenGreen, size: 16),
+                  const Icon(
+                    Icons.gps_fixed_rounded,
+                    color: zenGreen,
+                    size: 16,
+                  ),
               ],
             ),
           ),
@@ -275,13 +318,23 @@ class _MyLocationPageState extends State<MyLocationPage> {
           children: [
             Icon(icon, color: const Color(0xFF22D3EE), size: 18),
             const SizedBox(height: 10),
-            Text(value,
-                style: GoogleFonts.outfit(
-                    color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+            Text(
+              value,
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(label,
-                style: GoogleFonts.plusJakartaSans(
-                    color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white54,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),

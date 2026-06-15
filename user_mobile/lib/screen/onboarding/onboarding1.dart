@@ -21,7 +21,9 @@ class Onboarding1 extends StatelessWidget {
               FadeInDown(
                 child: Image.asset(
                   'assets/images/gambarHp/icon4.png',
-                  width: 280, height: 280, fit: BoxFit.contain,
+                  width: 280,
+                  height: 280,
+                  fit: BoxFit.contain,
                 ),
               ),
               const SizedBox(height: 60),
@@ -29,7 +31,11 @@ class Onboarding1 extends StatelessWidget {
                 child: Text(
                   'Geofencing Pintar',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.outfit(color: const Color(0xFF1E293B), fontSize: 28, fontWeight: FontWeight.w900),
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFF1E293B),
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -38,7 +44,12 @@ class Onboarding1 extends StatelessWidget {
                 child: Text(
                   'Absensi otomatis terdeteksi saat Anda berada di dalam radius kantor JNE.',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.outfit(color: const Color(0xFF64748B), fontSize: 16, height: 1.6, fontWeight: FontWeight.w500),
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFF64748B),
+                    fontSize: 16,
+                    height: 1.6,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               const Spacer(),
@@ -48,13 +59,25 @@ class Onboarding1 extends StatelessWidget {
                   width: double.infinity,
                   height: 60,
                   child: ElevatedButton(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Onboarding2())),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const Onboarding2()),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: jneBlue,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       elevation: 0,
                     ),
-                    child: Text('LANJUTKAN', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                    child: Text(
+                      'LANJUTKAN',
+                      style: GoogleFonts.outfit(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1,
+                      ),
+                    ),
                   ),
                 ),
               ),

@@ -107,7 +107,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   /// True jika flag per-user `allowRemoteAttendance` ON, ATAU bypass kurir global
   /// aktif dan karyawan ini kurir.
   bool get canBypassGeofence =>
-      (_currentUser?.allowRemoteAttendance ?? false) || (_courierBypassGeofence && isCourierUser);
+      (_currentUser?.allowRemoteAttendance ?? false) ||
+      (_courierBypassGeofence && isCourierUser);
 
   // ── Persisted User Preferences ──
   static const _kDarkModeKey = 'pref_dark_mode';
@@ -215,7 +216,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
       if (value) {
         await FirebaseMessaging.instance.requestPermission(
-          alert: true, badge: true, sound: true,
+          alert: true,
+          badge: true,
+          sound: true,
         );
         await FirebaseMessaging.instance.subscribeToTopic('broadcasts');
       } else {
@@ -291,9 +294,11 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   LeaveBalance get leaveBalance {
     if (_firestoreLeaveBalance != null) {
       final now = DateTime.now();
-      final pending = _leaveRequests.where((l) =>
-          l.status == 'pending' &&
-          (l.startDate.year == now.year || l.endDate.year == now.year));
+      final pending = _leaveRequests.where(
+        (l) =>
+            l.status == 'pending' &&
+            (l.startDate.year == now.year || l.endDate.year == now.year),
+      );
       return LeaveBalance(
         annualQuota: _firestoreLeaveBalance!.annualQuota,
         usedAnnual: _firestoreLeaveBalance!.usedAnnual,
@@ -311,13 +316,19 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       return l.startDate.year == thisYear || l.endDate.year == thisYear;
     });
     final approved = yearLeaves.where((l) => l.status == 'approved');
-    final pending  = yearLeaves.where((l) => l.status == 'pending');
+    final pending = yearLeaves.where((l) => l.status == 'pending');
     return LeaveBalance(
       annualQuota: quota,
-      usedAnnual:     approved.where((l) => l.type == 'annual').fold(0, (s, l) => s + l.totalDays),
-      usedSick:       approved.where((l) => l.type == 'sick').fold(0, (s, l) => s + l.totalDays),
-      usedPermission: approved.where((l) => l.type != 'annual' && l.type != 'sick').fold(0, (s, l) => s + l.totalDays),
-      pendingDays:    pending.fold(0, (s, l) => s + l.totalDays),
+      usedAnnual: approved
+          .where((l) => l.type == 'annual')
+          .fold(0, (s, l) => s + l.totalDays),
+      usedSick: approved
+          .where((l) => l.type == 'sick')
+          .fold(0, (s, l) => s + l.totalDays),
+      usedPermission: approved
+          .where((l) => l.type != 'annual' && l.type != 'sick')
+          .fold(0, (s, l) => s + l.totalDays),
+      pendingDays: pending.fold(0, (s, l) => s + l.totalDays),
     );
   }
 
@@ -332,7 +343,10 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   }
 
   int get unreadNotificationCount {
-    return [..._personalNotifs, ..._broadcastNotifs].where((n) => !n.isRead).length;
+    return [
+      ..._personalNotifs,
+      ..._broadcastNotifs,
+    ].where((n) => !n.isRead).length;
   }
 
   /// Insight otomatis berdasarkan data user — tidak disimpan ke Firestore,
@@ -345,65 +359,95 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     final today = DateFormat('yyyy-MM-dd').format(now);
 
     // Tip 1: Belum absen masuk hari ini & sudah lewat jam masuk
-    final officeStart = DateTime(now.year, now.month, now.day, officeStartTime.hour, officeStartTime.minute);
-    final hasCheckInToday = _attendanceRecords.any((r) => r.date == today && r.checkIn != null);
-    if (!hasCheckInToday && now.isAfter(officeStart) && now.weekday != DateTime.saturday && now.weekday != DateTime.sunday && !IndonesianHolidays.isHoliday(now)) {
+    final officeStart = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      officeStartTime.hour,
+      officeStartTime.minute,
+    );
+    final hasCheckInToday = _attendanceRecords.any(
+      (r) => r.date == today && r.checkIn != null,
+    );
+    if (!hasCheckInToday &&
+        now.isAfter(officeStart) &&
+        now.weekday != DateTime.saturday &&
+        now.weekday != DateTime.sunday &&
+        !IndonesianHolidays.isHoliday(now)) {
       final lateBy = now.difference(officeStart);
-      tips.add(SmartTip(
-        id: 'clock_in_reminder',
-        title: 'Belum absen masuk',
-        message: lateBy.inMinutes > 30
-            ? 'Anda terlambat ${lateBy.inMinutes} menit. Segera absen masuk!'
-            : 'Office sudah buka. Jangan lupa absen masuk.',
-        severity: lateBy.inMinutes > 30 ? 'urgent' : 'info',
-        action: 'attendance',
-        icon: 'access_time',
-      ));
+      tips.add(
+        SmartTip(
+          id: 'clock_in_reminder',
+          title: 'Belum absen masuk',
+          message: lateBy.inMinutes > 30
+              ? 'Anda terlambat ${lateBy.inMinutes} menit. Segera absen masuk!'
+              : 'Office sudah buka. Jangan lupa absen masuk.',
+          severity: lateBy.inMinutes > 30 ? 'urgent' : 'info',
+          action: 'attendance',
+          icon: 'access_time',
+        ),
+      );
     }
 
     // Tip 2: Sudah check-in tapi belum check-out & sudah sore
     final openSession = _attendanceRecords.firstWhere(
       (r) => r.date == today && r.checkIn != null && r.checkOut == null,
       orElse: () => AttendanceRecord(
-        id: '', userId: '', employeeName: '', employeeId: '',
-        department: '', date: '', status: '',
+        id: '',
+        userId: '',
+        employeeName: '',
+        employeeId: '',
+        department: '',
+        date: '',
+        status: '',
       ),
     );
     if (openSession.id.isNotEmpty && now.hour >= 17) {
-      tips.add(SmartTip(
-        id: 'clock_out_reminder',
-        title: 'Belum absen keluar',
-        message: 'Anda sudah masuk pukul ${DateFormat('HH:mm').format(openSession.checkIn!.time!)}. Jangan lupa absen keluar.',
-        severity: now.hour >= 19 ? 'urgent' : 'info',
-        action: 'attendance',
-        icon: 'logout',
-      ));
+      tips.add(
+        SmartTip(
+          id: 'clock_out_reminder',
+          title: 'Belum absen keluar',
+          message:
+              'Anda sudah masuk pukul ${DateFormat('HH:mm').format(openSession.checkIn!.time!)}. Jangan lupa absen keluar.',
+          severity: now.hour >= 19 ? 'urgent' : 'info',
+          action: 'attendance',
+          icon: 'logout',
+        ),
+      );
     }
 
     // Tip 3: Sisa cuti tahunan menipis
     final balance = leaveBalance;
     if (balance.remainingAnnual <= 3 && balance.annualQuota > 0) {
-      tips.add(SmartTip(
-        id: 'leave_low',
-        title: 'Sisa cuti tinggal ${balance.remainingAnnual} hari',
-        message: 'Rencanakan cuti Anda dengan bijak. Kuota tahunan ${balance.annualQuota} hari.',
-        severity: balance.remainingAnnual == 0 ? 'urgent' : 'warning',
-        action: 'leave_balance',
-        icon: 'beach_access',
-      ));
+      tips.add(
+        SmartTip(
+          id: 'leave_low',
+          title: 'Sisa cuti tinggal ${balance.remainingAnnual} hari',
+          message:
+              'Rencanakan cuti Anda dengan bijak. Kuota tahunan ${balance.annualQuota} hari.',
+          severity: balance.remainingAnnual == 0 ? 'urgent' : 'warning',
+          action: 'leave_balance',
+          icon: 'beach_access',
+        ),
+      );
     }
 
     // Tip 4: Komplain perlu konfirmasi user (admin sudah resolve, user belum acknowledge)
-    final pendingConfirm = _disputeRequests.where((d) => d.needsUserConfirmation).length;
+    final pendingConfirm = _disputeRequests
+        .where((d) => d.needsUserConfirmation)
+        .length;
     if (pendingConfirm > 0) {
-      tips.add(SmartTip(
-        id: 'dispute_confirm',
-        title: '$pendingConfirm komplain menunggu konfirmasi',
-        message: 'Admin sudah menyelesaikan. Buka & konfirmasi agar tiket bisa ditutup.',
-        severity: 'warning',
-        action: 'dispute',
-        icon: 'task_alt',
-      ));
+      tips.add(
+        SmartTip(
+          id: 'dispute_confirm',
+          title: '$pendingConfirm komplain menunggu konfirmasi',
+          message:
+              'Admin sudah menyelesaikan. Buka & konfirmasi agar tiket bisa ditutup.',
+          severity: 'warning',
+          action: 'dispute',
+          icon: 'task_alt',
+        ),
+      );
     }
 
     // Tip 5: Performance bulan ini — telat berkali-kali
@@ -413,31 +457,39 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }).toList();
     final lateCount = thisMonth.where((r) => r.status == 'late').length;
     if (lateCount >= 3) {
-      tips.add(SmartTip(
-        id: 'late_streak',
-        title: '$lateCount kali terlambat bulan ini',
-        message: 'Coba tidur lebih awal & berangkat 15 menit lebih cepat. Anda pasti bisa!',
-        severity: 'warning',
-        action: 'statistic',
-        icon: 'trending_down',
-      ));
+      tips.add(
+        SmartTip(
+          id: 'late_streak',
+          title: '$lateCount kali terlambat bulan ini',
+          message:
+              'Coba tidur lebih awal & berangkat 15 menit lebih cepat. Anda pasti bisa!',
+          severity: 'warning',
+          action: 'statistic',
+          icon: 'trending_down',
+        ),
+      );
     }
 
     // Tip 6: Streak hadir tepat waktu (positive reinforcement)
     if (thisMonth.length >= 5 && lateCount == 0) {
-      tips.add(SmartTip(
-        id: 'perfect_streak',
-        title: 'Performa luar biasa! 🎉',
-        message: '${thisMonth.length} hari hadir tepat waktu bulan ini. Pertahankan!',
-        severity: 'success',
-        action: 'statistic',
-        icon: 'emoji_events',
-      ));
+      tips.add(
+        SmartTip(
+          id: 'perfect_streak',
+          title: 'Performa luar biasa! 🎉',
+          message:
+              '${thisMonth.length} hari hadir tepat waktu bulan ini. Pertahankan!',
+          severity: 'success',
+          action: 'statistic',
+          icon: 'emoji_events',
+        ),
+      );
     }
 
     // Urutkan: urgent > warning > info > success
     const order = {'urgent': 0, 'warning': 1, 'info': 2, 'success': 3};
-    tips.sort((a, b) => (order[a.severity] ?? 9).compareTo(order[b.severity] ?? 9));
+    tips.sort(
+      (a, b) => (order[a.severity] ?? 9).compareTo(order[b.severity] ?? 9),
+    );
     return tips;
   }
 
@@ -445,10 +497,14 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     try {
       // Try userNotifications first, then broadcasts
       try {
-        await _db.collection('userNotifications').doc(notifId).update({'isRead': true});
+        await _db.collection('userNotifications').doc(notifId).update({
+          'isRead': true,
+        });
       } catch (_) {
         try {
-          await _db.collection('broadcasts').doc(notifId).update({'isRead': true});
+          await _db.collection('broadcasts').doc(notifId).update({
+            'isRead': true,
+          });
         } catch (_) {}
       }
     } catch (e) {
@@ -460,7 +516,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     try {
       final batch = _db.batch();
       for (final n in _personalNotifs.where((n) => !n.isRead)) {
-        batch.update(_db.collection('userNotifications').doc(n.id), {'isRead': true});
+        batch.update(_db.collection('userNotifications').doc(n.id), {
+          'isRead': true,
+        });
       }
       await batch.commit();
     } catch (e) {
@@ -503,7 +561,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     _loadPreferences();
     _init();
     WidgetsBinding.instance.addObserver(this);
-    
+
     connectivityService.addListener(() {
       if (connectivityService.isOnline && isLoggedIn) {
         syncPendingRecords();
@@ -570,82 +628,109 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     // Ambil jam shift user agar pengingat absensi pakai jam masuk/keluar asli.
     _loadUserShiftTimes();
 
-    _attendanceSub = _db.collection('attendance')
+    _attendanceSub = _db
+        .collection('attendance')
         .where('userId', isEqualTo: _currentUser!.uid)
         .orderBy('attendanceDate', descending: true)
         .limit(30)
         .snapshots()
         .listen((snap) {
-      _attendanceRecords = snap.docs.map((doc) => AttendanceRecord.fromFirestore(doc)).toList();
-      _scheduleNotify();
-    }, onError: (e) => _setDataError('Data absensi', e));
+          _attendanceRecords = snap.docs
+              .map((doc) => AttendanceRecord.fromFirestore(doc))
+              .toList();
+          _scheduleNotify();
+        }, onError: (e) => _setDataError('Data absensi', e));
 
-    _leaveSub = _db.collection('leaves')
+    _leaveSub = _db
+        .collection('leaves')
         .where('userId', isEqualTo: _currentUser!.uid)
         .orderBy('createdAt', descending: true)
         .snapshots()
         .listen((snap) {
-      _leaveRequests = snap.docs.map((doc) => LeaveRequest.fromFirestore(doc)).toList();
-      _scheduleNotify();
-    }, onError: (e) => _setDataError('Data cuti', e));
+          _leaveRequests = snap.docs
+              .map((doc) => LeaveRequest.fromFirestore(doc))
+              .toList();
+          _scheduleNotify();
+        }, onError: (e) => _setDataError('Data cuti', e));
 
-    _overtimeSub = _db.collection('overtime')
+    _overtimeSub = _db
+        .collection('overtime')
         .where('userId', isEqualTo: _currentUser!.uid)
         .orderBy('createdAt', descending: true)
         .limit(20)
         .snapshots()
         .listen((snap) {
-      _overtimeRequests = snap.docs.map((doc) => OvertimeRequest.fromFirestore(doc)).toList();
-      _scheduleNotify();
-    }, onError: (e) => _setDataError('Data lembur', e));
+          _overtimeRequests = snap.docs
+              .map((doc) => OvertimeRequest.fromFirestore(doc))
+              .toList();
+          _scheduleNotify();
+        }, onError: (e) => _setDataError('Data lembur', e));
 
     // Disputes
-    _disputeSub = _db.collection('disputes')
+    _disputeSub = _db
+        .collection('disputes')
         .where('userId', isEqualTo: _currentUser!.uid)
         .orderBy('createdAt', descending: true)
         .limit(20)
         .snapshots()
         .listen((snap) {
-      _disputeRequests = snap.docs.map((doc) => DisputeRequest.fromFirestore(doc)).toList();
-      _scheduleNotify();
-    }, onError: (e) => _setDataError('Data sanggahan', e));
+          _disputeRequests = snap.docs
+              .map((doc) => DisputeRequest.fromFirestore(doc))
+              .toList();
+          _scheduleNotify();
+        }, onError: (e) => _setDataError('Data sanggahan', e));
 
     // Leave balance from admin (collection: leave_balances/{uid})
-    _leaveBalanceSub = _db.collection('leave_balances')
+    _leaveBalanceSub = _db
+        .collection('leave_balances')
         .doc(_currentUser!.uid)
         .snapshots()
         .listen((snap) {
-      _firestoreLeaveBalance = snap.exists ? LeaveBalance.fromFirestore(snap) : null;
-      _scheduleNotify();
-    }, onError: (e) => _setDataError('Saldo cuti', e));
-    _notifSub = _db.collection('userNotifications')
+          _firestoreLeaveBalance = snap.exists
+              ? LeaveBalance.fromFirestore(snap)
+              : null;
+          _scheduleNotify();
+        }, onError: (e) => _setDataError('Saldo cuti', e));
+    _notifSub = _db
+        .collection('userNotifications')
         .where('userId', isEqualTo: _currentUser!.uid)
         .orderBy('createdAt', descending: true)
         .limit(20)
         .snapshots()
         .listen((snap) {
-      _updateNotifications(snap, isBroadcast: false);
-    }, onError: (e) => _setDataError('Notifikasi', e));
+          _updateNotifications(snap, isBroadcast: false);
+        }, onError: (e) => _setDataError('Notifikasi', e));
 
-    _broadcastSub = _db.collection('broadcasts')
+    _broadcastSub = _db
+        .collection('broadcasts')
         .orderBy('createdAt', descending: true)
         .limit(10)
         .snapshots()
         .listen((snap) {
-      _updateNotifications(snap, isBroadcast: true);
-    }, onError: (e) => _setDataError('Broadcast', e));
+          _updateNotifications(snap, isBroadcast: true);
+        }, onError: (e) => _setDataError('Broadcast', e));
 
-    _eventSub = _db.collection('calendarEvents')
-        .where('startDate', isGreaterThanOrEqualTo: DateTime.now().subtract(const Duration(days: 30)))
+    _eventSub = _db
+        .collection('calendarEvents')
+        .where(
+          'startDate',
+          isGreaterThanOrEqualTo: DateTime.now().subtract(
+            const Duration(days: 30),
+          ),
+        )
         .snapshots()
         .listen((snap) {
-      _events = snap.docs.map((doc) => CalendarEvent.fromFirestore(doc)).toList();
-      _scheduleNotify();
-    }, onError: (e) => _setDataError('Kalender', e));
+          _events = snap.docs
+              .map((doc) => CalendarEvent.fromFirestore(doc))
+              .toList();
+          _scheduleNotify();
+        }, onError: (e) => _setDataError('Kalender', e));
   }
 
   void _updateNotifications(QuerySnapshot snap, {required bool isBroadcast}) {
-    final newNotifs = snap.docs.map((doc) => AdminNotification.fromFirestore(doc)).toList();
+    final newNotifs = snap.docs
+        .map((doc) => AdminNotification.fromFirestore(doc))
+        .toList();
 
     if (isBroadcast) {
       _broadcastNotifs.clear();
@@ -673,26 +758,32 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   }
 
   // ── Heartbeat & Presence ──
-   void _startHeartbeat() {
-     _heartbeatTimer?.cancel();
-     // Legacy heartbeats for admin dashboard
-     HeartbeatService.startHeartbeat(userId: _auth.currentUser?.uid ?? '', deviceId: 'mobile_${_auth.currentUser?.uid}');
-     // New presence system with explicit online flag
-     _updatePresence(true);
-     _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-       if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
-         _updatePresence(true);
-         HeartbeatService.startHeartbeat(userId: _auth.currentUser?.uid ?? '', deviceId: 'mobile_${_auth.currentUser?.uid}');
-       }
-     });
-   }
+  void _startHeartbeat() {
+    _heartbeatTimer?.cancel();
+    // Legacy heartbeats for admin dashboard
+    HeartbeatService.startHeartbeat(
+      userId: _auth.currentUser?.uid ?? '',
+      deviceId: 'mobile_${_auth.currentUser?.uid}',
+    );
+    // New presence system with explicit online flag
+    _updatePresence(true);
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+        _updatePresence(true);
+        HeartbeatService.startHeartbeat(
+          userId: _auth.currentUser?.uid ?? '',
+          deviceId: 'mobile_${_auth.currentUser?.uid}',
+        );
+      }
+    });
+  }
 
-   void _stopHeartbeat() {
-     _heartbeatTimer?.cancel();
-     _heartbeatTimer = null;
-     HeartbeatService.stopHeartbeat();
-     PresenceService.stop();
-   }
+  void _stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    HeartbeatService.stopHeartbeat();
+    PresenceService.stop();
+  }
 
   void _stopPresence() {
     PresenceService.stop();
@@ -715,7 +806,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
   void _schedulePeriodicSync() {
     _syncRetryTimer?.cancel();
-    _syncRetryTimer = Timer.periodic(const Duration(seconds: 60), (timer) async {
+    _syncRetryTimer = Timer.periodic(const Duration(seconds: 60), (
+      timer,
+    ) async {
       if (_hasPendingAttendance && isLoggedIn) {
         // Only sync if we have connectivity
         bool isOnline = await _checkConnectivity();
@@ -750,9 +843,11 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .listen((snap) {
-      _leaveRequests = snap.docs.map((doc) => LeaveRequest.fromFirestore(doc)).toList();
-      notifyListeners();
-    }, onError: (e) => _setDataError('Data cuti', e));
+          _leaveRequests = snap.docs
+              .map((doc) => LeaveRequest.fromFirestore(doc))
+              .toList();
+          notifyListeners();
+        }, onError: (e) => _setDataError('Data cuti', e));
   }
 
   // ── Auth Methods ──
@@ -762,7 +857,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
     try {
       await FortressUtils.wrapWithRetry(
-        () => _auth.signInWithEmailAndPassword(email: email, password: password),
+        () =>
+            _auth.signInWithEmailAndPassword(email: email, password: password),
         taskName: 'Login',
         onStatusUpdate: (msg) {
           _fortressStatus = msg;
@@ -772,7 +868,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       _updatePresence(true);
       _startHeartbeat();
     } catch (e) {
-      throw Exception('Email atau password salah atau gangguan server. Coba cek kembali ya.');
+      throw Exception(
+        'Email atau password salah atau gangguan server. Coba cek kembali ya.',
+      );
     } finally {
       _isProcessing = false;
       _fortressStatus = '';
@@ -787,7 +885,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       await _auth.currentUser?.updatePassword(newPassword);
     } catch (e) {
       debugPrint('Error changing password: $e');
-      throw Exception('Gagal mengubah kata sandi. Pastikan Anda baru saja masuk (recent login) untuk alasan keamanan.');
+      throw Exception(
+        'Gagal mengubah kata sandi. Pastikan Anda baru saja masuk (recent login) untuk alasan keamanan.',
+      );
     } finally {
       _isProcessing = false;
       notifyListeners();
@@ -823,11 +923,10 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
     try {
       final uid = _currentUser!.uid;
-      final ref = FirebaseStorage.instance.ref().child('profile_photos/$uid.jpg');
-      await ref.putFile(
-        imageFile,
-        SettableMetadata(contentType: 'image/jpeg'),
+      final ref = FirebaseStorage.instance.ref().child(
+        'profile_photos/$uid.jpg',
       );
+      await ref.putFile(imageFile, SettableMetadata(contentType: 'image/jpeg'));
       final url = await ref.getDownloadURL();
       // Cache-buster supaya CachedNetworkImage memuat foto terbaru, bukan versi lama.
       final freshUrl = '$url?v=${DateTime.now().millisecondsSinceEpoch}';
@@ -861,7 +960,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     required String description,
     String? phone,
   }) async {
-    if (name.trim().isEmpty || emailOrEmployeeId.trim().isEmpty || description.trim().isEmpty) {
+    if (name.trim().isEmpty ||
+        emailOrEmployeeId.trim().isEmpty ||
+        description.trim().isEmpty) {
       throw Exception('Nama, email/ID, dan deskripsi wajib diisi.');
     }
     await _db.collection('login_issues').add({
@@ -901,7 +1002,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
     try {
       // Fetch limited records to avoid composite index requirement
-      final snap = await _db.collection('attendance')
+      final snap = await _db
+          .collection('attendance')
           .where('userId', isEqualTo: _currentUser!.uid)
           .orderBy('attendanceDate', descending: true)
           .limit(100)
@@ -924,10 +1026,17 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
   // ── Attendance Logic ──
   bool get hasClockedInToday {
-    return _attendanceRecords.any((r) => r.checkIn != null && r.checkOut == null);
+    return _attendanceRecords.any(
+      (r) => r.checkIn != null && r.checkOut == null,
+    );
   }
 
-  Future<void> addAttendanceCheckIn(String status, {String? localImagePath, double lat = 0, double lng = 0}) async {
+  Future<void> addAttendanceCheckIn(
+    String status, {
+    String? localImagePath,
+    double lat = 0,
+    double lng = 0,
+  }) async {
     if (_currentUser == null) return;
     _isProcessing = true;
     notifyListeners();
@@ -954,13 +1063,23 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
             'time': FieldValue.serverTimestamp(),
             'latitude': lat,
             'longitude': lng,
-            'distance': Geolocator.distanceBetween(lat, lng, _officeLat, _officeLng).round(),
+            'distance': Geolocator.distanceBetween(
+              lat,
+              lng,
+              _officeLat,
+              _officeLng,
+            ).round(),
             'photoUrl': localImagePath,
           },
           'checkInTime': FieldValue.serverTimestamp(),
           'checkInLatitude': lat,
           'checkInLongitude': lng,
-          'checkInDistance': Geolocator.distanceBetween(lat, lng, _officeLat, _officeLng).round(),
+          'checkInDistance': Geolocator.distanceBetween(
+            lat,
+            lng,
+            _officeLat,
+            _officeLng,
+          ).round(),
           'checkInPhotoUrl': localImagePath,
           'syncStatus': 'pending',
           'createdAt': FieldValue.serverTimestamp(),
@@ -1003,10 +1122,14 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         }
 
         // Mark as synced immediately since we wrote directly
-        await _db.collection('attendance').doc(docId).update({'syncStatus': 'synced'});
+        await _db.collection('attendance').doc(docId).update({
+          'syncStatus': 'synced',
+        });
       } else {
         if (!_allowOfflineAttendance) {
-          throw Exception('Absensi offline dinonaktifkan admin. Sambungkan internet untuk absen masuk.');
+          throw Exception(
+            'Absensi offline dinonaktifkan admin. Sambungkan internet untuk absen masuk.',
+          );
         }
         final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
         final data = {
@@ -1021,13 +1144,23 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
             'time': DateTime.now().toIso8601String(),
             'latitude': lat,
             'longitude': lng,
-            'distance': Geolocator.distanceBetween(lat, lng, _officeLat, _officeLng).round(),
+            'distance': Geolocator.distanceBetween(
+              lat,
+              lng,
+              _officeLat,
+              _officeLng,
+            ).round(),
             'photoUrl': localImagePath,
           },
           'checkInTime': DateTime.now().toIso8601String(),
           'checkInLatitude': lat,
           'checkInLongitude': lng,
-          'checkInDistance': Geolocator.distanceBetween(lat, lng, _officeLat, _officeLng).round(),
+          'checkInDistance': Geolocator.distanceBetween(
+            lat,
+            lng,
+            _officeLat,
+            _officeLng,
+          ).round(),
           'checkInPhotoUrl': localImagePath,
           'syncStatus': 'pending',
           'createdAt': DateTime.now().toIso8601String(),
@@ -1039,7 +1172,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       }
     } catch (e) {
       debugPrint('Attendance error: $e');
-      throw Exception('Gagal mengirim absensi. Data akan disimpan secara otomatis jika offline.');
+      throw Exception(
+        'Gagal mengirim absensi. Data akan disimpan secara otomatis jika offline.',
+      );
     } finally {
       _isProcessing = false;
       notifyListeners();
@@ -1048,7 +1183,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
   Future<bool> _checkConnectivity() async {
     try {
-      final result = await InternetAddress.lookup('google.com').timeout(const Duration(seconds: 3));
+      final result = await InternetAddress.lookup(
+        'google.com',
+      ).timeout(const Duration(seconds: 3));
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
     } catch (_) {
       return false;
@@ -1070,29 +1207,29 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         // sync delay-nya panjang atau melewati pergantian hari UTC.
         final dateStr = record['attendanceDate'] as String;
         final docId = '${_currentUser!.uid}_$dateStr';
-        
-         await _db.runTransaction((transaction) async {
-           final docRef = _db.collection('attendance').doc(docId);
-           final snapshot = await transaction.get(docRef);
-           if (snapshot.exists) {
-             return; // Already exists
-           }
-           final firestoreData = Map<String, dynamic>.from(record);
-           final now = FieldValue.serverTimestamp();
 
-           // Override with server timestamp for all time fields
-           firestoreData['attendanceDate'] = dateStr;
-           firestoreData['checkIn']['time'] = now;
-           firestoreData['checkInTime'] = now;
-           firestoreData['createdAt'] = now;
-           firestoreData['updatedAt'] = now;
-           firestoreData['syncStatus'] = 'syncing';
+        await _db.runTransaction((transaction) async {
+          final docRef = _db.collection('attendance').doc(docId);
+          final snapshot = await transaction.get(docRef);
+          if (snapshot.exists) {
+            return; // Already exists
+          }
+          final firestoreData = Map<String, dynamic>.from(record);
+          final now = FieldValue.serverTimestamp();
 
-           firestoreData['checkIn']['photoUrl'] = 'uploading...';
-           firestoreData['checkInPhotoUrl'] = 'uploading...';
+          // Override with server timestamp for all time fields
+          firestoreData['attendanceDate'] = dateStr;
+          firestoreData['checkIn']['time'] = now;
+          firestoreData['checkInTime'] = now;
+          firestoreData['createdAt'] = now;
+          firestoreData['updatedAt'] = now;
+          firestoreData['syncStatus'] = 'syncing';
 
-           transaction.set(docRef, firestoreData);
-         });
+          firestoreData['checkIn']['photoUrl'] = 'uploading...';
+          firestoreData['checkInPhotoUrl'] = 'uploading...';
+
+          transaction.set(docRef, firestoreData);
+        });
 
         final localPath = record['checkIn']['photoUrl'];
         if (localPath != null && File(localPath).existsSync()) {
@@ -1119,7 +1256,11 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     debugPrint('Sync complete: $successes success, $failures failed');
   }
 
-  Future<void> addAttendanceCheckOut({String? localImagePath, double lat = 0, double lng = 0}) async {
+  Future<void> addAttendanceCheckOut({
+    String? localImagePath,
+    double lat = 0,
+    double lng = 0,
+  }) async {
     if (_currentUser == null) return;
     _isProcessing = true;
     notifyListeners();
@@ -1127,14 +1268,21 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     try {
       final record = _attendanceRecords.firstWhere(
         (r) => r.checkIn != null && r.checkOut == null,
-        orElse: () => throw Exception('Absensi masuk hari ini tidak ditemukan atau sudah absen keluar.'),
+        orElse: () => throw Exception(
+          'Absensi masuk hari ini tidak ditemukan atau sudah absen keluar.',
+        ),
       );
 
       final checkOutData = {
         'time': DateTime.now().toIso8601String(),
         'latitude': lat,
         'longitude': lng,
-        'distance': Geolocator.distanceBetween(lat, lng, _officeLat, _officeLng).round(),
+        'distance': Geolocator.distanceBetween(
+          lat,
+          lng,
+          _officeLat,
+          _officeLng,
+        ).round(),
         'photoUrl': localImagePath,
       };
 
@@ -1142,7 +1290,12 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         'checkOutTime': DateTime.now().toIso8601String(),
         'checkOutLatitude': lat,
         'checkOutLongitude': lng,
-        'checkOutDistance': Geolocator.distanceBetween(lat, lng, _officeLat, _officeLng).round(),
+        'checkOutDistance': Geolocator.distanceBetween(
+          lat,
+          lng,
+          _officeLat,
+          _officeLng,
+        ).round(),
         'checkOutPhotoUrl': localImagePath,
       };
 
@@ -1152,7 +1305,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         final checkOutMap = Map<String, dynamic>.from(checkOutData);
         final flatMap = Map<String, dynamic>.from(flatCheckOutData);
         final now = FieldValue.serverTimestamp();
-        
+
         checkOutMap['time'] = now;
         flatMap['checkOutTime'] = now;
 
@@ -1161,10 +1314,14 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           ...flatMap,
           'updatedAt': now,
         };
-        
+
         await _db.collection('attendance').doc(record.id).update(firestoreData);
         if (localImagePath != null) {
-          await _uploadAttendancePhoto(record.id, localImagePath, isCheckOut: true);
+          await _uploadAttendancePhoto(
+            record.id,
+            localImagePath,
+            isCheckOut: true,
+          );
         }
 
         // Audit log (non-blocking)
@@ -1196,11 +1353,20 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  Future<void> _uploadAttendancePhoto(String docId, String localPath, {bool isCheckOut = false}) async {
+  Future<void> _uploadAttendancePhoto(
+    String docId,
+    String localPath, {
+    bool isCheckOut = false,
+  }) async {
     try {
       final prefix = isCheckOut ? 'checkout' : 'checkin';
-      final ref = FirebaseStorage.instance.ref().child('attendance_photos/${prefix}_$docId.jpg');
-      await ref.putFile(File(localPath), SettableMetadata(contentType: 'image/jpeg'));
+      final ref = FirebaseStorage.instance.ref().child(
+        'attendance_photos/${prefix}_$docId.jpg',
+      );
+      await ref.putFile(
+        File(localPath),
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
       final url = await ref.getDownloadURL();
 
       final field = isCheckOut ? 'checkOut.photoUrl' : 'checkIn.photoUrl';
@@ -1219,12 +1385,20 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   // ── Stats Logic ──
   bool get isLateForClockIn {
     final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day, officeStartTime.hour, officeStartTime.minute);
+    final start = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      officeStartTime.hour,
+      officeStartTime.minute,
+    );
     return now.isAfter(start.add(const Duration(minutes: 1)));
   }
 
   Map<String, dynamic> calculateOvertime() {
-    final overtimeRecords = _attendanceRecords.where((r) => r.status == 'overtime').length;
+    final overtimeRecords = _attendanceRecords
+        .where((r) => r.status == 'overtime')
+        .length;
     return {
       'hours': overtimeRecords * 2,
       'estimatedPay': overtimeRecords * 50000,
@@ -1237,14 +1411,19 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       return d?.month == month && d?.year == year;
     }).toList();
 
-    final approvedLeaves = _leaveRequests.where((r) => 
-      r.startDate.month == month && r.startDate.year == year && r.status == 'approved'
-    ).toList();
+    final approvedLeaves = _leaveRequests
+        .where(
+          (r) =>
+              r.startDate.month == month &&
+              r.startDate.year == year &&
+              r.status == 'approved',
+        )
+        .toList();
 
     int present = monthRecords.length;
     int leaves = approvedLeaves.fold<int>(0, (acc, r) => acc + r.totalDays);
     int late = monthRecords.where((r) => r.status == 'late').length;
-    
+
     double punctuality = present > 0 ? ((present - late) / present) : 1.0;
 
     return {
@@ -1267,7 +1446,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       await FortressUtils.wrapWithRetry(
         () async {
           final now = FieldValue.serverTimestamp();
-          
+
           // 1. Send to dedicated SOS telemetry for real-time dashboard
           await _db.collection('sos_alerts').add({
             'userId': _currentUser!.uid,
@@ -1391,7 +1570,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   // ── Admin Retrieval for Chat ──
   Future<UserModel?> getFirstAdmin() async {
     try {
-      final snap = await _db.collection('users')
+      final snap = await _db
+          .collection('users')
           .where('role', whereIn: ['admin', 'moderator'])
           .limit(1)
           .get();
@@ -1412,7 +1592,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   }
 
   void _listenToSettings() {
-    _settingsSub = _db.collection('settings').doc('system').snapshots().listen((snap) {
+    _settingsSub = _db.collection('settings').doc('system').snapshots().listen((
+      snap,
+    ) {
       if (!snap.exists) return;
       final data = snap.data();
       if (data == null) return;
@@ -1427,18 +1609,21 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         // Jam masuk/keluar dari admin (kalau tersedia) untuk pengingat absensi.
         officeStartTime =
             _parseTimeOfDay(office['startTime'] ?? office['checkInTime']) ??
-                officeStartTime;
+            officeStartTime;
         officeEndTime =
             _parseTimeOfDay(office['endTime'] ?? office['checkOutTime']) ??
-                officeEndTime;
+            officeEndTime;
       }
 
       // Setting tab Absensi — sekarang benar-benar dipatuhi APK.
       final att = data['attendance'];
       if (att is Map<String, dynamic>) {
-        _allowOfflineAttendance = (att['allowOfflineAttendance'] as bool?) ?? _allowOfflineAttendance;
-        _maxFaceAttempts = (att['maxFaceAttempts'] as num?)?.toInt() ?? _maxFaceAttempts;
-        _courierBypassGeofence = (att['courierBypassGeofence'] as bool?) ?? _courierBypassGeofence;
+        _allowOfflineAttendance =
+            (att['allowOfflineAttendance'] as bool?) ?? _allowOfflineAttendance;
+        _maxFaceAttempts =
+            (att['maxFaceAttempts'] as num?)?.toInt() ?? _maxFaceAttempts;
+        _courierBypassGeofence =
+            (att['courierBypassGeofence'] as bool?) ?? _courierBypassGeofence;
       }
 
       notifyListeners();
@@ -1527,8 +1712,11 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       String? attachmentUrl;
       if (evidenceFile != null) {
         final ext = evidenceFile.path.split('.').last;
-        final fileName = 'dispute_${_currentUser!.uid}_${DateTime.now().millisecondsSinceEpoch}.$ext';
-        final ref = FirebaseStorage.instance.ref().child('dispute_evidence/$fileName');
+        final fileName =
+            'dispute_${_currentUser!.uid}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+        final ref = FirebaseStorage.instance.ref().child(
+          'dispute_evidence/$fileName',
+        );
         await ref.putFile(evidenceFile);
         attachmentUrl = await ref.getDownloadURL();
       }
@@ -1600,9 +1788,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       final ext = evidenceFile.path.split('.').last;
       final fileName =
           'reply_${_currentUser!.uid}_${DateTime.now().millisecondsSinceEpoch}.$ext';
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('dispute_evidence/$fileName');
+      final ref = FirebaseStorage.instance.ref().child(
+        'dispute_evidence/$fileName',
+      );
       await ref.putFile(evidenceFile);
       attachmentUrl = await ref.getDownloadURL();
     }
@@ -1690,8 +1878,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         'isSystem': true,
         'text': satisfied
             ? (rating != null
-                ? '✅ Masalah selesai. Rating: $rating/5${(feedback ?? '').isNotEmpty ? '\n"$feedback"' : ''}'
-                : '✅ Masalah selesai.')
+                  ? '✅ Masalah selesai. Rating: $rating/5${(feedback ?? '').isNotEmpty ? '\n"$feedback"' : ''}'
+                  : '✅ Masalah selesai.')
             : '🔄 Tiket dibuka kembali oleh user.',
         'createdAt': now,
       });

@@ -48,8 +48,8 @@ class BentoTile extends StatelessWidget {
             ),
           ],
         ),
-        child: isLarge 
-            ? _buildLargeLayout(zenNavy, zenGrey, zenIndigo) 
+        child: isLarge
+            ? _buildLargeLayout(zenNavy, zenGrey, zenIndigo)
             : _buildSmallLayout(zenNavy, zenGrey, zenIndigo),
       ),
     );
@@ -98,7 +98,11 @@ class BentoTile extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Icon(Icons.chevron_right_rounded, color: grey.withValues(alpha: 0.4), size: 22),
+        Icon(
+          Icons.chevron_right_rounded,
+          color: grey.withValues(alpha: 0.4),
+          size: 22,
+        ),
       ],
     );
   }

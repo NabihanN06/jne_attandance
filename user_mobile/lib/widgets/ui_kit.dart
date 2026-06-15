@@ -14,14 +14,13 @@ TextStyle _jk({
   Color? color,
   double? height,
   double? spacing,
-}) =>
-    GoogleFonts.plusJakartaSans(
-      fontSize: size,
-      fontWeight: weight,
-      color: color,
-      height: height,
-      letterSpacing: spacing,
-    );
+}) => GoogleFonts.plusJakartaSans(
+  fontSize: size,
+  fontWeight: weight,
+  color: color,
+  height: height,
+  letterSpacing: spacing,
+);
 
 /// Tombol kembali bundar untuk app bar.
 class AppBackButton extends StatelessWidget {
@@ -33,7 +32,11 @@ class AppBackButton extends StatelessWidget {
     final pal = context.palette;
     return IconButton(
       onPressed: onTap ?? () => Navigator.maybePop(context),
-      icon: Icon(Icons.arrow_back_ios_new_rounded, color: pal.textPrimary, size: 20),
+      icon: Icon(
+        Icons.arrow_back_ios_new_rounded,
+        color: pal.textPrimary,
+        size: 20,
+      ),
     );
   }
 }
@@ -42,8 +45,11 @@ class AppBackButton extends StatelessWidget {
 class SectionLabel extends StatelessWidget {
   final String title;
   final EdgeInsets padding;
-  const SectionLabel(this.title,
-      {super.key, this.padding = const EdgeInsets.fromLTRB(6, 0, 6, 12)});
+  const SectionLabel(
+    this.title, {
+    super.key,
+    this.padding = const EdgeInsets.fromLTRB(6, 0, 6, 12),
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -145,17 +151,34 @@ class AppActionRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: _jk(size: 14.5, weight: FontWeight.w700, color: pal.textPrimary)),
+                  Text(
+                    title,
+                    style: _jk(
+                      size: 14.5,
+                      weight: FontWeight.w700,
+                      color: pal.textPrimary,
+                    ),
+                  ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
-                    Text(subtitle!, style: _jk(size: 11.5, weight: FontWeight.w500, color: pal.textSub)),
+                    Text(
+                      subtitle!,
+                      style: _jk(
+                        size: 11.5,
+                        weight: FontWeight.w500,
+                        color: pal.textSub,
+                      ),
+                    ),
                   ],
                 ],
               ),
             ),
             trailing ??
-                Icon(Icons.chevron_right_rounded,
-                    color: pal.textSub.withValues(alpha: 0.5), size: 22),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: pal.textSub.withValues(alpha: 0.5),
+                  size: 22,
+                ),
           ],
         ),
       ),
@@ -168,7 +191,12 @@ class AppInfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const AppInfoRow({super.key, required this.icon, required this.label, required this.value});
+  const AppInfoRow({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -190,9 +218,23 @@ class AppInfoRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: _jk(size: 11.5, weight: FontWeight.w600, color: pal.textSub)),
+                Text(
+                  label,
+                  style: _jk(
+                    size: 11.5,
+                    weight: FontWeight.w600,
+                    color: pal.textSub,
+                  ),
+                ),
                 const SizedBox(height: 3),
-                Text(value, style: _jk(size: 14.5, weight: FontWeight.w700, color: pal.textPrimary)),
+                Text(
+                  value,
+                  style: _jk(
+                    size: 14.5,
+                    weight: FontWeight.w700,
+                    color: pal.textPrimary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -208,8 +250,12 @@ class AppRowDivider extends StatelessWidget {
   const AppRowDivider({super.key, this.indent = 64});
 
   @override
-  Widget build(BuildContext context) =>
-      Divider(height: 1, thickness: 1, color: context.palette.border, indent: indent);
+  Widget build(BuildContext context) => Divider(
+    height: 1,
+    thickness: 1,
+    color: context.palette.border,
+    indent: indent,
+  );
 }
 
 /// Pill status kecil dengan ikon.
@@ -217,7 +263,12 @@ class StatusPill extends StatelessWidget {
   final String label;
   final Color color;
   final IconData? icon;
-  const StatusPill({super.key, required this.label, required this.color, this.icon});
+  const StatusPill({
+    super.key,
+    required this.label,
+    required this.color,
+    this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -235,7 +286,10 @@ class StatusPill extends StatelessWidget {
             Icon(icon, color: color, size: 13),
             const SizedBox(width: 5),
           ],
-          Text(label, style: _jk(size: 11, weight: FontWeight.w700, color: color)),
+          Text(
+            label,
+            style: _jk(size: 11, weight: FontWeight.w700, color: color),
+          ),
         ],
       ),
     );
@@ -281,7 +335,11 @@ class PrimaryButton extends StatelessWidget {
             color: color,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 8)),
+              BoxShadow(
+                color: color.withValues(alpha: 0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
             ],
           ),
           child: Center(
@@ -290,7 +348,9 @@ class PrimaryButton extends StatelessWidget {
                     width: 22,
                     height: 22,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2.4, valueColor: AlwaysStoppedAnimation(foreground)),
+                      strokeWidth: 2.4,
+                      valueColor: AlwaysStoppedAnimation(foreground),
+                    ),
                   )
                 : Row(
                     mainAxisSize: MainAxisSize.min,
@@ -299,7 +359,14 @@ class PrimaryButton extends StatelessWidget {
                         Icon(icon, color: foreground, size: 19),
                         const SizedBox(width: 10),
                       ],
-                      Text(label, style: _jk(size: 15.5, weight: FontWeight.w800, color: foreground)),
+                      Text(
+                        label,
+                        style: _jk(
+                          size: 15.5,
+                          weight: FontWeight.w800,
+                          color: foreground,
+                        ),
+                      ),
                     ],
                   ),
           ),
@@ -343,14 +410,27 @@ class EmptyState extends StatelessWidget {
               child: Icon(icon, size: 42, color: pal.textSub),
             ),
             const SizedBox(height: 20),
-            Text(title,
-                textAlign: TextAlign.center,
-                style: _jk(size: 16, weight: FontWeight.w800, color: pal.textPrimary)),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: _jk(
+                size: 16,
+                weight: FontWeight.w800,
+                color: pal.textPrimary,
+              ),
+            ),
             if (subtitle != null) ...[
               const SizedBox(height: 8),
-              Text(subtitle!,
-                  textAlign: TextAlign.center,
-                  style: _jk(size: 13, weight: FontWeight.w500, color: pal.textSub, height: 1.5)),
+              Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                style: _jk(
+                  size: 13,
+                  weight: FontWeight.w500,
+                  color: pal.textSub,
+                  height: 1.5,
+                ),
+              ),
             ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 24),
@@ -425,13 +505,20 @@ class GlassCard extends StatelessWidget {
 
 /// Helper snackbar konsisten.
 SnackBar appSnack(String message, Color color) => SnackBar(
-      content: Text(message, style: _jk(size: 13, weight: FontWeight.w700, color: Colors.white)),
-      backgroundColor: color,
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-    );
+  content: Text(
+    message,
+    style: _jk(size: 13, weight: FontWeight.w700, color: Colors.white),
+  ),
+  backgroundColor: color,
+  behavior: SnackBarBehavior.floating,
+  margin: const EdgeInsets.all(16),
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+);
 
-void showAppSnack(BuildContext context, String message, {Color color = AppColors.green}) {
+void showAppSnack(
+  BuildContext context,
+  String message, {
+  Color color = AppColors.green,
+}) {
   ScaffoldMessenger.of(context).showSnackBar(appSnack(message, color));
 }

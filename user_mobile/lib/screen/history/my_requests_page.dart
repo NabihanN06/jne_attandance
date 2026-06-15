@@ -17,7 +17,8 @@ class MyRequestsPage extends StatefulWidget {
   State<MyRequestsPage> createState() => _MyRequestsPageState();
 }
 
-class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProviderStateMixin {
+class _MyRequestsPageState extends State<MyRequestsPage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -48,15 +49,24 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
         title: Text(
           context.tr('request_center'),
           style: GoogleFonts.plusJakartaSans(
-              color: pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800),
+            color: pal.textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.jneOrange,
           indicatorWeight: 3,
           indicatorSize: TabBarIndicatorSize.label,
-          labelStyle: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w800),
-          unselectedLabelStyle: GoogleFonts.plusJakartaSans(fontSize: 12.5, fontWeight: FontWeight.w600),
+          labelStyle: GoogleFonts.plusJakartaSans(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w800,
+          ),
+          unselectedLabelStyle: GoogleFonts.plusJakartaSans(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+          ),
           unselectedLabelColor: pal.textFaint,
           labelColor: pal.textPrimary,
           tabs: [
@@ -98,7 +108,8 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
       return EmptyState(
         icon: Icons.inbox_rounded,
         title: context.tr('no_requests_yet'),
-        subtitle: '${context.tr('list_prefix')} $emptyLabel ${context.tr('list_suffix')}',
+        subtitle:
+            '${context.tr('list_prefix')} $emptyLabel ${context.tr('list_suffix')}',
       );
     }
 
@@ -114,18 +125,25 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
             item: item,
             onTap: item is DisputeRequest
                 ? () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => DisputeDetailScreen(dispute: item)),
-                    )
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DisputeDetailScreen(dispute: item),
+                    ),
+                  )
                 : null,
-            onCancel: onCancel != null ? () => _handleCancel(item, onCancel) : null,
+            onCancel: onCancel != null
+                ? () => _handleCancel(item, onCancel)
+                : null,
           ),
         );
       },
     );
   }
 
-  Future<void> _handleCancel<T>(T item, Future<void> Function(T) cancelFn) async {
+  Future<void> _handleCancel<T>(
+    T item,
+    Future<void> Function(T) cancelFn,
+  ) async {
     final pal = context.palette;
     final okMsg = context.tr('request_cancelled');
     final failPre = context.tr('fail_prefix');
@@ -135,26 +153,49 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
         backgroundColor: pal.card,
         surfaceTintColor: pal.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(context.tr('cancel_request_q'),
-            style: GoogleFonts.plusJakartaSans(
-                fontWeight: FontWeight.w800, fontSize: 18, color: pal.textPrimary)),
-        content: Text(context.tr('cancel_request_desc'),
-            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: pal.textSub, height: 1.5)),
+        title: Text(
+          context.tr('cancel_request_q'),
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+            color: pal.textPrimary,
+          ),
+        ),
+        content: Text(
+          context.tr('cancel_request_desc'),
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 14,
+            color: pal.textSub,
+            height: 1.5,
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(context.tr('no'),
-                style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontWeight: FontWeight.w700)),
+            child: Text(
+              context.tr('no'),
+              style: GoogleFonts.plusJakartaSans(
+                color: pal.textSub,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.brandRed,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
-            child: Text(context.tr('yes_cancel'),
-                style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.w800)),
+            child: Text(
+              context.tr('yes_cancel'),
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
         ],
       ),
@@ -166,8 +207,11 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
         if (mounted) showAppSnack(context, okMsg, color: AppColors.green);
       } catch (e) {
         if (mounted) {
-          showAppSnack(context, '$failPre: ${e.toString().replaceAll('Exception: ', '')}',
-              color: AppColors.brandRed);
+          showAppSnack(
+            context,
+            '$failPre: ${e.toString().replaceAll('Exception: ', '')}',
+            color: AppColors.brandRed,
+          );
         }
       }
     }
@@ -176,26 +220,41 @@ class _MyRequestsPageState extends State<MyRequestsPage> with SingleTickerProvid
 
 String _leaveTypeLabel(BuildContext context, String type) {
   switch (type) {
-    case 'annual': return context.tr('leave_annual');
-    case 'sick': return context.tr('lt_sick');
-    case 'permission': return context.tr('lt_permission');
-    case 'personal': return context.tr('lt_personal');
-    case 'urgent': return context.tr('lt_family');
-    default: return type.toUpperCase();
+    case 'annual':
+      return context.tr('leave_annual');
+    case 'sick':
+      return context.tr('lt_sick');
+    case 'permission':
+      return context.tr('lt_permission');
+    case 'personal':
+      return context.tr('lt_personal');
+    case 'urgent':
+      return context.tr('lt_family');
+    default:
+      return type.toUpperCase();
   }
 }
 
 String _statusLabel(BuildContext context, String s) {
   switch (s) {
-    case 'approved': return context.tr('st_approved');
-    case 'rejected': return context.tr('st_rejected');
-    case 'resolved': return context.tr('st_resolved');
-    case 'pending': return context.tr('st_pending');
-    case 'in_review': return context.tr('st_in_review');
-    case 'reopened': return context.tr('st_reopened');
-    case 'closed': return context.tr('st_closed');
-    case 'cancelled': return context.tr('st_cancelled');
-    default: return s.toUpperCase();
+    case 'approved':
+      return context.tr('st_approved');
+    case 'rejected':
+      return context.tr('st_rejected');
+    case 'resolved':
+      return context.tr('st_resolved');
+    case 'pending':
+      return context.tr('st_pending');
+    case 'in_review':
+      return context.tr('st_in_review');
+    case 'reopened':
+      return context.tr('st_reopened');
+    case 'closed':
+      return context.tr('st_closed');
+    case 'cancelled':
+      return context.tr('st_cancelled');
+    default:
+      return s.toUpperCase();
   }
 }
 
@@ -226,10 +285,12 @@ class _RequestCard<T> extends StatelessWidget {
     const fmt = 'dd MMM yyyy';
     if (item is LeaveRequest) {
       final req = item as LeaveRequest;
-      title = '${context.tr('nav_leave')}: ${_leaveTypeLabel(context, req.type)}';
+      title =
+          '${context.tr('nav_leave')}: ${_leaveTypeLabel(context, req.type)}';
       subtitle = req.reason;
       status = req.status;
-      final sameDay = req.startDate.year == req.endDate.year &&
+      final sameDay =
+          req.startDate.year == req.endDate.year &&
           req.startDate.month == req.endDate.month &&
           req.startDate.day == req.endDate.day;
       dateStr = sameDay
@@ -237,10 +298,14 @@ class _RequestCard<T> extends StatelessWidget {
           : '${DateFormat('dd MMM', lang).format(req.startDate)} – ${DateFormat(fmt, lang).format(req.endDate)}';
     } else if (item is OvertimeRequest) {
       final req = item as OvertimeRequest;
-      title = '${context.tr('overtime_word')} ${req.overtimeHours} ${context.tr('hours_word')}';
+      title =
+          '${context.tr('overtime_word')} ${req.overtimeHours} ${context.tr('hours_word')}';
       subtitle = req.reason;
       status = req.status;
-      dateStr = DateFormat(fmt, lang).format(DateTime.tryParse(req.date) ?? DateTime.now());
+      dateStr = DateFormat(
+        fmt,
+        lang,
+      ).format(DateTime.tryParse(req.date) ?? DateTime.now());
     } else if (item is DisputeRequest) {
       final req = item as DisputeRequest;
       isDispute = true;
@@ -271,19 +336,31 @@ class _RequestCard<T> extends StatelessWidget {
                     Text(
                       dateStr.toUpperCase(),
                       style: GoogleFonts.plusJakartaSans(
-                          color: pal.textFaint, fontSize: 9.5, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                        color: pal.textFaint,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                        border: Border.all(
+                          color: statusColor.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Text(
                         _statusLabel(context, status),
                         style: GoogleFonts.plusJakartaSans(
-                            color: statusColor, fontSize: 10, fontWeight: FontWeight.w800),
+                          color: statusColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ],
@@ -292,7 +369,10 @@ class _RequestCard<T> extends StatelessWidget {
                 Text(
                   title,
                   style: GoogleFonts.plusJakartaSans(
-                      color: pal.textPrimary, fontSize: 15.5, fontWeight: FontWeight.w800),
+                    color: pal.textPrimary,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -300,17 +380,30 @@ class _RequestCard<T> extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.plusJakartaSans(
-                      color: pal.textSub, fontSize: 12.5, fontWeight: FontWeight.w500, height: 1.4),
+                    color: pal.textSub,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                  ),
                 ),
                 if (isDispute) ...[
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      Icon(Icons.forum_rounded, size: 13, color: AppColors.blue),
+                      Icon(
+                        Icons.forum_rounded,
+                        size: 13,
+                        color: AppColors.blue,
+                      ),
                       const SizedBox(width: 5),
-                      Text(context.tr('tap_see_admin_reply'),
-                          style: GoogleFonts.plusJakartaSans(
-                              color: AppColors.blue, fontSize: 11, fontWeight: FontWeight.w700)),
+                      Text(
+                        context.tr('tap_see_admin_reply'),
+                        style: GoogleFonts.plusJakartaSans(
+                          color: AppColors.blue,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -323,16 +416,27 @@ class _RequestCard<T> extends StatelessWidget {
                     width: double.infinity,
                     child: TextButton.icon(
                       onPressed: onCancel,
-                      icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.brandRed),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 16,
+                        color: AppColors.brandRed,
+                      ),
                       label: Text(
                         context.tr('withdraw_request'),
                         style: GoogleFonts.plusJakartaSans(
-                            color: AppColors.brandRed, fontSize: 12, fontWeight: FontWeight.w800),
+                          color: AppColors.brandRed,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        backgroundColor: AppColors.brandRed.withValues(alpha: 0.06),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        backgroundColor: AppColors.brandRed.withValues(
+                          alpha: 0.06,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                   ),

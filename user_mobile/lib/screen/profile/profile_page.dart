@@ -45,12 +45,19 @@ class _ProfilePageState extends State<ProfilePage> {
         title: Text(
           context.tr('profile_title'),
           style: GoogleFonts.plusJakartaSans(
-              color: pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800),
+            color: pal.textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         actions: [
           IconButton(
             onPressed: () => Navigator.pushNamed(context, '/settings'),
-            icon: Icon(Icons.settings_outlined, color: pal.textPrimary, size: 22),
+            icon: Icon(
+              Icons.settings_outlined,
+              color: pal.textPrimary,
+              size: 22,
+            ),
           ),
         ],
       ),
@@ -59,143 +66,179 @@ class _ProfilePageState extends State<ProfilePage> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
           children: [
-          // ── Premium hero header ──
-          FadeInDown(
-            duration: const Duration(milliseconds: 450),
-            child: _heroHeader(user, stats),
-          ),
-          const SizedBox(height: 20),
-
-          // ── Leave balance ──
-          FadeInUp(
-            duration: const Duration(milliseconds: 450),
-            child: _leaveBalanceCard(balance, pal),
-          ),
-          const SizedBox(height: 24),
-
-          // ── Account info ──
-          SectionLabel(context.tr('sec_account')),
-          GlassCard(
-            padding: EdgeInsets.zero,
-            child:Column(children: [
-              AppInfoRow(icon: Icons.alternate_email_rounded, label: context.tr('email'), value: user.email),
-              const AppRowDivider(),
-              AppInfoRow(
-                  icon: Icons.phone_iphone_rounded,
-                  label: context.tr('phone'),
-                  value: user.phone.isEmpty ? context.tr('not_set') : user.phone),
-              const AppRowDivider(),
-              AppInfoRow(
-                  icon: Icons.badge_outlined,
-                  label: context.tr('employee_id'),
-                  value: user.employeeId.isEmpty ? '-' : user.employeeId),
-            ]),
-          ),
-          const SizedBox(height: 24),
-
-          // ── Services ──
-          SectionLabel(context.tr('sec_services')),
-          GlassCard(
-            padding: EdgeInsets.zero,
-            child:Column(children: [
-              AppActionRow(
-                icon: Icons.assignment_outlined,
-                iconColor: AppColors.blue,
-                title: context.tr('request_center'),
-                subtitle: context.tr('request_center_sub'),
-                onTap: () => Navigator.pushNamed(context, '/my_requests'),
-              ),
-              const AppRowDivider(),
-              AppActionRow(
-                icon: Icons.support_agent_rounded,
-                iconColor: AppColors.green,
-                title: context.tr('menu_chat'),
-                subtitle: context.tr('chat_hr_sub'),
-                onTap: () => Navigator.pushNamed(context, '/chat'),
-              ),
-              const AppRowDivider(),
-              AppActionRow(
-                icon: Icons.help_outline_rounded,
-                iconColor: AppColors.amber,
-                title: context.tr('help_faq'),
-                subtitle: context.tr('help_faq_sub'),
-                onTap: () => Navigator.push(
-                    context, MaterialPageRoute(builder: (_) => const FaqScreen())),
-              ),
-            ]),
-          ),
-          const SizedBox(height: 24),
-
-          // ── Card & biometric ──
-          SectionLabel(context.tr('sec_card_bio')),
-          GlassCard(
-            padding: EdgeInsets.zero,
-            child:Column(children: [
-              AppActionRow(
-                icon: Icons.contact_mail_outlined,
-                iconColor: AppColors.brandRed,
-                title: context.tr('id_card'),
-                subtitle: context.tr('id_card_sub'),
-                onTap: () => Navigator.pushNamed(context, '/profile/id_card'),
-              ),
-              const AppRowDivider(),
-              AppActionRow(
-                icon: Icons.face_retouching_natural_rounded,
-                iconColor: AppColors.violet,
-                title: context.tr('reenroll_face'),
-                subtitle: context.tr('reenroll_face_sub'),
-                onTap: () => Navigator.push(
-                    context, MaterialPageRoute(builder: (_) => const EnrollPage())),
-              ),
-            ]),
-          ),
-          const SizedBox(height: 24),
-
-          // ── Security ──
-          SectionLabel(context.tr('sec_security')),
-          GlassCard(
-            padding: EdgeInsets.zero,
-            child:AppActionRow(
-              icon: Icons.lock_outline_rounded,
-              iconColor: const Color(0xFF0EA5E9),
-              title: context.tr('change_password'),
-              subtitle: context.tr('change_password_sub'),
-              onTap: () => _showChangePasswordDialog(context, provider, pal.isDark),
+            // ── Premium hero header ──
+            FadeInDown(
+              duration: const Duration(milliseconds: 450),
+              child: _heroHeader(user, stats),
             ),
-          ),
-          const SizedBox(height: 28),
+            const SizedBox(height: 20),
 
-          // ── Logout ──
-          GestureDetector(
-            onTap: () => _confirmLogout(context, provider, pal.isDark),
-            child: Container(
-              height: 56,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.brandRed.withValues(alpha: pal.isDark ? 0.14 : 0.08),
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.brandRed.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+            // ── Leave balance ──
+            FadeInUp(
+              duration: const Duration(milliseconds: 450),
+              child: _leaveBalanceCard(balance, pal),
+            ),
+            const SizedBox(height: 24),
+
+            // ── Account info ──
+            SectionLabel(context.tr('sec_account')),
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: Column(
                 children: [
-                  const Icon(Icons.logout_rounded, color: AppColors.brandRed, size: 19),
-                  const SizedBox(width: 10),
-                  Text(context.tr('logout'),
-                      style: GoogleFonts.plusJakartaSans(
-                          color: AppColors.brandRed, fontSize: 15, fontWeight: FontWeight.w800)),
+                  AppInfoRow(
+                    icon: Icons.alternate_email_rounded,
+                    label: context.tr('email'),
+                    value: user.email,
+                  ),
+                  const AppRowDivider(),
+                  AppInfoRow(
+                    icon: Icons.phone_iphone_rounded,
+                    label: context.tr('phone'),
+                    value: user.phone.isEmpty
+                        ? context.tr('not_set')
+                        : user.phone,
+                  ),
+                  const AppRowDivider(),
+                  AppInfoRow(
+                    icon: Icons.badge_outlined,
+                    label: context.tr('employee_id'),
+                    value: user.employeeId.isEmpty ? '-' : user.employeeId,
+                  ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: Text(
-              context.tr('app_footer'),
-              style: GoogleFonts.plusJakartaSans(
-                  color: pal.textFaint, fontSize: 11, fontWeight: FontWeight.w600),
+            const SizedBox(height: 24),
+
+            // ── Services ──
+            SectionLabel(context.tr('sec_services')),
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  AppActionRow(
+                    icon: Icons.assignment_outlined,
+                    iconColor: AppColors.blue,
+                    title: context.tr('request_center'),
+                    subtitle: context.tr('request_center_sub'),
+                    onTap: () => Navigator.pushNamed(context, '/my_requests'),
+                  ),
+                  const AppRowDivider(),
+                  AppActionRow(
+                    icon: Icons.support_agent_rounded,
+                    iconColor: AppColors.green,
+                    title: context.tr('menu_chat'),
+                    subtitle: context.tr('chat_hr_sub'),
+                    onTap: () => Navigator.pushNamed(context, '/chat'),
+                  ),
+                  const AppRowDivider(),
+                  AppActionRow(
+                    icon: Icons.help_outline_rounded,
+                    iconColor: AppColors.amber,
+                    title: context.tr('help_faq'),
+                    subtitle: context.tr('help_faq_sub'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const FaqScreen()),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            const SizedBox(height: 24),
+
+            // ── Card & biometric ──
+            SectionLabel(context.tr('sec_card_bio')),
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  AppActionRow(
+                    icon: Icons.contact_mail_outlined,
+                    iconColor: AppColors.brandRed,
+                    title: context.tr('id_card'),
+                    subtitle: context.tr('id_card_sub'),
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/profile/id_card'),
+                  ),
+                  const AppRowDivider(),
+                  AppActionRow(
+                    icon: Icons.face_retouching_natural_rounded,
+                    iconColor: AppColors.violet,
+                    title: context.tr('reenroll_face'),
+                    subtitle: context.tr('reenroll_face_sub'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const EnrollPage()),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // ── Security ──
+            SectionLabel(context.tr('sec_security')),
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: AppActionRow(
+                icon: Icons.lock_outline_rounded,
+                iconColor: const Color(0xFF0EA5E9),
+                title: context.tr('change_password'),
+                subtitle: context.tr('change_password_sub'),
+                onTap: () =>
+                    _showChangePasswordDialog(context, provider, pal.isDark),
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // ── Logout ──
+            GestureDetector(
+              onTap: () => _confirmLogout(context, provider, pal.isDark),
+              child: Container(
+                height: 56,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.brandRed.withValues(
+                    alpha: pal.isDark ? 0.14 : 0.08,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: AppColors.brandRed.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.logout_rounded,
+                      color: AppColors.brandRed,
+                      size: 19,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      context.tr('logout'),
+                      style: GoogleFonts.plusJakartaSans(
+                        color: AppColors.brandRed,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: Text(
+                context.tr('app_footer'),
+                style: GoogleFonts.plusJakartaSans(
+                  color: pal.textFaint,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -222,7 +265,11 @@ class _ProfilePageState extends State<ProfilePage> {
             user.name,
             textAlign: TextAlign.center,
             style: GoogleFonts.plusJakartaSans(
-                color: Colors.white, fontSize: 21, fontWeight: FontWeight.w800, letterSpacing: -0.3),
+              color: Colors.white,
+              fontSize: 21,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
+            ),
           ),
           if (roleText.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -231,13 +278,18 @@ class _ProfilePageState extends State<ProfilePage> {
               decoration: BoxDecoration(
                 color: AppColors.jneOrange.withValues(alpha: 0.18),
                 borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: AppColors.jneOrange.withValues(alpha: 0.35)),
+                border: Border.all(
+                  color: AppColors.jneOrange.withValues(alpha: 0.35),
+                ),
               ),
               child: Text(
                 roleText,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.plusJakartaSans(
-                    color: AppColors.jneOrange, fontSize: 11.5, fontWeight: FontWeight.w700),
+                  color: AppColors.jneOrange,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -250,12 +302,26 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             child: Row(
               children: [
-                _heroStat('${stats['present']}', context.tr('stat_present'), Icons.check_circle_rounded, AppColors.green),
+                _heroStat(
+                  '${stats['present']}',
+                  context.tr('stat_present'),
+                  Icons.check_circle_rounded,
+                  AppColors.green,
+                ),
                 _heroDivider(),
-                _heroStat('${stats['late']}', context.tr('stat_late'), Icons.alarm_rounded, AppColors.amber),
+                _heroStat(
+                  '${stats['late']}',
+                  context.tr('stat_late'),
+                  Icons.alarm_rounded,
+                  AppColors.amber,
+                ),
                 _heroDivider(),
-                _heroStat('${(punctuality * 100).toInt()}%', context.tr('on_time'),
-                    Icons.verified_rounded, AppColors.sky),
+                _heroStat(
+                  '${(punctuality * 100).toInt()}%',
+                  context.tr('on_time'),
+                  Icons.verified_rounded,
+                  AppColors.sky,
+                ),
               ],
             ),
           ),
@@ -270,20 +336,33 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           Icon(icon, color: color, size: 17),
           const SizedBox(height: 6),
-          Text(value,
-              style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
+          Text(
+            value,
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(label,
-              style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              color: Colors.white54,
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _heroDivider() =>
-      Container(width: 1, height: 38, color: Colors.white.withValues(alpha: 0.08));
+  Widget _heroDivider() => Container(
+    width: 1,
+    height: 38,
+    color: Colors.white.withValues(alpha: 0.08),
+  );
 
   // ── Leave balance (theme-aware) ──
   Widget _leaveBalanceCard(LeaveBalance balance, AppPalette pal) {
@@ -298,24 +377,37 @@ class _ProfilePageState extends State<ProfilePage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(context.tr('remaining_annual_leave'),
-                      style: GoogleFonts.plusJakartaSans(
-                          color: pal.textSub, fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text(
+                    context.tr('remaining_annual_leave'),
+                    style: GoogleFonts.plusJakartaSans(
+                      color: pal.textSub,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('${balance.remainingAnnual}',
-                          style: GoogleFonts.plusJakartaSans(
-                              color: pal.textPrimary,
-                              fontSize: 34,
-                              fontWeight: FontWeight.w800,
-                              height: 1)),
+                      Text(
+                        '${balance.remainingAnnual}',
+                        style: GoogleFonts.plusJakartaSans(
+                          color: pal.textPrimary,
+                          fontSize: 34,
+                          fontWeight: FontWeight.w800,
+                          height: 1,
+                        ),
+                      ),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 5, left: 5),
-                        child: Text('${context.tr('of_days')} ${balance.annualQuota} ${context.tr('days')}',
-                            style: GoogleFonts.plusJakartaSans(
-                                color: pal.textFaint, fontSize: 12, fontWeight: FontWeight.w600)),
+                        child: Text(
+                          '${context.tr('of_days')} ${balance.annualQuota} ${context.tr('days')}',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: pal.textFaint,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -324,8 +416,14 @@ class _ProfilePageState extends State<ProfilePage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                    color: AppColors.green.withValues(alpha: 0.12), shape: BoxShape.circle),
-                child: const Icon(Icons.event_available_rounded, color: AppColors.green, size: 26),
+                  color: AppColors.green.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.event_available_rounded,
+                  color: AppColors.green,
+                  size: 26,
+                ),
               ),
             ],
           ),
@@ -334,7 +432,9 @@ class _ProfilePageState extends State<ProfilePage> {
             borderRadius: BorderRadius.circular(100),
             child: LinearProgressIndicator(
               value: balance.usagePercent,
-              backgroundColor: pal.isDark ? Colors.white10 : const Color(0xFFE2E8F0),
+              backgroundColor: pal.isDark
+                  ? Colors.white10
+                  : const Color(0xFFE2E8F0),
               color: AppColors.green,
               minHeight: 8,
             ),
@@ -343,10 +443,30 @@ class _ProfilePageState extends State<ProfilePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _miniStat(context.tr('used2'), '${balance.usedAnnual} ${context.tr('days')}', pal, pal.textPrimary),
-              _miniStat(context.tr('sick2'), '${balance.usedSick} ${context.tr('days')}', pal, pal.textPrimary),
-              _miniStat(context.tr('permit'), '${balance.usedPermission} ${context.tr('days')}', pal, pal.textPrimary),
-              _miniStat(context.tr('submitted'), '${balance.pendingDays} ${context.tr('days')}', pal, AppColors.amber),
+              _miniStat(
+                context.tr('used2'),
+                '${balance.usedAnnual} ${context.tr('days')}',
+                pal,
+                pal.textPrimary,
+              ),
+              _miniStat(
+                context.tr('sick2'),
+                '${balance.usedSick} ${context.tr('days')}',
+                pal,
+                pal.textPrimary,
+              ),
+              _miniStat(
+                context.tr('permit'),
+                '${balance.usedPermission} ${context.tr('days')}',
+                pal,
+                pal.textPrimary,
+              ),
+              _miniStat(
+                context.tr('submitted'),
+                '${balance.pendingDays} ${context.tr('days')}',
+                pal,
+                AppColors.amber,
+              ),
             ],
           ),
         ],
@@ -354,17 +474,32 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _miniStat(String label, String value, AppPalette pal, Color valueColor) {
+  Widget _miniStat(
+    String label,
+    String value,
+    AppPalette pal,
+    Color valueColor,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: GoogleFonts.plusJakartaSans(
-                color: pal.textFaint, fontSize: 10, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: GoogleFonts.plusJakartaSans(
+            color: pal.textFaint,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(value,
-            style: GoogleFonts.plusJakartaSans(
-                color: valueColor, fontSize: 13, fontWeight: FontWeight.w800)),
+        Text(
+          value,
+          style: GoogleFonts.plusJakartaSans(
+            color: valueColor,
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ],
     );
   }
@@ -380,28 +515,42 @@ class _ProfilePageState extends State<ProfilePage> {
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.jneOrange.withValues(alpha: 0.4), width: 2),
+              border: Border.all(
+                color: AppColors.jneOrange.withValues(alpha: 0.4),
+                width: 2,
+              ),
             ),
             child: CircleAvatar(
               radius: 50,
               backgroundColor: const Color(0xFF1E293B),
-              backgroundImage: hasPhoto ? CachedNetworkImageProvider(photoUrl) : null,
+              backgroundImage: hasPhoto
+                  ? CachedNetworkImageProvider(photoUrl)
+                  : null,
               child: hasPhoto
                   ? null
-                  : const Icon(Icons.person_rounded, color: Colors.white54, size: 52),
+                  : const Icon(
+                      Icons.person_rounded,
+                      color: Colors.white54,
+                      size: 52,
+                    ),
             ),
           ),
           if (_uploading)
             Positioned.fill(
               child: Container(
                 margin: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.black54),
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black54,
+                ),
                 child: const Center(
                   child: SizedBox(
                     width: 26,
                     height: 26,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation(Colors.white)),
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation(Colors.white),
+                    ),
                   ),
                 ),
               ),
@@ -416,7 +565,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xFF15203A), width: 3),
               ),
-              child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 15),
+              child: const Icon(
+                Icons.camera_alt_rounded,
+                color: Colors.white,
+                size: 15,
+              ),
             ),
           ),
         ],
@@ -436,7 +589,10 @@ class _ProfilePageState extends State<ProfilePage> {
         return Container(
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: sheet, borderRadius: BorderRadius.circular(24)),
+          decoration: BoxDecoration(
+            color: sheet,
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -444,14 +600,31 @@ class _ProfilePageState extends State<ProfilePage> {
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
                 child: Row(
                   children: [
-                    Text(context.tr('change_photo'),
-                        style: GoogleFonts.plusJakartaSans(
-                            color: txt, fontWeight: FontWeight.w800, fontSize: 16)),
+                    Text(
+                      context.tr('change_photo'),
+                      style: GoogleFonts.plusJakartaSans(
+                        color: txt,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
                   ],
                 ),
               ),
-              _sheetOption(ctx, Icons.photo_library_rounded, context.tr('from_gallery'), txt, ImageSource.gallery),
-              _sheetOption(ctx, Icons.photo_camera_rounded, context.tr('take_photo'), txt, ImageSource.camera),
+              _sheetOption(
+                ctx,
+                Icons.photo_library_rounded,
+                context.tr('from_gallery'),
+                txt,
+                ImageSource.gallery,
+              ),
+              _sheetOption(
+                ctx,
+                Icons.photo_camera_rounded,
+                context.tr('take_photo'),
+                txt,
+                ImageSource.camera,
+              ),
               const SizedBox(height: 4),
             ],
           ),
@@ -473,16 +646,30 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() => _uploading = true);
       await provider.updateProfilePhoto(File(picked.path));
       if (!mounted) return;
-      showAppSnack(context, context.tr('photo_updated'), color: AppColors.green);
+      showAppSnack(
+        context,
+        context.tr('photo_updated'),
+        color: AppColors.green,
+      );
     } catch (e) {
       if (!mounted) return;
-      showAppSnack(context, e.toString().replaceAll('Exception: ', ''), color: AppColors.brandRed);
+      showAppSnack(
+        context,
+        e.toString().replaceAll('Exception: ', ''),
+        color: AppColors.brandRed,
+      );
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
   }
 
-  Widget _sheetOption(BuildContext ctx, IconData icon, String label, Color txt, ImageSource src) {
+  Widget _sheetOption(
+    BuildContext ctx,
+    IconData icon,
+    String label,
+    Color txt,
+    ImageSource src,
+  ) {
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () => Navigator.pop(ctx, src),
@@ -493,14 +680,20 @@ class _ProfilePageState extends State<ProfilePage> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                  color: AppColors.brandRed.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12)),
+                color: AppColors.brandRed.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Icon(icon, color: AppColors.brandRed, size: 20),
             ),
             const SizedBox(width: 14),
-            Text(label,
-                style: GoogleFonts.plusJakartaSans(
-                    color: txt, fontWeight: FontWeight.w700, fontSize: 14.5)),
+            Text(
+              label,
+              style: GoogleFonts.plusJakartaSans(
+                color: txt,
+                fontWeight: FontWeight.w700,
+                fontSize: 14.5,
+              ),
+            ),
           ],
         ),
       ),
@@ -517,18 +710,33 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: card,
         surfaceTintColor: card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(context.tr('logout_confirm'),
-            style: GoogleFonts.plusJakartaSans(color: txt, fontWeight: FontWeight.w800, fontSize: 18)),
+        title: Text(
+          context.tr('logout_confirm'),
+          style: GoogleFonts.plusJakartaSans(
+            color: txt,
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+          ),
+        ),
         content: Text(
           context.tr('logout_confirm_desc'),
-          style: GoogleFonts.plusJakartaSans(color: sub, fontSize: 13.5, height: 1.5),
+          style: GoogleFonts.plusJakartaSans(
+            color: sub,
+            fontSize: 13.5,
+            height: 1.5,
+          ),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(context.tr('cancel'),
-                style: GoogleFonts.plusJakartaSans(color: sub, fontWeight: FontWeight.w700)),
+            child: Text(
+              context.tr('cancel'),
+              style: GoogleFonts.plusJakartaSans(
+                color: sub,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -543,17 +751,28 @@ class _ProfilePageState extends State<ProfilePage> {
               backgroundColor: AppColors.brandRed,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
-            child: Text(context.tr('logout'),
-                style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.w800)),
+            child: Text(
+              context.tr('logout'),
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _showChangePasswordDialog(BuildContext context, AppProvider provider, bool isDark) {
+  void _showChangePasswordDialog(
+    BuildContext context,
+    AppProvider provider,
+    bool isDark,
+  ) {
     final controller = TextEditingController();
     final card = isDark ? const Color(0xFF15203A) : Colors.white;
     final txt = isDark ? Colors.white : const Color(0xFF0F172A);
@@ -564,27 +783,51 @@ class _ProfilePageState extends State<ProfilePage> {
         backgroundColor: card,
         surfaceTintColor: card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(context.tr('change_password'),
-            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800, fontSize: 18, color: txt)),
+        title: Text(
+          context.tr('change_password'),
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+            color: txt,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(context.tr('cp_desc'),
-                style: GoogleFonts.plusJakartaSans(color: sub, fontSize: 13.5, height: 1.5)),
+            Text(
+              context.tr('cp_desc'),
+              style: GoogleFonts.plusJakartaSans(
+                color: sub,
+                fontSize: 13.5,
+                height: 1.5,
+              ),
+            ),
             const SizedBox(height: 20),
             TextField(
               controller: controller,
               obscureText: true,
-              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, color: txt),
+              style: GoogleFonts.plusJakartaSans(
+                fontWeight: FontWeight.w700,
+                color: txt,
+              ),
               decoration: InputDecoration(
                 hintText: context.tr('new_password_hint'),
-                hintStyle: GoogleFonts.plusJakartaSans(color: sub.withValues(alpha: 0.6), fontSize: 13.5),
-                prefixIcon: Icon(Icons.lock_outline_rounded, size: 19, color: sub),
+                hintStyle: GoogleFonts.plusJakartaSans(
+                  color: sub.withValues(alpha: 0.6),
+                  fontSize: 13.5,
+                ),
+                prefixIcon: Icon(
+                  Icons.lock_outline_rounded,
+                  size: 19,
+                  color: sub,
+                ),
                 filled: true,
                 fillColor: sub.withValues(alpha: 0.08),
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
                 contentPadding: const EdgeInsets.all(18),
               ),
             ),
@@ -594,8 +837,13 @@ class _ProfilePageState extends State<ProfilePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(context.tr('cancel'),
-                style: GoogleFonts.plusJakartaSans(color: sub, fontWeight: FontWeight.w700)),
+            child: Text(
+              context.tr('cancel'),
+              style: GoogleFonts.plusJakartaSans(
+                color: sub,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -613,17 +861,28 @@ class _ProfilePageState extends State<ProfilePage> {
                 messenger.showSnackBar(appSnack(okMsg, AppColors.green));
               } catch (e) {
                 messenger.showSnackBar(
-                    appSnack(e.toString().replaceAll('Exception: ', ''), AppColors.brandRed));
+                  appSnack(
+                    e.toString().replaceAll('Exception: ', ''),
+                    AppColors.brandRed,
+                  ),
+                );
               }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.blue,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
-            child: Text(context.tr('save'),
-                style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.w800)),
+            child: Text(
+              context.tr('save'),
+              style: GoogleFonts.plusJakartaSans(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
         ],
       ),

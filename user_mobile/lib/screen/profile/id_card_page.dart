@@ -43,8 +43,10 @@ class IDCardPage extends StatelessWidget {
       ),
       body: user == null
           ? Center(
-              child: Text('Data karyawan tidak tersedia',
-                  style: GoogleFonts.plusJakartaSans(color: textPrimary)),
+              child: Text(
+                'Data karyawan tidak tersedia',
+                style: GoogleFonts.plusJakartaSans(color: textPrimary),
+              ),
             )
           : SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
@@ -91,8 +93,11 @@ class IDCardPage extends StatelessWidget {
                             color: jneOrange.withValues(alpha: 0.16),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.local_shipping_rounded,
-                              color: jneOrange, size: 20),
+                          child: const Icon(
+                            Icons.local_shipping_rounded,
+                            color: jneOrange,
+                            size: 20,
+                          ),
                         ),
                         const SizedBox(width: 10),
                         Text(
@@ -106,8 +111,11 @@ class IDCardPage extends StatelessWidget {
                         ),
                       ],
                     ),
-                    Icon(Icons.contactless_rounded,
-                        color: Colors.white.withValues(alpha: 0.3), size: 22),
+                    Icon(
+                      Icons.contactless_rounded,
+                      color: Colors.white.withValues(alpha: 0.3),
+                      size: 22,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 28),
@@ -125,11 +133,16 @@ class IDCardPage extends StatelessWidget {
                       child: CircleAvatar(
                         radius: 42,
                         backgroundColor: Colors.white10,
-                        backgroundImage: (user.photoUrl != null && user.photoUrl!.isNotEmpty)
+                        backgroundImage:
+                            (user.photoUrl != null && user.photoUrl!.isNotEmpty)
                             ? NetworkImage(user.photoUrl!)
                             : null,
                         child: (user.photoUrl == null || user.photoUrl!.isEmpty)
-                            ? const Icon(Icons.person_rounded, color: Colors.white70, size: 42)
+                            ? const Icon(
+                                Icons.person_rounded,
+                                color: Colors.white70,
+                                size: 42,
+                              )
                             : null,
                       ),
                     ),
@@ -149,13 +162,18 @@ class IDCardPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: jneOrange.withValues(alpha: 0.16),
                               borderRadius: BorderRadius.circular(100),
                             ),
                             child: Text(
-                              user.position.isNotEmpty ? user.position : 'Karyawan',
+                              user.position.isNotEmpty
+                                  ? user.position
+                                  : 'Karyawan',
                               style: GoogleFonts.plusJakartaSans(
                                 color: jneOrange,
                                 fontSize: 10.5,
@@ -173,16 +191,25 @@ class IDCardPage extends StatelessWidget {
 
                 // ── Info row ──
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16,
+                    horizontal: 18,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Row(
                     children: [
-                      _info('UNIT', user.department.isNotEmpty ? user.department : '-'),
+                      _info(
+                        'UNIT',
+                        user.department.isNotEmpty ? user.department : '-',
+                      ),
                       Container(width: 1, height: 34, color: Colors.white12),
-                      _info('ID KARYAWAN', user.employeeId.isNotEmpty ? user.employeeId : '-'),
+                      _info(
+                        'ID KARYAWAN',
+                        user.employeeId.isNotEmpty ? user.employeeId : '-',
+                      ),
                     ],
                   ),
                 ),
@@ -197,7 +224,11 @@ class IDCardPage extends StatelessWidget {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Icon(Icons.qr_code_2_rounded, color: navy, size: 44),
+                      child: const Icon(
+                        Icons.qr_code_2_rounded,
+                        color: navy,
+                        size: 44,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -206,7 +237,11 @@ class IDCardPage extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.verified_user_rounded, color: cyan, size: 14),
+                              const Icon(
+                                Icons.verified_user_rounded,
+                                color: cyan,
+                                size: 14,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 'KARTU TERVERIFIKASI',
@@ -278,7 +313,11 @@ class IDCardPage extends StatelessWidget {
   Widget _footerNote(bool isDark, Color textPrimary) {
     return Column(
       children: [
-        Icon(Icons.shield_moon_rounded, color: jneOrange.withValues(alpha: 0.8), size: 26),
+        Icon(
+          Icons.shield_moon_rounded,
+          color: jneOrange.withValues(alpha: 0.8),
+          size: 26,
+        ),
         const SizedBox(height: 12),
         Text(
           'Kartu identitas resmi karyawan',

@@ -9,11 +9,11 @@ class ChatMessage {
   final String text;
   final String senderId;
   final String senderName;
-  final String senderRole;  // 'admin' or 'employee'
+  final String senderRole; // 'admin' or 'employee'
   final String receiverId;
   final String receiverRole;
   final DateTime timestamp;
-  final MessageStatus status;  // NEW: sent, delivered, read
+  final MessageStatus status; // NEW: sent, delivered, read
   final DateTime? readAt;
   final DateTime? deliveredAt;
   final String? imageUrl;
@@ -50,9 +50,10 @@ class ChatMessage {
       // Sender menulis ke field `createdAt` (serverTimestamp). Field
       // `timestamp` lama tidak pernah diisi — kalau tetap dibaca dari sini,
       // semua bubble jatuh ke DateTime.now() dan ordering kacau.
-      timestamp: (data['createdAt'] as Timestamp?)?.toDate()
-          ?? (data['timestamp'] as Timestamp?)?.toDate()
-          ?? DateTime.now(),
+      timestamp:
+          (data['createdAt'] as Timestamp?)?.toDate() ??
+          (data['timestamp'] as Timestamp?)?.toDate() ??
+          DateTime.now(),
       status: MessageStatus.values.firstWhere(
         (e) => e.toString() == 'MessageStatus.${data['status'] ?? 'sent'}',
         orElse: () => MessageStatus.sent,
@@ -102,25 +103,31 @@ class ChatProvider extends ChangeNotifier {
         .collection('messages')
         .where('chatId', isEqualTo: chatId)
         .snapshots()
-        .listen((snapshot) {
-      final list = snapshot.docs.map((doc) => ChatMessage.fromFirestore(doc)).toList();
-      list.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-      _messages = list;
-      _isLoading = false;
-      notifyListeners();
+        .listen(
+          (snapshot) {
+            final list = snapshot.docs
+                .map((doc) => ChatMessage.fromFirestore(doc))
+                .toList();
+            list.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+            _messages = list;
+            _isLoading = false;
+            notifyListeners();
 
-      // Mark messages as read
-      for (var msg in _messages) {
-        if (msg.status != MessageStatus.read && msg.senderId != _auth.currentUser?.uid) {
-          _markAsRead(msg.id);
-        }
-      }
-    }, onError: (e) {
-      debugPrint('Chat listener error: $e');
-      _messages = [];
-      _isLoading = false;
-      notifyListeners();
-    });
+            // Mark messages as read
+            for (var msg in _messages) {
+              if (msg.status != MessageStatus.read &&
+                  msg.senderId != _auth.currentUser?.uid) {
+                _markAsRead(msg.id);
+              }
+            }
+          },
+          onError: (e) {
+            debugPrint('Chat listener error: $e');
+            _messages = [];
+            _isLoading = false;
+            notifyListeners();
+          },
+        );
 
     _typingSubscription = _db
         .collection('chats')
@@ -129,15 +136,15 @@ class ChatProvider extends ChangeNotifier {
         .doc('status')
         .snapshots()
         .listen((doc) {
-      // Mobile selalu pihak user → pantau apakah admin sedang mengetik.
-      if (doc.exists) {
-        final data = doc.data()!;
-        _otherUserTyping = data['admin'] ?? false;
-      } else {
-        _otherUserTyping = false;
-      }
-      notifyListeners();
-    });
+          // Mobile selalu pihak user → pantau apakah admin sedang mengetik.
+          if (doc.exists) {
+            final data = doc.data()!;
+            _otherUserTyping = data['admin'] ?? false;
+          } else {
+            _otherUserTyping = false;
+          }
+          notifyListeners();
+        });
   }
 
   Future<void> _markAsRead(String messageId) async {
@@ -150,9 +157,12 @@ class ChatProvider extends ChangeNotifier {
   Future<void> updateTyping(String chatId, bool typing) async {
     if (_auth.currentUser == null) return;
     // Key berbasis peran ('user' / 'admin') agar konsisten lintas-platform.
-    await _db.collection('chats').doc(chatId).collection('typing').doc('status').set({
-      'user': typing,
-    }, SetOptions(merge: true));
+    await _db
+        .collection('chats')
+        .doc(chatId)
+        .collection('typing')
+        .doc('status')
+        .set({'user': typing}, SetOptions(merge: true));
   }
 
   /// NEW: Enhanced send with status tracking
@@ -192,7 +202,10 @@ class ChatProvider extends ChangeNotifier {
     final docRef = await _db.collection('messages').add(messageData);
 
     // Mark as delivered immediately (optimistic)
-    await docRef.update({'status': 'delivered', 'deliveredAt': FieldValue.serverTimestamp()});
+    await docRef.update({
+      'status': 'delivered',
+      'deliveredAt': FieldValue.serverTimestamp(),
+    });
 
     // Perbarui metadata room untuk inbox admin (preview pesan terakhir + urutan).
     await _db.collection('chats').doc(chatId).set({

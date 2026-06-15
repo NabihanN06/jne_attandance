@@ -45,8 +45,10 @@ class AttendanceReminderScheduler {
 
   /// Buat channel Android lebih awal. Dipanggil sekali dari `main()`.
   static Future<void> init() async {
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     await android?.createNotificationChannel(
       const AndroidNotificationChannel(
         _channelId,
@@ -59,11 +61,15 @@ class AttendanceReminderScheduler {
 
   /// Minta izin notifikasi (Android 13+ POST_NOTIFICATIONS & iOS).
   static Future<void> requestPermissions() async {
-    final android = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     await android?.requestNotificationsPermission();
-    final ios = _plugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
+    final ios = _plugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
     await ios?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
@@ -158,8 +164,14 @@ class AttendanceReminderScheduler {
     }
   }
 
-  static tz.TZDateTime _at(tz.TZDateTime date, TimeOfDay t) =>
-      tz.TZDateTime(tz.local, date.year, date.month, date.day, t.hour, t.minute);
+  static tz.TZDateTime _at(tz.TZDateTime date, TimeOfDay t) => tz.TZDateTime(
+    tz.local,
+    date.year,
+    date.month,
+    date.day,
+    t.hour,
+    t.minute,
+  );
 
   /// Kurangi [minutes] dari jam, dibungkus aman dalam 24 jam.
   static TimeOfDay _subtract(TimeOfDay t, int minutes) {

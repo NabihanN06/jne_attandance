@@ -11,7 +11,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   // ── JNE Brand palette ──
   static const Color navy = Color(0xFF0B1120);
   static const Color jneOrange = Color(0xFFFF6B00);
@@ -23,12 +24,21 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 2000));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.7, curve: Curves.easeIn)),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.7, curve: Curves.easeIn),
+      ),
     );
     _scaleAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 1.0, curve: Curves.easeOutBack)),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 1.0, curve: Curves.easeOutBack),
+      ),
     );
     _controller.forward();
     _checkInit();
@@ -80,18 +90,31 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       child: Image.asset(
                         'assets/images/gambarHp/icon.png',
                         fit: BoxFit.contain,
-                        errorBuilder: (_, _, _) => const Icon(Icons.local_shipping_rounded, color: jneOrange, size: 50),
+                        errorBuilder: (_, _, _) => const Icon(
+                          Icons.local_shipping_rounded,
+                          color: jneOrange,
+                          size: 50,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 28),
                     Text(
                       'JNE MARTAPURA',
-                      style: GoogleFonts.outfit(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: 3),
+                      style: GoogleFonts.outfit(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 3,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Sistem Absensi Karyawan',
-                      style: GoogleFonts.plusJakartaSans(color: const Color(0xFF8A93A6), fontSize: 12.5, fontWeight: FontWeight.w500),
+                      style: GoogleFonts.plusJakartaSans(
+                        color: const Color(0xFF8A93A6),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -114,18 +137,28 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       borderRadius: BorderRadius.circular(10),
                       child: Stack(
                         children: [
-                          Container(color: Colors.white.withValues(alpha: 0.08)),
+                          Container(
+                            color: Colors.white.withValues(alpha: 0.08),
+                          ),
                           AnimatedBuilder(
                             animation: _controller,
                             builder: (context, child) => Align(
-                              alignment: Alignment(-1.0 + (2.0 * (_controller.value % 1.0)), 0),
+                              alignment: Alignment(
+                                -1.0 + (2.0 * (_controller.value % 1.0)),
+                                0,
+                              ),
                               child: Container(
                                 width: 16,
                                 height: 3,
                                 decoration: BoxDecoration(
                                   color: jneOrange,
                                   borderRadius: BorderRadius.circular(10),
-                                  boxShadow: [BoxShadow(color: jneOrange.withValues(alpha: 0.6), blurRadius: 6)],
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: jneOrange.withValues(alpha: 0.6),
+                                      blurRadius: 6,
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -137,7 +170,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                   const SizedBox(height: 26),
                   Text(
                     'Menyiapkan aplikasi...',
-                    style: GoogleFonts.plusJakartaSans(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                    style: GoogleFonts.plusJakartaSans(
+                      color: Colors.white38,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ],
               ),

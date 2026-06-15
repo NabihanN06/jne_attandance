@@ -64,7 +64,9 @@ class _LoginPageState extends State<LoginPage> {
       if (app.requiresPasswordChange) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const ChangePasswordRequiredScreen()),
+          MaterialPageRoute(
+            builder: (_) => const ChangePasswordRequiredScreen(),
+          ),
           (r) => false,
         );
         return;
@@ -84,7 +86,13 @@ class _LoginPageState extends State<LoginPage> {
   void _showSnack(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600, fontSize: 13)),
+        content: Text(
+          msg,
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
         backgroundColor: isError ? jneRed : const Color(0xFF10B981),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(20),
@@ -116,9 +124,14 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 10),
             ListTile(
-              leading: const Icon(Icons.mark_email_read_outlined, color: jneOrange),
-              title: Text(context.tr('reset_via_email'),
-                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+              leading: const Icon(
+                Icons.mark_email_read_outlined,
+                color: jneOrange,
+              ),
+              title: Text(
+                context.tr('reset_via_email'),
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+              ),
               subtitle: Text(context.tr('reset_via_email_sub')),
               onTap: () {
                 Navigator.pop(ctx);
@@ -126,15 +139,22 @@ class _LoginPageState extends State<LoginPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.support_agent_rounded, color: jneOrange),
-              title: Text(context.tr('report_to_admin'),
-                  style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+              leading: const Icon(
+                Icons.support_agent_rounded,
+                color: jneOrange,
+              ),
+              title: Text(
+                context.tr('report_to_admin'),
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+              ),
               subtitle: Text(context.tr('report_to_admin_sub')),
               onTap: () {
                 Navigator.pop(ctx);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const ReportLoginIssueScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const ReportLoginIssueScreen(),
+                  ),
                 );
               },
             ),
@@ -163,11 +183,13 @@ class _LoginPageState extends State<LoginPage> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(context.tr('cancel'))),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(context.tr('cancel')),
+          ),
           TextButton(
-              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-              child: Text(context.tr('send'))),
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: Text(context.tr('send')),
+          ),
         ],
       ),
     );
@@ -210,24 +232,44 @@ class _LoginPageState extends State<LoginPage> {
                 child: Image.asset(
                   'assets/images/gambarHp/icon.png',
                   fit: BoxFit.contain,
-                  errorBuilder: (_, _, _) => const Icon(Icons.local_shipping_rounded, color: jneOrange, size: 30),
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.local_shipping_rounded,
+                    color: jneOrange,
+                    size: 30,
+                  ),
                 ),
               ),
 
               const SizedBox(height: 40),
-              Text(context.tr('login_title'),
-                  style: GoogleFonts.outfit(color: textHi, fontSize: 32, fontWeight: FontWeight.w700, letterSpacing: -0.5)),
+              Text(
+                context.tr('login_title'),
+                style: GoogleFonts.outfit(
+                  color: textHi,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.5,
+                ),
+              ),
               const SizedBox(height: 8),
               Text(
                 context.tr('login_subtitle'),
-                style: GoogleFonts.plusJakartaSans(color: textLo, fontSize: 14, height: 1.5, fontWeight: FontWeight.w400),
+                style: GoogleFonts.plusJakartaSans(
+                  color: textLo,
+                  fontSize: 14,
+                  height: 1.5,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
 
               const SizedBox(height: 40),
 
               _label(context.tr('email_or_id')),
               const SizedBox(height: 8),
-              _field(_emailCtrl, 'budi  ·  budi@jne.mtp.com', keyboard: TextInputType.emailAddress),
+              _field(
+                _emailCtrl,
+                'budi  ·  budi@jne.mtp.com',
+                keyboard: TextInputType.emailAddress,
+              ),
 
               const SizedBox(height: 22),
 
@@ -239,7 +281,13 @@ class _LoginPageState extends State<LoginPage> {
                 obscure: _obscurePass,
                 suffix: IconButton(
                   splashRadius: 20,
-                  icon: Icon(_obscurePass ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: textLo, size: 20),
+                  icon: Icon(
+                    _obscurePass
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: textLo,
+                    size: 20,
+                  ),
                   onPressed: () => setState(() => _obscurePass = !_obscurePass),
                 ),
               ),
@@ -251,7 +299,11 @@ class _LoginPageState extends State<LoginPage> {
                   onTap: _showForgotSheet,
                   child: Text(
                     context.tr('forgot_login'),
-                    style: GoogleFonts.plusJakartaSans(color: jneOrange, fontSize: 13, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.plusJakartaSans(
+                      color: jneOrange,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -269,11 +321,26 @@ class _LoginPageState extends State<LoginPage> {
                     disabledBackgroundColor: jneOrange.withValues(alpha: 0.5),
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   child: _isLoading
-                      ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                      : Text(context.tr('login_title'), style: GoogleFonts.outfit(fontSize: 15.5, fontWeight: FontWeight.w700)),
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : Text(
+                          context.tr('login_title'),
+                          style: GoogleFonts.outfit(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                 ),
               ),
 
@@ -281,7 +348,11 @@ class _LoginPageState extends State<LoginPage> {
               Center(
                 child: Text(
                   context.tr('login_footer'),
-                  style: GoogleFonts.plusJakartaSans(color: textLo.withValues(alpha: 0.6), fontSize: 11.5, fontWeight: FontWeight.w500),
+                  style: GoogleFonts.plusJakartaSans(
+                    color: textLo.withValues(alpha: 0.6),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -293,25 +364,45 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _label(String text) => Text(
-        text,
-        style: GoogleFonts.plusJakartaSans(color: textLo, fontSize: 12.5, fontWeight: FontWeight.w600),
-      );
+    text,
+    style: GoogleFonts.plusJakartaSans(
+      color: textLo,
+      fontSize: 12.5,
+      fontWeight: FontWeight.w600,
+    ),
+  );
 
-  Widget _field(TextEditingController ctrl, String hint,
-      {bool obscure = false, Widget? suffix, TextInputType keyboard = TextInputType.text}) {
+  Widget _field(
+    TextEditingController ctrl,
+    String hint, {
+    bool obscure = false,
+    Widget? suffix,
+    TextInputType keyboard = TextInputType.text,
+  }) {
     return TextField(
       controller: ctrl,
       obscureText: obscure,
       keyboardType: keyboard,
-      style: GoogleFonts.plusJakartaSans(color: textHi, fontSize: 15, fontWeight: FontWeight.w600),
+      style: GoogleFonts.plusJakartaSans(
+        color: textHi,
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+      ),
       cursorColor: jneOrange,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.plusJakartaSans(color: textLo.withValues(alpha: 0.55), fontSize: 14, fontWeight: FontWeight.w400),
+        hintStyle: GoogleFonts.plusJakartaSans(
+          color: textLo.withValues(alpha: 0.55),
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+        ),
         suffixIcon: suffix,
         filled: true,
         fillColor: surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 17,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: line, width: 1),

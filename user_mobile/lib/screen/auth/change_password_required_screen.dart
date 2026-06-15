@@ -74,19 +74,17 @@ class _ChangePasswordRequiredScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showSnack(
-        e.toString().replaceAll('Exception: ', ''),
-        isError: true,
-      );
+      _showSnack(e.toString().replaceAll('Exception: ', ''), isError: true);
     }
   }
 
   void _showSnack(String msg, {required bool isError}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg,
-            style: GoogleFonts.outfit(
-                fontWeight: FontWeight.w700, fontSize: 13)),
+        content: Text(
+          msg,
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w700, fontSize: 13),
+        ),
         backgroundColor: isError ? zenRose : zenEmerald,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(20),
@@ -116,8 +114,11 @@ class _ChangePasswordRequiredScreenState
                     color: zenIndigo.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Icon(Icons.shield_outlined,
-                      color: zenIndigo, size: 36),
+                  child: const Icon(
+                    Icons.shield_outlined,
+                    color: zenIndigo,
+                    size: 36,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -154,8 +155,11 @@ class _ChangePasswordRequiredScreenState
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.info_outline_rounded,
-                          color: Color(0xFFB45309), size: 20),
+                      const Icon(
+                        Icons.info_outline_rounded,
+                        color: Color(0xFFB45309),
+                        size: 20,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -209,7 +213,8 @@ class _ChangePasswordRequiredScreenState
                       backgroundColor: zenNavy,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18)),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
                       elevation: 0,
                     ),
                     child: _isLoading
@@ -217,13 +222,17 @@ class _ChangePasswordRequiredScreenState
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 3))
+                              color: Colors.white,
+                              strokeWidth: 3,
+                            ),
+                          )
                         : Text(
                             'SIMPAN & LANJUTKAN',
                             style: GoogleFonts.outfit(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 2),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 2,
+                            ),
                           ),
                   ),
                 ),
@@ -242,9 +251,10 @@ class _ChangePasswordRequiredScreenState
                     child: Text(
                       'Logout',
                       style: GoogleFonts.outfit(
-                          color: zenSlate,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700),
+                        color: zenSlate,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
@@ -258,16 +268,17 @@ class _ChangePasswordRequiredScreenState
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 10, left: 4),
-        child: Text(
-          text,
-          style: GoogleFonts.outfit(
-              color: zenSlate,
-              fontSize: 9,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.5),
-        ),
-      );
+    padding: const EdgeInsets.only(bottom: 10, left: 4),
+    child: Text(
+      text,
+      style: GoogleFonts.outfit(
+        color: zenSlate,
+        fontSize: 9,
+        fontWeight: FontWeight.w900,
+        letterSpacing: 1.5,
+      ),
+    ),
+  );
 
   Widget _field({
     required TextEditingController ctrl,
@@ -286,29 +297,32 @@ class _ChangePasswordRequiredScreenState
         controller: ctrl,
         obscureText: obscure,
         style: GoogleFonts.outfit(
-            color: zenNavy,
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.2),
+          color: zenNavy,
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.2,
+        ),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: GoogleFonts.outfit(
-              color: zenSlate.withValues(alpha: 0.4),
-              fontSize: 13,
-              fontWeight: FontWeight.w500),
+            color: zenSlate.withValues(alpha: 0.4),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
           prefixIcon: Icon(icon, color: zenIndigo, size: 20),
           suffixIcon: IconButton(
             icon: Icon(
-                obscure
-                    ? Icons.visibility_off_rounded
-                    : Icons.visibility_rounded,
-                color: zenSlate.withValues(alpha: 0.5),
-                size: 18),
+              obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+              color: zenSlate.withValues(alpha: 0.5),
+              size: 18,
+            ),
             onPressed: toggleObscure,
           ),
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 20,
+          ),
         ),
       ),
     );

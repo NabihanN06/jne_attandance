@@ -33,22 +33,36 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(vsync: this, duration: const Duration(seconds: 2))
-      ..repeat(reverse: true);
-    _pulseAnim = Tween<double>(begin: 0.98, end: 1.02)
-        .animate(CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut));
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    _pulseAnim = Tween<double>(begin: 0.98, end: 1.02).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
 
-    _shutterController = AnimationController(vsync: this, duration: const Duration(milliseconds: 150));
-    _shutterScale = Tween<double>(begin: 1.0, end: 0.82)
-        .animate(CurvedAnimation(parent: _shutterController, curve: Curves.easeOut));
-    _rippleScale = Tween<double>(begin: 1.0, end: 2.2)
-        .animate(CurvedAnimation(parent: _shutterController, curve: Curves.easeOut));
-    _rippleOpacity = Tween<double>(begin: 0.5, end: 0.0)
-        .animate(CurvedAnimation(parent: _shutterController, curve: Curves.easeOut));
+    _shutterController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 150),
+    );
+    _shutterScale = Tween<double>(begin: 1.0, end: 0.82).animate(
+      CurvedAnimation(parent: _shutterController, curve: Curves.easeOut),
+    );
+    _rippleScale = Tween<double>(begin: 1.0, end: 2.2).animate(
+      CurvedAnimation(parent: _shutterController, curve: Curves.easeOut),
+    );
+    _rippleOpacity = Tween<double>(begin: 0.5, end: 0.0).animate(
+      CurvedAnimation(parent: _shutterController, curve: Curves.easeOut),
+    );
 
-    _flashController = AnimationController(vsync: this, duration: const Duration(milliseconds: 250));
-    _flashOpacity = Tween<double>(begin: 0.0, end: 1.0)
-        .animate(CurvedAnimation(parent: _flashController, curve: Curves.easeIn));
+    _flashController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+    _flashOpacity = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _flashController, curve: Curves.easeIn));
 
     _initCamera();
   }
@@ -56,15 +70,25 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
   Future<void> _initCamera() async {
     try {
       final cameras = await availableCameras();
-      if (cameras.isEmpty) { setState(() => _errorMessage = 'Kamera tidak terdeteksi.'); return; }
+      if (cameras.isEmpty) {
+        setState(() => _errorMessage = 'Kamera tidak terdeteksi.');
+        return;
+      }
       final front = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
-      final ctrl = CameraController(front, ResolutionPreset.high, enableAudio: false);
+      final ctrl = CameraController(
+        front,
+        ResolutionPreset.high,
+        enableAudio: false,
+      );
       await ctrl.initialize();
       if (!mounted) return;
-      setState(() { _cameraController = ctrl; _isCameraReady = true; });
+      setState(() {
+        _cameraController = ctrl;
+        _isCameraReady = true;
+      });
     } on CameraException catch (e) {
       setState(() => _errorMessage = 'Gagal Membuka Kamera:\n${e.description}');
     } catch (e) {
@@ -81,7 +105,10 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
     await _shutterController.reverse();
 
     _flashController.forward().then((_) {
-      Future.delayed(const Duration(milliseconds: 80), () => _flashController.reverse());
+      Future.delayed(
+        const Duration(milliseconds: 80),
+        () => _flashController.reverse(),
+      );
     });
 
     try {
@@ -96,7 +123,9 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
           if (mounted) {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => const SucceedPage(isEnroll: true)),
+              MaterialPageRoute(
+                builder: (_) => const SucceedPage(isEnroll: true),
+              ),
               (route) => false,
             );
           }
@@ -125,7 +154,14 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
-        title: Text('SCAN WAJAH', style: GoogleFonts.inter(letterSpacing: 2, fontWeight: FontWeight.w900, fontSize: 14)),
+        title: Text(
+          'SCAN WAJAH',
+          style: GoogleFonts.inter(
+            letterSpacing: 2,
+            fontWeight: FontWeight.w900,
+            fontSize: 14,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: true,
@@ -134,48 +170,58 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
       body: Column(
         children: [
           Expanded(
-            child: LayoutBuilder(builder: (context, constraints) {
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (_isCameraReady && _cameraController != null)
-                    SizedBox.expand(child: CameraPreview(_cameraController!))
-                  else if (_errorMessage != null)
-                    _buildError()
-                  else
-                    _buildLoading(cyanAccent),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (_isCameraReady && _cameraController != null)
+                      SizedBox.expand(child: CameraPreview(_cameraController!))
+                    else if (_errorMessage != null)
+                      _buildError()
+                    else
+                      _buildLoading(cyanAccent),
 
-                  if (_isCameraReady)
-                    AnimatedBuilder(
-                      animation: _pulseAnim,
-                      builder: (_, _) => Transform.scale(
-                        scale: _pulseAnim.value,
-                        child: CustomPaint(
-                          size: Size(constraints.maxWidth, constraints.maxHeight),
-                          painter: _OvalPainter(
-                            w: constraints.maxWidth, 
-                            h: constraints.maxHeight,
-                            color: cyanAccent,
+                    if (_isCameraReady)
+                      AnimatedBuilder(
+                        animation: _pulseAnim,
+                        builder: (_, _) => Transform.scale(
+                          scale: _pulseAnim.value,
+                          child: CustomPaint(
+                            size: Size(
+                              constraints.maxWidth,
+                              constraints.maxHeight,
+                            ),
+                            painter: _OvalPainter(
+                              w: constraints.maxWidth,
+                              h: constraints.maxHeight,
+                              color: cyanAccent,
+                            ),
                           ),
                         ),
                       ),
-                    ),
 
-                  AnimatedBuilder(
-                    animation: _flashOpacity,
-                    builder: (_, _) => Opacity(
-                      opacity: _flashOpacity.value,
-                      child: Container(color: Colors.white),
+                    AnimatedBuilder(
+                      animation: _flashOpacity,
+                      builder: (_, _) => Opacity(
+                        opacity: _flashOpacity.value,
+                        child: Container(color: Colors.white),
+                      ),
                     ),
-                  ),
-                ],
-              );
-            }),
+                  ],
+                );
+              },
+            ),
           ),
 
           Container(
             color: const Color(0xFF0F172A),
-            padding: const EdgeInsets.only(top: 30, bottom: 50, left: 24, right: 24),
+            padding: const EdgeInsets.only(
+              top: 30,
+              bottom: 50,
+              left: 24,
+              right: 24,
+            ),
             child: Column(
               children: [
                 GestureDetector(
@@ -183,7 +229,8 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                   child: AnimatedBuilder(
                     animation: _shutterController,
                     builder: (_, _) => SizedBox(
-                      width: 90, height: 90,
+                      width: 90,
+                      height: 90,
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
@@ -192,10 +239,14 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                             child: Opacity(
                               opacity: _rippleOpacity.value,
                               child: Container(
-                                width: 80, height: 80,
+                                width: 80,
+                                height: 80,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: cyanAccent, width: 2),
+                                  border: Border.all(
+                                    color: cyanAccent,
+                                    width: 2,
+                                  ),
                                 ),
                               ),
                             ),
@@ -203,26 +254,44 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                           Transform.scale(
                             scale: _shutterScale.value,
                             child: Container(
-                              width: 72, height: 72,
+                              width: 72,
+                              height: 72,
                               decoration: BoxDecoration(
-                                color: _isCapturing ? cyanAccent.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.1),
+                                color: _isCapturing
+                                    ? cyanAccent.withValues(alpha: 0.2)
+                                    : Colors.white.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: _isCameraReady ? cyanAccent : Colors.white12,
+                                  color: _isCameraReady
+                                      ? cyanAccent
+                                      : Colors.white12,
                                   width: 3,
                                 ),
                                 boxShadow: _isCameraReady
-                                    ? [BoxShadow(color: cyanAccent.withValues(alpha: 0.3), blurRadius: 20, spreadRadius: 2)]
+                                    ? [
+                                        BoxShadow(
+                                          color: cyanAccent.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                          blurRadius: 20,
+                                          spreadRadius: 2,
+                                        ),
+                                      ]
                                     : null,
                               ),
                               child: _isCapturing
                                   ? Padding(
                                       padding: const EdgeInsets.all(22),
-                                      child: CircularProgressIndicator(color: cyanAccent, strokeWidth: 3),
+                                      child: CircularProgressIndicator(
+                                        color: cyanAccent,
+                                        strokeWidth: 3,
+                                      ),
                                     )
                                   : Icon(
                                       Icons.face_retouching_natural_rounded,
-                                      color: _isCameraReady ? Colors.white : Colors.white24,
+                                      color: _isCameraReady
+                                          ? Colors.white
+                                          : Colors.white24,
                                       size: 32,
                                     ),
                             ),
@@ -233,12 +302,25 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text('VERIFIKASI BIOMETRIK',
-                    style: GoogleFonts.inter(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                Text(
+                  'VERIFIKASI BIOMETRIK',
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                Text('Posisikan wajah Anda tepat di tengah bingkai oval',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(color: Colors.white60, fontSize: 11, letterSpacing: -0.2)),
+                Text(
+                  'Posisikan wajah Anda tepat di tengah bingkai oval',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    color: Colors.white60,
+                    fontSize: 11,
+                    letterSpacing: -0.2,
+                  ),
+                ),
               ],
             ),
           ),
@@ -247,36 +329,51 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
     );
   }
 
-
   Widget _buildLoading(Color accent) => Container(
-        color: const Color(0xFF0F172A),
-        child: const PackageLoading(
-          message: 'Mempersiapkan Modul Biometrik...',
-          isLight: true,
-        ),
-      );
+    color: const Color(0xFF0F172A),
+    child: const PackageLoading(
+      message: 'Mempersiapkan Modul Biometrik...',
+      isLight: true,
+    ),
+  );
 
   Widget _buildError() => Container(
-        color: const Color(0xFF0F172A),
-        padding: const EdgeInsets.all(40),
-        child: Center(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.videocam_off_rounded, color: Colors.white24, size: 64),
-            const SizedBox(height: 24),
-            Text(_errorMessage ?? 'Kamera Bermasalah',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(color: Colors.white60, fontSize: 13, height: 1.6)),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () {
-                setState(() { _isCameraReady = false; _errorMessage = null; });
-                _initCamera();
-              },
-              child: const Text('RE-INITIALIZE'),
+    color: const Color(0xFF0F172A),
+    padding: const EdgeInsets.all(40),
+    child: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.videocam_off_rounded,
+            color: Colors.white24,
+            size: 64,
+          ),
+          const SizedBox(height: 24),
+          Text(
+            _errorMessage ?? 'Kamera Bermasalah',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              color: Colors.white60,
+              fontSize: 13,
+              height: 1.6,
             ),
-          ]),
-        ),
-      );
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _isCameraReady = false;
+                _errorMessage = null;
+              });
+              _initCamera();
+            },
+            child: const Text('RE-INITIALIZE'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _OvalPainter extends CustomPainter {
@@ -301,25 +398,48 @@ class _OvalPainter extends CustomPainter {
     );
 
     // Oval Border
-    canvas.drawOval(rect, Paint()
-      ..color = color.withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0);
+    canvas.drawOval(
+      rect,
+      Paint()
+        ..color = color.withValues(alpha: 0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0,
+    );
 
     // Focus Indicators
-    final p = Paint()..color = color..style = PaintingStyle.stroke
-      ..strokeWidth = 4.0..strokeCap = StrokeCap.round;
-    
+    final p = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.0
+      ..strokeCap = StrokeCap.round;
+
     // Top
-    canvas.drawLine(Offset(rect.center.dx - 15, rect.top), Offset(rect.center.dx + 15, rect.top), p);
+    canvas.drawLine(
+      Offset(rect.center.dx - 15, rect.top),
+      Offset(rect.center.dx + 15, rect.top),
+      p,
+    );
     // Bottom
-    canvas.drawLine(Offset(rect.center.dx - 15, rect.bottom), Offset(rect.center.dx + 15, rect.bottom), p);
+    canvas.drawLine(
+      Offset(rect.center.dx - 15, rect.bottom),
+      Offset(rect.center.dx + 15, rect.bottom),
+      p,
+    );
     // Left
-    canvas.drawLine(Offset(rect.left, rect.center.dy - 15), Offset(rect.left, rect.center.dy + 15), p);
+    canvas.drawLine(
+      Offset(rect.left, rect.center.dy - 15),
+      Offset(rect.left, rect.center.dy + 15),
+      p,
+    );
     // Right
-    canvas.drawLine(Offset(rect.right, rect.center.dy - 15), Offset(rect.right, rect.center.dy + 15), p);
+    canvas.drawLine(
+      Offset(rect.right, rect.center.dy - 15),
+      Offset(rect.right, rect.center.dy + 15),
+      p,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _OvalPainter old) => old.w != w || old.h != h || old.color != color;
+  bool shouldRepaint(covariant _OvalPainter old) =>
+      old.w != w || old.h != h || old.color != color;
 }

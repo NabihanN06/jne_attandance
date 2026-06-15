@@ -32,10 +32,10 @@ class _SettingsPageState extends State<SettingsPage> {
   // Versi aplikasi dari pubspec.yaml — di-bump manual saat release.
   static const String _appVersion = '1.0.0+1';
 
-  bool get _isDark =>
-      Theme.of(context).brightness == Brightness.dark;
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
 
-  Color get _bgColor => _isDark ? const Color(0xFF0B1120) : const Color(0xFFF8FAFC);
+  Color get _bgColor =>
+      _isDark ? const Color(0xFF0B1120) : const Color(0xFFF8FAFC);
   Color get _cardColor => _isDark ? const Color(0xFF1A2230) : Colors.white;
   Color get _textColor => _isDark ? Colors.white : zenNavy;
   Color get _subColor => _isDark ? Colors.white60 : zenSlate;
@@ -54,7 +54,11 @@ class _SettingsPageState extends State<SettingsPage> {
         leading: const AppBackButton(),
         title: Text(
           context.tr('settings_title'),
-          style: GoogleFonts.plusJakartaSans(color: _textColor, fontSize: 17, fontWeight: FontWeight.w800),
+          style: GoogleFonts.plusJakartaSans(
+            color: _textColor,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         centerTitle: true,
       ),
@@ -96,7 +100,9 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: context.tr('set_push_notif_sub'),
               value: provider.notificationsEnabled,
               onChanged: (v) async {
-                final msg = v ? context.tr('notif_on') : context.tr('notif_off');
+                final msg = v
+                    ? context.tr('notif_on')
+                    : context.tr('notif_off');
                 await provider.setNotificationsEnabled(v);
                 if (mounted) _toast(msg);
               },
@@ -120,9 +126,14 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.location_on_outlined,
               iconColor: zenRose,
               title: context.tr('office_point'),
-              value: '${provider.officeLat.toStringAsFixed(4)}, ${provider.officeLng.toStringAsFixed(4)}',
+              value:
+                  '${provider.officeLat.toStringAsFixed(4)}, ${provider.officeLng.toStringAsFixed(4)}',
               onCopy: () {
-                Clipboard.setData(ClipboardData(text: '${provider.officeLat}, ${provider.officeLng}'));
+                Clipboard.setData(
+                  ClipboardData(
+                    text: '${provider.officeLat}, ${provider.officeLng}',
+                  ),
+                );
                 _toast(context.tr('coord_copied'));
               },
             ),
@@ -131,14 +142,16 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: Icons.radar_rounded,
               iconColor: zenEmerald,
               title: context.tr('office_radius_label'),
-              value: '${provider.officeRadius.toStringAsFixed(0)} ${context.tr('meters')}',
+              value:
+                  '${provider.officeRadius.toStringAsFixed(0)} ${context.tr('meters')}',
             ),
             _divider(),
             _infoItem(
               icon: Icons.schedule_rounded,
               iconColor: zenAmber,
               title: context.tr('start_time_label'),
-              value: '${provider.officeStartTime.hour.toString().padLeft(2, '0')}:${provider.officeStartTime.minute.toString().padLeft(2, '0')} WIB',
+              value:
+                  '${provider.officeStartTime.hour.toString().padLeft(2, '0')}:${provider.officeStartTime.minute.toString().padLeft(2, '0')} WIB',
             ),
           ]),
           const SizedBox(height: 24),
@@ -213,7 +226,10 @@ class _SettingsPageState extends State<SettingsPage> {
               iconColor: zenEmerald,
               title: context.tr('privacy_policy'),
               subtitle: context.tr('privacy_policy_sub'),
-              onTap: () => _showLegalSheet(context.tr('privacy_policy'), _privacyContent),
+              onTap: () => _showLegalSheet(
+                context.tr('privacy_policy'),
+                _privacyContent,
+              ),
             ),
             _divider(),
             _tapItem(
@@ -221,7 +237,10 @@ class _SettingsPageState extends State<SettingsPage> {
               iconColor: zenAmber,
               title: context.tr('terms_conditions'),
               subtitle: context.tr('terms_conditions_sub'),
-              onTap: () => _showLegalSheet(context.tr('terms_conditions'), _termsContent),
+              onTap: () => _showLegalSheet(
+                context.tr('terms_conditions'),
+                _termsContent,
+              ),
             ),
           ]),
 
@@ -229,16 +248,28 @@ class _SettingsPageState extends State<SettingsPage> {
           Center(
             child: Column(
               children: [
-                Icon(Icons.shield_rounded, color: _subColor.withValues(alpha: 0.4), size: 28),
+                Icon(
+                  Icons.shield_rounded,
+                  color: _subColor.withValues(alpha: 0.4),
+                  size: 28,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   '© 2026 JNE Martapura HUB',
-                  style: GoogleFonts.outfit(color: _subColor, fontSize: 11, fontWeight: FontWeight.w700),
+                  style: GoogleFonts.outfit(
+                    color: _subColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'All Rights Reserved.',
-                  style: GoogleFonts.outfit(color: _subColor.withValues(alpha: 0.7), fontSize: 10, fontWeight: FontWeight.w500),
+                  style: GoogleFonts.outfit(
+                    color: _subColor.withValues(alpha: 0.7),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -272,17 +303,25 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Row(
         children: [
           Container(
-            width: 56, height: 56,
+            width: 56,
+            height: 56,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppColors.jneOrange.withValues(alpha: 0.9), AppColors.brandRed],
+                colors: [
+                  AppColors.jneOrange.withValues(alpha: 0.9),
+                  AppColors.brandRed,
+                ],
               ),
               shape: BoxShape.circle,
             ),
             child: Text(
               name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: GoogleFonts.outfit(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -290,18 +329,40 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-                Text(email, style: GoogleFonts.outfit(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w500)),
+                Text(
+                  name,
+                  style: GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  email,
+                  style: GoogleFonts.outfit(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     role.toUpperCase(),
-                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1),
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
               ],
@@ -317,7 +378,12 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.only(left: 4),
       child: Text(
         t.toUpperCase(),
-        style: GoogleFonts.outfit(color: _subColor, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+        style: GoogleFonts.outfit(
+          color: _subColor,
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 1.5,
+        ),
       ),
     );
   }
@@ -330,7 +396,8 @@ class _SettingsPageState extends State<SettingsPage> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: _isDark ? 0.2 : 0.03),
-            blurRadius: 12, offset: const Offset(0, 4),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -339,9 +406,12 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _divider() => Padding(
-        padding: const EdgeInsets.only(left: 60),
-        child: Divider(height: 1, color: _isDark ? Colors.white12 : const Color(0xFFF1F5F9)),
-      );
+    padding: const EdgeInsets.only(left: 60),
+    child: Divider(
+      height: 1,
+      color: _isDark ? Colors.white12 : const Color(0xFFF1F5F9),
+    ),
+  );
 
   Widget _switchItem({
     required IconData icon,
@@ -354,10 +424,24 @@ class _SettingsPageState extends State<SettingsPage> {
     return SwitchListTile.adaptive(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       secondary: _iconBox(icon, iconColor),
-      title: Text(title, style: GoogleFonts.outfit(color: _textColor, fontSize: 14, fontWeight: FontWeight.w800)),
+      title: Text(
+        title,
+        style: GoogleFonts.outfit(
+          color: _textColor,
+          fontSize: 14,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
-        child: Text(subtitle, style: GoogleFonts.outfit(color: _subColor, fontSize: 11, fontWeight: FontWeight.w500)),
+        child: Text(
+          subtitle,
+          style: GoogleFonts.outfit(
+            color: _subColor,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ),
       value: value,
       onChanged: onChanged,
@@ -387,15 +471,33 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: GoogleFonts.outfit(color: _textColor, fontSize: 14, fontWeight: FontWeight.w800)),
+                    Text(
+                      title,
+                      style: GoogleFonts.outfit(
+                        color: _textColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                     if (subtitle != null) ...[
                       const SizedBox(height: 2),
-                      Text(subtitle, style: GoogleFonts.outfit(color: _subColor, fontSize: 11, fontWeight: FontWeight.w500)),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.outfit(
+                          color: _subColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ],
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, color: _subColor.withValues(alpha: 0.5), size: 22),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: _subColor.withValues(alpha: 0.5),
+                size: 22,
+              ),
             ],
           ),
         ),
@@ -420,9 +522,23 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: GoogleFonts.outfit(color: _textColor, fontSize: 14, fontWeight: FontWeight.w800)),
+                Text(
+                  title,
+                  style: GoogleFonts.outfit(
+                    color: _textColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(value, style: GoogleFonts.outfit(color: _subColor, fontSize: 11, fontWeight: FontWeight.w600)),
+                Text(
+                  value,
+                  style: GoogleFonts.outfit(
+                    color: _subColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -438,7 +554,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _iconBox(IconData icon, Color color) {
     return Container(
-      width: 38, height: 38,
+      width: 38,
+      height: 38,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: color.withValues(alpha: _isDark ? 0.2 : 0.1),
@@ -453,7 +570,10 @@ class _SettingsPageState extends State<SettingsPage> {
   void _toast(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700)),
+        content: Text(
+          msg,
+          style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700),
+        ),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -462,9 +582,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
   String _languageLabel(String code) {
     switch (code) {
-      case 'en': return 'English';
+      case 'en':
+        return 'English';
       case 'id':
-      default: return 'Bahasa Indonesia';
+      default:
+        return 'Bahasa Indonesia';
     }
   }
 
@@ -482,7 +604,8 @@ class _SettingsPageState extends State<SettingsPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
                   color: _subColor.withValues(alpha: 0.3),
@@ -491,11 +614,26 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               Text(
                 context.tr('choose_language').toUpperCase(),
-                style: GoogleFonts.outfit(color: _textColor, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 2),
+                style: GoogleFonts.outfit(
+                  color: _textColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
               ),
               const SizedBox(height: 12),
-              _langOption(ctx, 'id', '🇮🇩  Bahasa Indonesia', provider.language == 'id'),
-              _langOption(ctx, 'en', '🇬🇧  English', provider.language == 'en'),
+              _langOption(
+                ctx,
+                'id',
+                '🇮🇩  Bahasa Indonesia',
+                provider.language == 'id',
+              ),
+              _langOption(
+                ctx,
+                'en',
+                '🇬🇧  English',
+                provider.language == 'en',
+              ),
             ],
           ),
         ),
@@ -503,7 +641,9 @@ class _SettingsPageState extends State<SettingsPage> {
     );
     if (code != null && code != provider.language) {
       await provider.setLanguage(code);
-      if (mounted) _toast('${context.tr('set_language')}: ${_languageLabel(code)}');
+      if (mounted) {
+        _toast('${context.tr('set_language')}: ${_languageLabel(code)}');
+      }
     }
   }
 
@@ -527,10 +667,15 @@ class _SettingsPageState extends State<SettingsPage> {
             Expanded(
               child: Text(
                 label,
-                style: GoogleFonts.outfit(color: _textColor, fontSize: 14, fontWeight: FontWeight.w800),
+                style: GoogleFonts.outfit(
+                  color: _textColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
-            if (active) const Icon(Icons.check_circle_rounded, color: jneBlue, size: 22),
+            if (active)
+              const Icon(Icons.check_circle_rounded, color: jneBlue, size: 22),
           ],
         ),
       ),
@@ -557,7 +702,8 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               Center(
                 child: Container(
-                  width: 40, height: 4,
+                  width: 40,
+                  height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
                     color: _subColor.withValues(alpha: 0.3),
@@ -567,12 +713,20 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               Text(
                 title,
-                style: GoogleFonts.outfit(color: _textColor, fontSize: 18, fontWeight: FontWeight.w900),
+                style: GoogleFonts.outfit(
+                  color: _textColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 context.tr('effective_date'),
-                style: GoogleFonts.outfit(color: _subColor, fontSize: 11, fontWeight: FontWeight.w600),
+                style: GoogleFonts.outfit(
+                  color: _subColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -599,11 +753,17 @@ class _SettingsPageState extends State<SettingsPage> {
                     backgroundColor: jneBlue,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   child: Text(
                     context.tr('understood').toUpperCase(),
-                    style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2),
+                    style: GoogleFonts.outfit(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                    ),
                   ),
                 ),
               ),
@@ -625,10 +785,16 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSB) => AlertDialog(
           backgroundColor: _cardColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: Text(
             context.tr('change_password2'),
-            style: GoogleFonts.outfit(color: _textColor, fontSize: 16, fontWeight: FontWeight.w900),
+            style: GoogleFonts.outfit(
+              color: _textColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
           ),
           content: Form(
             key: formKey,
@@ -644,14 +810,26 @@ class _SettingsPageState extends State<SettingsPage> {
               decoration: InputDecoration(
                 hintText: context.tr('new_password_hint2'),
                 hintStyle: GoogleFonts.outfit(color: _subColor, fontSize: 13),
-                prefixIcon: Icon(Icons.lock_outline_rounded, color: _subColor, size: 18),
+                prefixIcon: Icon(
+                  Icons.lock_outline_rounded,
+                  color: _subColor,
+                  size: 18,
+                ),
                 suffixIcon: IconButton(
                   onPressed: () => setSB(() => obscure = !obscure),
-                  icon: Icon(obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded, color: _subColor, size: 18),
+                  icon: Icon(
+                    obscure
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded,
+                    color: _subColor,
+                    size: 18,
+                  ),
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: _subColor.withValues(alpha: 0.3)),
+                  borderSide: BorderSide(
+                    color: _subColor.withValues(alpha: 0.3),
+                  ),
                 ),
               ),
             ),
@@ -659,7 +837,13 @@ class _SettingsPageState extends State<SettingsPage> {
           actions: [
             TextButton(
               onPressed: processing ? null : () => Navigator.pop(ctx),
-              child: Text(context.tr('cancel'), style: GoogleFonts.outfit(color: _subColor, fontWeight: FontWeight.w700)),
+              child: Text(
+                context.tr('cancel'),
+                style: GoogleFonts.outfit(
+                  color: _subColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
             ElevatedButton(
               onPressed: processing
@@ -673,30 +857,56 @@ class _SettingsPageState extends State<SettingsPage> {
                         await provider.changePassword(ctrl.text);
                         if (!ctx.mounted) return;
                         Navigator.pop(ctx);
-                        messenger.showSnackBar(SnackBar(
-                          content: Text(okMsg, style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
-                          backgroundColor: zenEmerald,
-                          behavior: SnackBarBehavior.floating,
-                        ));
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              okMsg,
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            backgroundColor: zenEmerald,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
                       } catch (e) {
                         setSB(() => processing = false);
                         if (!ctx.mounted) return;
-                        messenger.showSnackBar(SnackBar(
-                          content: Text(e.toString().replaceFirst('Exception: ', ''), style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
-                          backgroundColor: zenRose,
-                          behavior: SnackBarBehavior.floating,
-                        ));
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              e.toString().replaceFirst('Exception: ', ''),
+                              style: GoogleFonts.outfit(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            backgroundColor: zenRose,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
                       }
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: jneBlue,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               child: processing
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text(context.tr('save'), style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      context.tr('save'),
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.w900),
+                    ),
             ),
           ],
         ),
@@ -711,15 +921,32 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(context.tr('clear_cache_confirm'), style: GoogleFonts.outfit(color: _textColor, fontSize: 16, fontWeight: FontWeight.w900)),
+        title: Text(
+          context.tr('clear_cache_confirm'),
+          style: GoogleFonts.outfit(
+            color: _textColor,
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
         content: Text(
           context.tr('clear_cache_confirm_desc'),
-          style: GoogleFonts.outfit(color: _subColor, fontSize: 13, fontWeight: FontWeight.w500),
+          style: GoogleFonts.outfit(
+            color: _subColor,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(context.tr('cancel'), style: GoogleFonts.outfit(color: _subColor, fontWeight: FontWeight.w700)),
+            child: Text(
+              context.tr('cancel'),
+              style: GoogleFonts.outfit(
+                color: _subColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -727,9 +954,14 @@ class _SettingsPageState extends State<SettingsPage> {
               backgroundColor: zenAmber,
               foregroundColor: Colors.white,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-            child: Text(context.tr('clear_btn'), style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
+            child: Text(
+              context.tr('clear_btn'),
+              style: GoogleFonts.outfit(fontWeight: FontWeight.w900),
+            ),
           ),
         ],
       ),
@@ -739,11 +971,16 @@ class _SettingsPageState extends State<SettingsPage> {
     // simulasikan housekeeping — ekstensi nanti bisa hapus file cache jika ada.
     await Future.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
-    messenger.showSnackBar(SnackBar(
-      content: Text(context.tr('cache_cleared'), style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
-      backgroundColor: zenEmerald,
-      behavior: SnackBarBehavior.floating,
-    ));
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          context.tr('cache_cleared'),
+          style: GoogleFonts.outfit(fontWeight: FontWeight.w700),
+        ),
+        backgroundColor: zenEmerald,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Future<void> _confirmLogout(AppProvider provider) async {
@@ -752,15 +989,32 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _cardColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(context.tr('logout_confirm'), style: GoogleFonts.outfit(color: _textColor, fontSize: 16, fontWeight: FontWeight.w900)),
+        title: Text(
+          context.tr('logout_confirm'),
+          style: GoogleFonts.outfit(
+            color: _textColor,
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
         content: Text(
           context.tr('logout_confirm_desc'),
-          style: GoogleFonts.outfit(color: _subColor, fontSize: 13, fontWeight: FontWeight.w500),
+          style: GoogleFonts.outfit(
+            color: _subColor,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(context.tr('cancel'), style: GoogleFonts.outfit(color: _subColor, fontWeight: FontWeight.w700)),
+            child: Text(
+              context.tr('cancel'),
+              style: GoogleFonts.outfit(
+                color: _subColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -768,9 +1022,14 @@ class _SettingsPageState extends State<SettingsPage> {
               backgroundColor: zenRose,
               foregroundColor: Colors.white,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-            child: Text(context.tr('logout'), style: GoogleFonts.outfit(fontWeight: FontWeight.w900)),
+            child: Text(
+              context.tr('logout'),
+              style: GoogleFonts.outfit(fontWeight: FontWeight.w900),
+            ),
           ),
         ],
       ),

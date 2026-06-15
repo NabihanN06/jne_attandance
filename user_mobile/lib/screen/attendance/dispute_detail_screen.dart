@@ -36,8 +36,11 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
   Color get _bg => _isDark ? const Color(0xFF0B1120) : zenOffWhite;
   Color get _card => _isDark ? const Color(0xFF15203A) : Colors.white;
   Color get _textPrimary => _isDark ? Colors.white : zenNavy;
-  Color get _fieldFill => _isDark ? Colors.white.withValues(alpha: 0.06) : zenOffWhite;
-  Color get _cardBorder => _isDark ? Colors.white.withValues(alpha: 0.07) : zenNavy.withValues(alpha: 0.04);
+  Color get _fieldFill =>
+      _isDark ? Colors.white.withValues(alpha: 0.06) : zenOffWhite;
+  Color get _cardBorder => _isDark
+      ? Colors.white.withValues(alpha: 0.07)
+      : zenNavy.withValues(alpha: 0.04);
 
   final TextEditingController _replyController = TextEditingController();
   File? _attachedImage;
@@ -60,7 +63,10 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
 
   Future<void> _attachPhoto() async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 60);
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 60,
+    );
     if (file != null) setState(() => _attachedImage = File(file.path));
   }
 
@@ -70,10 +76,10 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
     setState(() => _sending = true);
     try {
       await context.read<AppProvider>().replyToDispute(
-            disputeId: widget.dispute.id,
-            text: text,
-            evidenceFile: _attachedImage,
-          );
+        disputeId: widget.dispute.id,
+        text: text,
+        evidenceFile: _attachedImage,
+      );
       if (!mounted) return;
       _replyController.clear();
       setState(() => _attachedImage = null);
@@ -88,9 +94,9 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal kirim: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal kirim: $e')));
       }
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -111,7 +117,8 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
                 color: zenSlate.withValues(alpha: 0.3),
@@ -121,13 +128,23 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
             Text(
               'APAKAH MASALAH SELESAI?',
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(color: _textPrimary, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 2),
+              style: GoogleFonts.outfit(
+                color: _textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Admin sudah menandai komplain ini selesai. Konfirmasi dari Anda menutup tiket secara resmi.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(color: zenSlate, fontSize: 12, height: 1.5, fontWeight: FontWeight.w500),
+              style: GoogleFonts.outfit(
+                color: zenSlate,
+                fontSize: 12,
+                height: 1.5,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 24),
             _bigButton(
@@ -157,12 +174,16 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
       final messenger = ScaffoldMessenger.of(context);
       try {
         await provider.confirmDisputeResolution(
-              disputeId: d.id,
-              satisfied: false,
-            );
+          disputeId: d.id,
+          satisfied: false,
+        );
         if (mounted) {
           messenger.showSnackBar(
-            const SnackBar(content: Text('Tiket dibuka kembali. Tulis pesan untuk admin di bawah.')),
+            const SnackBar(
+              content: Text(
+                'Tiket dibuka kembali. Tulis pesan untuk admin di bawah.',
+              ),
+            ),
           );
         }
       } catch (e) {
@@ -182,7 +203,9 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSB) => Dialog(
           backgroundColor: _card,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -190,7 +213,12 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
               children: [
                 Text(
                   'NILAI RESPON ADMIN',
-                  style: GoogleFonts.outfit(color: _textPrimary, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 2),
+                  style: GoogleFonts.outfit(
+                    color: _textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -200,7 +228,9 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                     return IconButton(
                       onPressed: () => setSB(() => rating = idx),
                       icon: Icon(
-                        idx <= rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                        idx <= rating
+                            ? Icons.star_rounded
+                            : Icons.star_outline_rounded,
                         color: zenAmber,
                         size: 36,
                       ),
@@ -214,7 +244,10 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                   style: GoogleFonts.outfit(fontSize: 13, color: _textPrimary),
                   decoration: InputDecoration(
                     hintText: 'Komentar (opsional)',
-                    hintStyle: GoogleFonts.outfit(color: zenSlate, fontSize: 12),
+                    hintStyle: GoogleFonts.outfit(
+                      color: zenSlate,
+                      fontSize: 12,
+                    ),
                     filled: true,
                     fillColor: _fieldFill,
                     border: OutlineInputBorder(
@@ -231,7 +264,9 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                     onPressed: () async {
                       Navigator.pop(ctx);
                       try {
-                        await context.read<AppProvider>().confirmDisputeResolution(
+                        await context
+                            .read<AppProvider>()
+                            .confirmDisputeResolution(
                               disputeId: d.id,
                               satisfied: true,
                               rating: rating,
@@ -239,24 +274,36 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                             );
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Terima kasih atas konfirmasinya 🙌')),
+                            const SnackBar(
+                              content: Text(
+                                'Terima kasih atas konfirmasinya 🙌',
+                              ),
+                            ),
                           );
                         }
                       } catch (e) {
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal: $e')));
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text('Gagal: $e')));
                         }
                       }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: zenEmerald,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       elevation: 0,
                     ),
                     child: Text(
                       'KIRIM KONFIRMASI',
-                      style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2),
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2,
+                      ),
                     ),
                   ),
                 ),
@@ -280,7 +327,12 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
         elevation: 0,
         title: Text(
           'KOMPLAIN #${d.id.substring(0, d.id.length > 6 ? 6 : d.id.length).toUpperCase()}',
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3),
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 3,
+          ),
         ),
         centerTitle: true,
         leading: IconButton(
@@ -299,8 +351,11 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
               builder: (ctx, snap) {
                 final msgs = snap.data ?? [];
                 final items = _buildTimelineItems(d, msgs);
-                if (snap.connectionState == ConnectionState.waiting && msgs.isEmpty) {
-                  return const Center(child: CircularProgressIndicator(color: zenIndigo));
+                if (snap.connectionState == ConnectionState.waiting &&
+                    msgs.isEmpty) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: zenIndigo),
+                  );
                 }
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (_scroll.hasClients && msgs.isNotEmpty) {
@@ -322,7 +377,10 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
     );
   }
 
-  List<Widget> _buildTimelineItems(DisputeRequest d, List<DisputeMessage> msgs) {
+  List<Widget> _buildTimelineItems(
+    DisputeRequest d,
+    List<DisputeMessage> msgs,
+  ) {
     final widgets = <Widget>[
       _initialDescriptionCard(d),
       const SizedBox(height: 16),
@@ -351,28 +409,49 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.report_problem_rounded, color: zenRose, size: 16),
+              const Icon(
+                Icons.report_problem_rounded,
+                color: zenRose,
+                size: 16,
+              ),
               const SizedBox(width: 8),
               Text(
                 'LAPORAN AWAL',
-                style: GoogleFonts.outfit(color: zenRose, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                style: GoogleFonts.outfit(
+                  color: zenRose,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
               ),
               const Spacer(),
               Text(
                 DateFormat('d MMM • HH:mm').format(d.createdAt),
-                style: GoogleFonts.outfit(color: zenSlate, fontSize: 10, fontWeight: FontWeight.w700),
+                style: GoogleFonts.outfit(
+                  color: zenSlate,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             d.title,
-            style: GoogleFonts.outfit(color: _textPrimary, fontSize: 15, fontWeight: FontWeight.w900),
+            style: GoogleFonts.outfit(
+              color: _textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             d.description,
-            style: GoogleFonts.plusJakartaSans(color: _textPrimary.withValues(alpha: 0.8), fontSize: 13, height: 1.5),
+            style: GoogleFonts.plusJakartaSans(
+              color: _textPrimary.withValues(alpha: 0.8),
+              fontSize: 13,
+              height: 1.5,
+            ),
           ),
           if (d.attachmentUrl != null) ...[
             const SizedBox(height: 12),
@@ -393,7 +472,10 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                   height: 80,
                   color: zenOffWhite,
                   alignment: Alignment.center,
-                  child: const Icon(Icons.broken_image_rounded, color: zenSlate),
+                  child: const Icon(
+                    Icons.broken_image_rounded,
+                    color: zenSlate,
+                  ),
                 ),
               ),
             ),
@@ -419,7 +501,11 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
           Expanded(
             child: Text(
               'Menunggu respon admin. Anda bisa kirim info tambahan kapan saja.',
-              style: GoogleFonts.outfit(color: zenIndigo, fontSize: 11, fontWeight: FontWeight.w700),
+              style: GoogleFonts.outfit(
+                color: zenIndigo,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -435,26 +521,36 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
           margin: const EdgeInsets.symmetric(vertical: 8),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: _isDark ? Colors.white.withValues(alpha: 0.08) : zenNavy.withValues(alpha: 0.05),
+            color: _isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : zenNavy.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             m.text,
             textAlign: TextAlign.center,
-            style: GoogleFonts.outfit(color: zenSlate, fontSize: 11, fontWeight: FontWeight.w700),
+            style: GoogleFonts.outfit(
+              color: zenSlate,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       );
     }
     return Row(
-      mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+      mainAxisAlignment: isUser
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (!isUser) _avatar('A', zenIndigo),
         if (!isUser) const SizedBox(width: 8),
         Flexible(
           child: Container(
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.72,
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: isUser ? zenIndigo : _card,
@@ -474,7 +570,11 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Text(
                       m.senderName,
-                      style: GoogleFonts.outfit(color: zenIndigo, fontSize: 10, fontWeight: FontWeight.w900),
+                      style: GoogleFonts.outfit(
+                        color: zenIndigo,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                 if (m.attachmentUrl != null) ...[
@@ -486,7 +586,9 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                       fit: BoxFit.cover,
                       placeholder: (_, _) => const SizedBox(
                         height: 140,
-                        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                       ),
                       errorWidget: (_, _, _) => const SizedBox(),
                     ),
@@ -506,7 +608,9 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                 Text(
                   DateFormat('HH:mm').format(m.createdAt),
                   style: GoogleFonts.outfit(
-                    color: (isUser ? Colors.white : zenSlate).withValues(alpha: 0.6),
+                    color: (isUser ? Colors.white : zenSlate).withValues(
+                      alpha: 0.6,
+                    ),
                     fontSize: 9,
                     fontWeight: FontWeight.w700,
                   ),
@@ -523,12 +627,17 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
 
   Widget _avatar(String letter, Color color) {
     return Container(
-      width: 28, height: 28,
+      width: 28,
+      height: 28,
       alignment: Alignment.center,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       child: Text(
         letter,
-        style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900),
+        style: GoogleFonts.outfit(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }
@@ -539,11 +648,19 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
       _TimelineStep(
         'Ditinjau',
         Icons.search_rounded,
-        ['in_review', 'resolved', 'closed', 'rejected', 'reopened'].contains(d.status),
+        [
+          'in_review',
+          'resolved',
+          'closed',
+          'rejected',
+          'reopened',
+        ].contains(d.status),
       ),
       _TimelineStep(
         d.status == 'rejected' ? 'Ditolak' : 'Selesai',
-        d.status == 'rejected' ? Icons.cancel_rounded : Icons.check_circle_rounded,
+        d.status == 'rejected'
+            ? Icons.cancel_rounded
+            : Icons.check_circle_rounded,
         ['resolved', 'closed', 'rejected'].contains(d.status),
       ),
       _TimelineStep(
@@ -563,7 +680,9 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
             return Expanded(
               child: Container(
                 height: 2,
-                color: left.active ? zenCyan : Colors.white.withValues(alpha: 0.1),
+                color: left.active
+                    ? zenCyan
+                    : Colors.white.withValues(alpha: 0.1),
               ),
             );
           }
@@ -571,13 +690,20 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
           return Column(
             children: [
               Container(
-                width: 32, height: 32,
+                width: 32,
+                height: 32,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: s.active ? zenCyan : Colors.white.withValues(alpha: 0.08),
+                  color: s.active
+                      ? zenCyan
+                      : Colors.white.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(s.icon, size: 14, color: s.active ? zenNavy : Colors.white38),
+                child: Icon(
+                  s.icon,
+                  size: 14,
+                  color: s.active ? zenNavy : Colors.white38,
+                ),
               ),
               const SizedBox(height: 6),
               SizedBox(
@@ -619,11 +745,19 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
               children: [
                 Text(
                   'Admin menandai selesai',
-                  style: GoogleFonts.outfit(color: zenEmerald, fontSize: 12, fontWeight: FontWeight.w900),
+                  style: GoogleFonts.outfit(
+                    color: zenEmerald,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 Text(
                   'Konfirmasi apakah masalah benar-benar beres.',
-                  style: GoogleFonts.outfit(color: zenEmerald.withValues(alpha: 0.8), fontSize: 11, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.outfit(
+                    color: zenEmerald.withValues(alpha: 0.8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -633,12 +767,18 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
             style: TextButton.styleFrom(
               backgroundColor: zenEmerald,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             ),
             child: Text(
               'KONFIRMASI',
-              style: GoogleFonts.outfit(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+              style: GoogleFonts.outfit(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
             ),
           ),
         ],
@@ -658,14 +798,22 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
       ),
       child: Row(
         children: [
-          Icon(isRejected ? Icons.block_rounded : Icons.lock_outline_rounded, color: color, size: 18),
+          Icon(
+            isRejected ? Icons.block_rounded : Icons.lock_outline_rounded,
+            color: color,
+            size: 18,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               isRejected
                   ? 'Tiket ditolak admin. Buat komplain baru jika perlu.'
                   : 'Tiket sudah ditutup. ${d.userRating != null ? "Rating Anda: ${d.userRating}/5" : ""}',
-              style: GoogleFonts.outfit(color: color, fontSize: 11, fontWeight: FontWeight.w800),
+              style: GoogleFonts.outfit(
+                color: color,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ],
@@ -703,17 +851,30 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.file(_attachedImage!, width: 40, height: 40, fit: BoxFit.cover),
+                      child: Image.file(
+                        _attachedImage!,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         'Foto terlampir',
-                        style: GoogleFonts.outfit(color: _textPrimary, fontSize: 11, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.outfit(
+                          color: _textPrimary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 18, color: zenSlate),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: zenSlate,
+                      ),
                       onPressed: () => setState(() => _attachedImage = null),
                     ),
                   ],
@@ -730,17 +891,26 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                     controller: _replyController,
                     minLines: 1,
                     maxLines: 4,
-                    style: GoogleFonts.outfit(fontSize: 13, color: _textPrimary),
+                    style: GoogleFonts.outfit(
+                      fontSize: 13,
+                      color: _textPrimary,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Tulis balasan ke admin...',
-                      hintStyle: GoogleFonts.outfit(color: zenSlate, fontSize: 12),
+                      hintStyle: GoogleFonts.outfit(
+                        color: zenSlate,
+                        fontSize: 12,
+                      ),
                       filled: true,
                       fillColor: _fieldFill,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                   ),
                 ),
@@ -755,10 +925,18 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
                       padding: const EdgeInsets.all(12),
                       child: _sending
                           ? const SizedBox(
-                              width: 16, height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                          : const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                          : const Icon(
+                              Icons.send_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                     ),
                   ),
                 ),
@@ -785,11 +963,18 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
               icon: Icon(icon, color: color),
               label: Text(
                 label,
-                style: GoogleFonts.outfit(color: color, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                style: GoogleFonts.outfit(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
               ),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: color, width: 2),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             )
           : ElevatedButton.icon(
@@ -797,12 +982,19 @@ class _DisputeDetailScreenState extends State<DisputeDetailScreen> {
               icon: Icon(icon, color: Colors.white),
               label: Text(
                 label,
-                style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: color,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
     );

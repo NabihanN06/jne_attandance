@@ -10,7 +10,7 @@ class UserModel {
   final String email;
   final String phone;
   final String employeeId;
-  final String role;    
+  final String role;
   final String department;
   final String position;
   final bool faceRegistered;
@@ -25,7 +25,7 @@ class UserModel {
     required this.uid,
     required this.name,
     required this.email,
-    required this.phone,  
+    required this.phone,
     required this.employeeId,
     required this.role,
     required this.department,
@@ -78,6 +78,7 @@ class UserModel {
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
+
   UserModel copyWith({
     String? uid,
     String? name,
@@ -106,7 +107,8 @@ class UserModel {
       position: position ?? this.position,
       faceRegistered: faceRegistered ?? this.faceRegistered,
       photoUrl: photoUrl ?? this.photoUrl,
-      allowRemoteAttendance: allowRemoteAttendance ?? this.allowRemoteAttendance,
+      allowRemoteAttendance:
+          allowRemoteAttendance ?? this.allowRemoteAttendance,
       jamKerjaId: jamKerjaId ?? this.jamKerjaId,
       isOnline: isOnline ?? this.isOnline,
       passwordChanged: passwordChanged ?? this.passwordChanged,
@@ -148,7 +150,7 @@ class AttendanceRecord {
 
   factory AttendanceRecord.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
-    
+
     // Support both nested (old) and flat (new Data Connect style) formats
     AttendanceCheck? checkIn;
     if (data['checkIn'] != null) {
@@ -235,8 +237,12 @@ class AttendanceRecord {
       department: json['department'] ?? '',
       date: json['date'] ?? '',
       status: json['status'] ?? '',
-      checkIn: json['checkIn'] != null ? AttendanceCheck.fromMap(json['checkIn']) : null,
-      checkOut: json['checkOut'] != null ? AttendanceCheck.fromMap(json['checkOut']) : null,
+      checkIn: json['checkIn'] != null
+          ? AttendanceCheck.fromMap(json['checkIn'])
+          : null,
+      checkOut: json['checkOut'] != null
+          ? AttendanceCheck.fromMap(json['checkOut'])
+          : null,
       totalWorkMinutes: json['totalWorkMinutes'],
       lateMinutes: json['lateMinutes'],
       overtimeMinutes: json['overtimeMinutes'],
@@ -294,7 +300,6 @@ class AttendanceCheck {
   }
 }
 
-
 class LeaveRequest {
   final String id;
   final String userId;
@@ -342,8 +347,16 @@ class LeaveRequest {
       department: data['department'] ?? '',
       type: data['type'] ?? 'personal',
       status: data['status'] ?? 'pending',
-      startDate: sD is Timestamp ? sD.toDate() : (sD is String ? DateTime.tryParse(sD) ?? DateTime.now() : DateTime.now()),
-      endDate: eD is Timestamp ? eD.toDate() : (eD is String ? DateTime.tryParse(eD) ?? DateTime.now() : DateTime.now()),
+      startDate: sD is Timestamp
+          ? sD.toDate()
+          : (sD is String
+                ? DateTime.tryParse(sD) ?? DateTime.now()
+                : DateTime.now()),
+      endDate: eD is Timestamp
+          ? eD.toDate()
+          : (eD is String
+                ? DateTime.tryParse(eD) ?? DateTime.now()
+                : DateTime.now()),
       totalDays: data['totalDays'] ?? 1,
       reason: data['reason'] ?? '',
       documentUrl: data['documentUrl'],
@@ -387,7 +400,7 @@ class CalendarEvent {
   final String description;
   final DateTime startDate;
   final DateTime endDate;
-  final String type; 
+  final String type;
   final String category; // 'meeting' | 'training' | 'deadline' | 'social'
   final String? location;
   final List<String> attendees;
@@ -416,13 +429,23 @@ class CalendarEvent {
       id: doc.id,
       title: data['title'] ?? '',
       description: data['description'] ?? '',
-      startDate: sD is Timestamp ? sD.toDate() : (sD is String ? DateTime.tryParse(sD) ?? DateTime.now() : DateTime.now()),
-      endDate: eD is Timestamp ? eD.toDate() : (eD is String ? DateTime.tryParse(eD) ?? DateTime.now() : DateTime.now()),
+      startDate: sD is Timestamp
+          ? sD.toDate()
+          : (sD is String
+                ? DateTime.tryParse(sD) ?? DateTime.now()
+                : DateTime.now()),
+      endDate: eD is Timestamp
+          ? eD.toDate()
+          : (eD is String
+                ? DateTime.tryParse(eD) ?? DateTime.now()
+                : DateTime.now()),
       type: data['type'] ?? 'event',
       category: data['category'] ?? 'social',
       location: data['location'],
       attendees: List<String>.from(data['attendees'] ?? []),
-      departments: data['departments'] != null ? List<String>.from(data['departments']) : null,
+      departments: data['departments'] != null
+          ? List<String>.from(data['departments'])
+          : null,
       color: data['color'],
     );
   }
@@ -516,13 +539,13 @@ class OvertimeRequest {
 
 // ── Leave Balance Model ───────────────────────────────────────
 class LeaveBalance {
-  final int annualQuota;      // Total jatah cuti setahun (admin-set or default 12)
-  final int usedAnnual;       // Sudah terpakai (approved leave type=annual)
-  final int usedSick;         // Sakit terpakai
-  final int usedPermission;   // Izin mendadak terpakai
-  final int pendingDays;      // Sedang diajukan (pending)
-  final String? updatedBy;    // Admin yang terakhir set
-  final DateTime? updatedAt;  // Kapan terakhir di-update admin
+  final int annualQuota; // Total jatah cuti setahun (admin-set or default 12)
+  final int usedAnnual; // Sudah terpakai (approved leave type=annual)
+  final int usedSick; // Sakit terpakai
+  final int usedPermission; // Izin mendadak terpakai
+  final int pendingDays; // Sedang diajukan (pending)
+  final String? updatedBy; // Admin yang terakhir set
+  final DateTime? updatedAt; // Kapan terakhir di-update admin
 
   const LeaveBalance({
     this.annualQuota = 12,
@@ -536,7 +559,8 @@ class LeaveBalance {
 
   int get remainingAnnual => (annualQuota - usedAnnual).clamp(0, annualQuota);
   int get totalUsed => usedAnnual + usedSick + usedPermission;
-  double get usagePercent => annualQuota > 0 ? (usedAnnual / annualQuota).clamp(0.0, 1.0) : 0.0;
+  double get usagePercent =>
+      annualQuota > 0 ? (usedAnnual / annualQuota).clamp(0.0, 1.0) : 0.0;
 
   factory LeaveBalance.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};
@@ -576,7 +600,7 @@ class DisputeRequest {
   // Two-way resolution loop
   final bool userConfirmedResolution;
   final String? userResolutionStatus; // 'satisfied' | 'reopened'
-  final int? userRating;              // 1..5
+  final int? userRating; // 1..5
   final String? userFeedback;
   final DateTime? confirmedAt;
   final int messageCount;
@@ -612,7 +636,9 @@ class DisputeRequest {
   bool get isClosed =>
       status == 'closed' ||
       status == 'rejected' ||
-      (status == 'resolved' && userConfirmedResolution && userResolutionStatus == 'satisfied');
+      (status == 'resolved' &&
+          userConfirmedResolution &&
+          userResolutionStatus == 'satisfied');
 
   factory DisputeRequest.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? <String, dynamic>{};

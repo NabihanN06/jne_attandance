@@ -8,7 +8,7 @@ class PackageLoading extends StatelessWidget {
   final double size;
 
   const PackageLoading({
-    super.key, 
+    super.key,
     this.message,
     this.isLight = false,
     this.size = 80,

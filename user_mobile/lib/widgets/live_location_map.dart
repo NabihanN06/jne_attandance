@@ -154,13 +154,17 @@ class _LiveLocationMapState extends State<LiveLocationMap> {
         Marker(
           markerId: const MarkerId('user'),
           position: user,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueAzure,
+          ),
           infoWindow: const InfoWindow(title: 'Posisi Anda'),
         ),
     };
 
     final inRange = geo.isInRange;
-    final circleColor = inRange ? const Color(0xFF10B981) : const Color(0xFFF43F5E);
+    final circleColor = inRange
+        ? const Color(0xFF10B981)
+        : const Color(0xFFF43F5E);
 
     final circles = <Circle>{
       Circle(
@@ -207,17 +211,9 @@ class _LiveLocationMapState extends State<LiveLocationMap> {
         Positioned.fill(child: map),
         if (geo.currentPosition == null) _gpsWaitingOverlay(isDark),
         if (widget.showStatusPill)
-          Positioned(
-            left: 12,
-            top: 12,
-            child: _statusPill(geo, app),
-          ),
+          Positioned(left: 12, top: 12, child: _statusPill(geo, app)),
         if (widget.compact)
-          Positioned(
-            right: 12,
-            bottom: 12,
-            child: _expandHint(),
-          ),
+          Positioned(right: 12, bottom: 12, child: _expandHint()),
       ],
     );
 
@@ -254,7 +250,9 @@ class _LiveLocationMapState extends State<LiveLocationMap> {
 
   Widget _gpsWaitingOverlay(bool isDark) {
     return Container(
-      color: (isDark ? const Color(0xFF0B1120) : Colors.white).withValues(alpha: 0.6),
+      color: (isDark ? const Color(0xFF0B1120) : Colors.white).withValues(
+        alpha: 0.6,
+      ),
       child: Center(
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -262,7 +260,10 @@ class _LiveLocationMapState extends State<LiveLocationMap> {
             const SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF4F46E5)),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(0xFF4F46E5),
+              ),
             ),
             const SizedBox(width: 10),
             Text(
@@ -288,8 +289,8 @@ class _LiveLocationMapState extends State<LiveLocationMap> {
     final String text = mocked
         ? 'Lokasi Palsu'
         : (inRange
-            ? 'Dalam Area'
-            : '${(geo.distanceFromOffice / 1000).toStringAsFixed(geo.distanceFromOffice < 1000 ? 2 : 1)} km dari kantor');
+              ? 'Dalam Area'
+              : '${(geo.distanceFromOffice / 1000).toStringAsFixed(geo.distanceFromOffice < 1000 ? 2 : 1)} km dari kantor');
     final IconData icon = mocked
         ? Icons.gps_off_rounded
         : (inRange ? Icons.verified_rounded : Icons.location_searching_rounded);
@@ -326,7 +327,11 @@ class _LiveLocationMapState extends State<LiveLocationMap> {
         color: const Color(0xFF0B1120).withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Icon(Icons.open_in_full_rounded, color: Colors.white, size: 15),
+      child: const Icon(
+        Icons.open_in_full_rounded,
+        color: Colors.white,
+        size: 15,
+      ),
     );
   }
 }

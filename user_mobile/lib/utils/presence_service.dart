@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart';
 class PresenceService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
-  
+
   static Timer? _heartbeatTimer;
   static String? _deviceId;
   static bool _isOnline = false;
@@ -20,10 +20,10 @@ class PresenceService {
   static void start({required String deviceId}) {
     _deviceId = deviceId;
     _heartbeatTimer?.cancel();
-    
+
     // Send immediate heartbeat
     _sendHeartbeat();
-    
+
     // Schedule periodic heartbeat every 30 seconds
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       _sendHeartbeat();
@@ -82,11 +82,7 @@ class PresenceService {
 
   /// Listen to a specific user's presence status (online + lastSeen masih segar).
   static Stream<bool> subscribeToUser(String userId) {
-    return _db
-        .collection('user_presence')
-        .doc(userId)
-        .snapshots()
-        .map((snap) {
+    return _db.collection('user_presence').doc(userId).snapshots().map((snap) {
       final data = snap.data();
       if (data == null || data['isOnline'] != true) return false;
       final ls = data['lastSeen'];
@@ -105,7 +101,7 @@ class PresenceService {
         .where('isOnline', isEqualTo: true)
         .snapshots()
         .map((snap) {
-      return snap.docs.map((d) => d.id).toSet();
-    });
+          return snap.docs.map((d) => d.id).toSet();
+        });
   }
 }

@@ -45,27 +45,43 @@ class _OvertimePageState extends State<OvertimePage> {
 
   bool _hasRequestForSelectedDate(AppProvider p) {
     final target = DateFormat('yyyy-MM-dd').format(_selectedDate);
-    return p.myOvertimeRequests.any((o) => o.date == target && o.status != 'rejected');
+    return p.myOvertimeRequests.any(
+      (o) => o.date == target && o.status != 'rejected',
+    );
   }
 
   Future<void> _submit() async {
     final provider = context.read<AppProvider>();
 
     if (_reasonCtrl.text.trim().isEmpty) {
-      showAppSnack(context, context.tr('fill_overtime_reason'), color: AppColors.brandRed);
+      showAppSnack(
+        context,
+        context.tr('fill_overtime_reason'),
+        color: AppColors.brandRed,
+      );
       return;
     }
 
     if (_hasRequestForSelectedDate(provider)) {
-      showAppSnack(context, context.tr('ot_exists_for_date'), color: AppColors.brandRed);
+      showAppSnack(
+        context,
+        context.tr('ot_exists_for_date'),
+        color: AppColors.brandRed,
+      );
       return;
     }
 
     final projected = _approvedHoursThisMonth(provider) + _selectedHours;
     if (projected > _monthlyHourCap) {
-      final sisa = (_monthlyHourCap - _approvedHoursThisMonth(provider)).clamp(0, _monthlyHourCap);
-      showAppSnack(context, '${context.tr('exceed_limit')} $_monthlyHourCap ${context.tr('per_month')}. ${context.tr('remaining_word')}: $sisa ${context.tr('hours_word')}.',
-          color: AppColors.brandRed);
+      final sisa = (_monthlyHourCap - _approvedHoursThisMonth(provider)).clamp(
+        0,
+        _monthlyHourCap,
+      );
+      showAppSnack(
+        context,
+        '${context.tr('exceed_limit')} $_monthlyHourCap ${context.tr('per_month')}. ${context.tr('remaining_word')}: $sisa ${context.tr('hours_word')}.',
+        color: AppColors.brandRed,
+      );
       return;
     }
 
@@ -83,8 +99,11 @@ class _OvertimePageState extends State<OvertimePage> {
       showAppSnack(context, submittedMsg, color: AppColors.green);
     } catch (e) {
       if (!mounted) return;
-      showAppSnack(context, '$failPre: ${e.toString().replaceAll('Exception: ', '')}',
-          color: AppColors.brandRed);
+      showAppSnack(
+        context,
+        '$failPre: ${e.toString().replaceAll('Exception: ', '')}',
+        color: AppColors.brandRed,
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -101,9 +120,14 @@ class _OvertimePageState extends State<OvertimePage> {
         scrolledUnderElevation: 0,
         centerTitle: true,
         leading: const AppBackButton(),
-        title: Text(context.tr('overtime_request_title'),
-            style: GoogleFonts.plusJakartaSans(
-                color: pal.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
+        title: Text(
+          context.tr('overtime_request_title'),
+          style: GoogleFonts.plusJakartaSans(
+            color: pal.textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
@@ -158,7 +182,11 @@ class _OvertimePageState extends State<OvertimePage> {
               Text(
                 '${context.tr('overtime_word').toUpperCase()} ${DateFormat('MMMM yyyy', context.read<AppProvider>().language).format(_selectedDate).toUpperCase()}',
                 style: GoogleFonts.plusJakartaSans(
-                    color: _accent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.0),
+                  color: _accent,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.0,
+                ),
               ),
             ],
           ),
@@ -167,15 +195,28 @@ class _OvertimePageState extends State<OvertimePage> {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text('$used',
-                  style: GoogleFonts.plusJakartaSans(
-                      color: pal.textPrimary, fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1)),
-              Text(' / $_monthlyHourCap ${context.tr('hours_word')}',
-                  style: GoogleFonts.plusJakartaSans(
-                      color: pal.textSub, fontSize: 13, fontWeight: FontWeight.w700)),
+              Text(
+                '$used',
+                style: GoogleFonts.plusJakartaSans(
+                  color: pal.textPrimary,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -1,
+                ),
+              ),
+              Text(
+                ' / $_monthlyHourCap ${context.tr('hours_word')}',
+                style: GoogleFonts.plusJakartaSans(
+                  color: pal.textSub,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const Spacer(),
               Text(
-                overLimit ? context.tr('limit_reached').toUpperCase() : '${context.tr('remaining')} $remaining ${context.tr('hours_word')}',
+                overLimit
+                    ? context.tr('limit_reached').toUpperCase()
+                    : '${context.tr('remaining')} $remaining ${context.tr('hours_word')}',
                 style: GoogleFonts.plusJakartaSans(
                   color: overLimit ? AppColors.brandRed : AppColors.green,
                   fontSize: 11,
@@ -213,9 +254,17 @@ class _OvertimePageState extends State<OvertimePage> {
             data: Theme.of(ctx).copyWith(
               colorScheme: isDark
                   ? const ColorScheme.dark(
-                      primary: _accent, onPrimary: Colors.white, surface: AppColors.darkCard, onSurface: Colors.white)
+                      primary: _accent,
+                      onPrimary: Colors.white,
+                      surface: AppColors.darkCard,
+                      onSurface: Colors.white,
+                    )
                   : const ColorScheme.light(
-                      primary: _accent, onPrimary: Colors.white, surface: Colors.white, onSurface: Color(0xFF1E293B)),
+                      primary: _accent,
+                      onPrimary: Colors.white,
+                      surface: Colors.white,
+                      onSurface: Color(0xFF1E293B),
+                    ),
             ),
             child: child!,
           ),
@@ -232,9 +281,14 @@ class _OvertimePageState extends State<OvertimePage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                style: GoogleFonts.plusJakartaSans(
-                    color: pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+            Text(
+              '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+              style: GoogleFonts.plusJakartaSans(
+                color: pal.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
             const Icon(Icons.calendar_today_rounded, color: _accent, size: 20),
           ],
         ),
@@ -260,9 +314,13 @@ class _OvertimePageState extends State<OvertimePage> {
                 border: Border.all(color: isSelected ? _accent : pal.border),
               ),
               child: Center(
-                child: Text('$hour',
-                    style: GoogleFonts.plusJakartaSans(
-                        color: isSelected ? Colors.white : pal.textSub, fontWeight: FontWeight.w800)),
+                child: Text(
+                  '$hour',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: isSelected ? Colors.white : pal.textSub,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
             ),
           ),
@@ -283,10 +341,17 @@ class _OvertimePageState extends State<OvertimePage> {
         maxLines: 4,
         textCapitalization: TextCapitalization.sentences,
         style: GoogleFonts.plusJakartaSans(
-            color: pal.textPrimary, fontSize: 14, fontWeight: FontWeight.w600),
+          color: pal.textPrimary,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
         decoration: InputDecoration(
           hintText: context.tr('ot_reason_hint'),
-          hintStyle: GoogleFonts.plusJakartaSans(color: pal.textFaint, fontSize: 13, fontWeight: FontWeight.w500),
+          hintStyle: GoogleFonts.plusJakartaSans(
+            color: pal.textFaint,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.all(20),
         ),

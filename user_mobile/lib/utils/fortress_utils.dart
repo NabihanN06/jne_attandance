@@ -20,15 +20,21 @@ class FortressUtils {
       } catch (e) {
         attempt++;
         if (attempt > maxRetries) {
-          debugPrint(' Fortress: $taskName failed after $maxRetries attempts: $e');
+          debugPrint(
+            ' Fortress: $taskName failed after $maxRetries attempts: $e',
+          );
           rethrow;
         }
 
-        final delaySeconds = attempt * attempt; // Exponential backoff (1, 4, 9s...)
-        final message = 'Koneksi terganggu, mencoba kembali... (Percobaan $attempt/$maxRetries)';
-        
-        debugPrint(' Fortress: $taskName attempt $attempt failed. Retrying in $delaySeconds s. Error: $e');
-        
+        final delaySeconds =
+            attempt * attempt; // Exponential backoff (1, 4, 9s...)
+        final message =
+            'Koneksi terganggu, mencoba kembali... (Percobaan $attempt/$maxRetries)';
+
+        debugPrint(
+          ' Fortress: $taskName attempt $attempt failed. Retrying in $delaySeconds s. Error: $e',
+        );
+
         if (onStatusUpdate != null) {
           onStatusUpdate(message);
         }
@@ -52,7 +58,7 @@ class FortressUtils {
           item.cancel();
         } else if (item is ChangeNotifier) {
           // Careful with this one as it might be managed by Provider
-          // item.dispose(); 
+          // item.dispose();
         }
       } catch (e) {
         debugPrint(' Fortress: Error disposing ${item.runtimeType}: $e');

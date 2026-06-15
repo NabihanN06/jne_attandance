@@ -40,7 +40,8 @@ import 'screen/calendar/calendar_page.dart';
 import 'screen/history/my_requests_page.dart';
 
 /// Initialize local notifications
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
@@ -49,12 +50,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> _setupFCM() async {
   FirebaseMessaging messaging = FirebaseMessaging.instance;
-  
-  await messaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
+
+  await messaging.requestPermission(alert: true, badge: true, sound: true);
 
   // Get and save FCM token (will be saved again after login)
   String? token = await messaging.getToken();
@@ -69,7 +66,7 @@ Future<void> _setupFCM() async {
   // Initialize local notifications
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
-  
+
   const DarwinInitializationSettings initializationSettingsDarwin =
       DarwinInitializationSettings();
 
@@ -83,7 +80,7 @@ Future<void> _setupFCM() async {
   // Foreground message handler
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     debugPrint('Got foreground message: ${message.notification?.title}');
-    
+
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = message.notification?.android;
 
@@ -96,7 +93,8 @@ Future<void> _setupFCM() async {
           android: AndroidNotificationDetails(
             'high_importance_channel',
             'High Importance Notifications',
-            channelDescription: 'This channel is used for important notifications.',
+            channelDescription:
+                'This channel is used for important notifications.',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@mipmap/ic_launcher',
@@ -136,34 +134,43 @@ void main() async {
   // Background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    systemNavigationBarColor: Colors.white,
-    systemNavigationBarIconBrightness: Brightness.dark,
-  ));
-   runApp(
-     MultiProvider(
-       providers: [
-         ChangeNotifierProvider(create: (_) => ConnectivityService()),
-         ChangeNotifierProxyProvider<ConnectivityService, AppProvider>(
-           create: (ctx) => AppProvider(ctx.read<ConnectivityService>()),
-           update: (_, connectivity, app) => app!,
-         ),
-         ChangeNotifierProvider(create: (_) => ChatProvider()),
-         ChangeNotifierProxyProvider<AppProvider, GeofenceService>(
-           create: (_) => GeofenceService(),
-           update: (ctx, app, geofence) {
-             geofence!.updateOfficeConfig(app.officeLat, app.officeLng, app.officeRadius);
-             return geofence;
-           },
-         ),
-       ],
-       child: const MyApp(),
-     ),
-   );
- }
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ConnectivityService()),
+        ChangeNotifierProxyProvider<ConnectivityService, AppProvider>(
+          create: (ctx) => AppProvider(ctx.read<ConnectivityService>()),
+          update: (_, connectivity, app) => app!,
+        ),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProxyProvider<AppProvider, GeofenceService>(
+          create: (_) => GeofenceService(),
+          update: (ctx, app, geofence) {
+            geofence!.updateOfficeConfig(
+              app.officeLat,
+              app.officeLng,
+              app.officeRadius,
+            );
+            return geofence;
+          },
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
+}
 
 // ── ROOT WIDGET ──
 class MyApp extends StatelessWidget {

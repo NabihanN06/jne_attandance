@@ -12,7 +12,10 @@ class HeartbeatService {
   static Timer? _heartbeatTimer;
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  static void startHeartbeat({required String userId, required String deviceId}) {
+  static void startHeartbeat({
+    required String userId,
+    required String deviceId,
+  }) {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
       try {
@@ -40,10 +43,13 @@ class OfflineService {
   static const String _pendingKey = 'pending_attendance';
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
-  static StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  static StreamSubscription<List<ConnectivityResult>>?
+  _connectivitySubscription;
 
   static Future<void> initAutoSync(Function onSyncComplete) async {
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((result) async {
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      result,
+    ) async {
       if (!result.contains(ConnectivityResult.none)) {
         await _syncPendingData(onSyncComplete);
       }
@@ -69,7 +75,10 @@ class OfflineService {
   }
 
   /// NEW: Save to pending_sync collection for reliable offline-first
-  static Future<void> savePendingSync(AttendanceRecord record, String type) async {
+  static Future<void> savePendingSync(
+    AttendanceRecord record,
+    String type,
+  ) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
@@ -160,9 +169,7 @@ class OfflineService {
           await doc.reference.update({'synced': true});
         } catch (e) {
           // Increment retry counter
-          await doc.reference.update({
-            'syncAttempts': FieldValue.increment(1),
-          });
+          await doc.reference.update({'syncAttempts': FieldValue.increment(1)});
         }
       }
 

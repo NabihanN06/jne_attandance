@@ -18,7 +18,8 @@ class AttendancePage extends StatefulWidget {
   State<AttendancePage> createState() => _AttendancePageState();
 }
 
-class _AttendancePageState extends State<AttendancePage> with TickerProviderStateMixin {
+class _AttendancePageState extends State<AttendancePage>
+    with TickerProviderStateMixin {
   // ── ZEN PREMIUM PALETTE ──
   static const Color zenNavy = Color(0xFF121826);
   static const Color zenIndigo = Color(0xFF4F46E5);
@@ -30,16 +31,18 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   String? _errorMessage;
   final FaceDetector _faceDetector = FaceDetector(
     options: FaceDetectorOptions(
-      enableContours: true, 
+      enableContours: true,
       enableClassification: true,
       performanceMode: FaceDetectorMode.accurate,
     ),
   );
-   
+
   late AnimationController _scanAnimController;
   bool _isCapturing = false;
-  bool _scanError = false; // true sebentar saat gagal (no face / luar area / GPS palsu)
-  int _faceAttempts = 0; // hitung gagal deteksi wajah (batas dari admin: maxFaceAttempts)
+  bool _scanError =
+      false; // true sebentar saat gagal (no face / luar area / GPS palsu)
+  int _faceAttempts =
+      0; // hitung gagal deteksi wajah (batas dari admin: maxFaceAttempts)
 
   void _flashError() {
     if (!mounted) return;
@@ -73,14 +76,17 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
         orElse: () => cameras.first,
       );
       final ctrl = CameraController(
-        front, 
-        ResolutionPreset.high, 
+        front,
+        ResolutionPreset.high,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
       await ctrl.initialize();
       if (!mounted) return;
-      setState(() { _cameraController = ctrl; _isCameraReady = true; });
+      setState(() {
+        _cameraController = ctrl;
+        _isCameraReady = true;
+      });
     } on CameraException catch (e) {
       _handleCameraError(e);
     } catch (e) {
@@ -92,32 +98,38 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     if (e.code == 'CameraAccessDenied') {
       setState(() => _errorMessage = context.tr('camera_denied'));
     } else {
-      setState(() => _errorMessage = '${context.tr('camera_start_failed')}: ${e.description}');
+      setState(
+        () => _errorMessage =
+            '${context.tr('camera_start_failed')}: ${e.description}',
+      );
     }
   }
 
   Future<void> _onShutterTap() async {
     if (!_isCameraReady || _isCapturing) return;
-    
+
     final geo = Provider.of<GeofenceService>(context, listen: false);
     final app = Provider.of<AppProvider>(context, listen: false);
     final isRemoteAllowed = app.canBypassGeofence;
-    
-     if (geo.currentPosition == null) {
-       _showFeedback(context.tr('waiting_gps'), zenNavy);
-       return;
-     }
 
-     if (geo.isLocationMocked) {
-       _flashError();
-       _showFeedback(context.tr('mock_location_rejected'), zenRose);
-       return;
-     }
+    if (geo.currentPosition == null) {
+      _showFeedback(context.tr('waiting_gps'), zenNavy);
+      return;
+    }
+
+    if (geo.isLocationMocked) {
+      _flashError();
+      _showFeedback(context.tr('mock_location_rejected'), zenRose);
+      return;
+    }
 
     if (!geo.isInRange && !isRemoteAllowed) {
       HapticFeedback.vibrate();
       _flashError();
-      _showFeedback('${context.tr('out_of_radius_office')} (${(geo.distanceFromOffice/1000).toStringAsFixed(1)} km)', zenRose);
+      _showFeedback(
+        '${context.tr('out_of_radius_office')} (${(geo.distanceFromOffice / 1000).toStringAsFixed(1)} km)',
+        zenRose,
+      );
       return;
     }
 
@@ -159,7 +171,8 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       } else {
         _faceAttempts = 0; // reset saat berhasil
         if (!mounted) return;
-        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final args =
+            ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
         final bool isCheckOut = args?['isCheckOut'] ?? false;
 
         if (isCheckOut) {
@@ -181,12 +194,17 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
           final now = DateTime.now();
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (_) => SucceedPage(
-              jenis: isCheckOut ? checkOutLabel : checkInLabel,
-              waktu: '${now.hour.toString().padLeft(2,'0')}:${now.minute.toString().padLeft(2,'0')} WITA',
-              status: isCheckOut ? doneCheck : (app.isLateForClockIn ? lateCheck : ontimeCheck),
-              lokasi: isRemoteAllowed ? outsideOfficeLoc : app.hubName,
-            )),
+            MaterialPageRoute(
+              builder: (_) => SucceedPage(
+                jenis: isCheckOut ? checkOutLabel : checkInLabel,
+                waktu:
+                    '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} WITA',
+                status: isCheckOut
+                    ? doneCheck
+                    : (app.isLateForClockIn ? lateCheck : ontimeCheck),
+                lokasi: isRemoteAllowed ? outsideOfficeLoc : app.hubName,
+              ),
+            ),
             (route) => route.isFirst,
           );
         }
@@ -197,10 +215,11 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       final msg = raw.contains('sudah melakukan absensi')
           ? alreadyCheckedIn
           : raw.contains('tidak ditemukan')
-              ? noCheckinYet
-              : raw.toLowerCase().contains('network') || raw.toLowerCase().contains('unavailable')
-                  ? connIssue
-                  : saveFailed;
+          ? noCheckinYet
+          : raw.toLowerCase().contains('network') ||
+                raw.toLowerCase().contains('unavailable')
+          ? connIssue
+          : saveFailed;
       _showFeedback(msg, zenRose);
     } finally {
       if (mounted) setState(() => _isCapturing = false);
@@ -210,7 +229,13 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   void _showFeedback(String msg, Color bg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700, fontSize: 13)),
+        content: Text(
+          msg,
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
         backgroundColor: bg,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(24),
@@ -254,9 +279,14 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
               ? Padding(
                   padding: const EdgeInsets.all(40),
                   child: Text(
-                    _errorMessage!, 
-                    textAlign: TextAlign.center, 
-                    style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 1),
+                    _errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                      letterSpacing: 1,
+                    ),
                   ),
                 )
               : const PackageLoading(isLight: true),
@@ -290,151 +320,207 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
     final remoteAllowed = app.canBypassGeofence;
     final geoOk = geo.isInRange || remoteAllowed;
     // Merah saat: baru gagal scan, GPS palsu, atau di luar area (setelah GPS dapat).
-    final frameColor = (_scanError || geo.isLocationMocked || (!geoOk && geo.currentPosition != null))
+    final frameColor =
+        (_scanError ||
+            geo.isLocationMocked ||
+            (!geoOk && geo.currentPosition != null))
         ? zenRose
         : zenIndigo;
     return Stack(
       children: [
         _buildScannerOverlay(frameColor),
-          
-          // ── APP BAR ──
-          Positioned(
-            top: 0, left: 0, right: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 60, 24, 32),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [zenNavy.withValues(alpha: 0.9), Colors.transparent],
-                ),
-              ),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 44, height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(Icons.chevron_left_rounded, color: Colors.white, size: 28),
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Text(
-                          context.tr('face_verification'),
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.3),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          app.hubName,
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.plusJakartaSans(color: zenCyan, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 44),
-                ],
+
+        // ── APP BAR ──
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 60, 24, 32),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [zenNavy.withValues(alpha: 0.9), Colors.transparent],
               ),
             ),
-          ),
-          
-          // ── STATUS TAG ──
-          _buildStatusInfo(geo, app),
-
-          // ── LIVE MINI MAP (glance where you are vs office) ──
-          Positioned(
-            top: 190,
-            right: 16,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+            child: Row(
               children: [
-                SizedBox(
-                  width: 130,
-                  height: 90,
-                  child: LiveLocationMap(
-                    compact: true,
-                    height: 90,
-                    borderRadius: 18,
-                    showStatusPill: false,
-                    onTap: () => Navigator.pushNamed(context, '/lokasi'),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.chevron_left_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  context.tr('tap_for_map'),
-                  style: GoogleFonts.plusJakartaSans(
-                    color: Colors.white60,
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(
+                        context.tr('face_verification'),
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        app.hubName,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.plusJakartaSans(
+                          color: zenCyan,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(width: 44),
               ],
             ),
           ),
+        ),
 
-          // ── BOTTOM SHUTTER AREA ──
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(32, 40, 32, 60),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [zenNavy.withValues(alpha: 0.95), zenNavy.withValues(alpha: 0.4), Colors.transparent],
+        // ── STATUS TAG ──
+        _buildStatusInfo(geo, app),
+
+        // ── LIVE MINI MAP (glance where you are vs office) ──
+        Positioned(
+          top: 190,
+          right: 16,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 130,
+                height: 90,
+                child: LiveLocationMap(
+                  compact: true,
+                  height: 90,
+                  borderRadius: 18,
+                  showStatusPill: false,
+                  onTap: () => Navigator.pushNamed(context, '/lokasi'),
                 ),
               ),
-              child: Column(
-                children: [
-                   if (_isCameraReady)
-                   GestureDetector(
-                     onTap: (_isCapturing || app.isProcessing) ? null : _onShutterTap,
-                     child: AnimatedOpacity(
-                       duration: const Duration(milliseconds: 400),
-                       opacity: (_isCapturing || app.isProcessing) ? 0.3 : 1.0,
+              const SizedBox(height: 6),
+              Text(
+                context.tr('tap_for_map'),
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white60,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // ── BOTTOM SHUTTER AREA ──
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(32, 40, 32, 60),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [
+                  zenNavy.withValues(alpha: 0.95),
+                  zenNavy.withValues(alpha: 0.4),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+            child: Column(
+              children: [
+                if (_isCameraReady)
+                  GestureDetector(
+                    onTap: (_isCapturing || app.isProcessing)
+                        ? null
+                        : _onShutterTap,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 400),
+                      opacity: (_isCapturing || app.isProcessing) ? 0.3 : 1.0,
                       child: Container(
-                        width: 96, height: 96,
+                        width: 96,
+                        height: 96,
                         padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: frameColor,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            width: 1.5,
+                          ),
                         ),
-                        child: _isCapturing
-                          ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
-                          : Icon(_scanError ? Icons.error_outline_rounded : Icons.fingerprint_rounded, color: Colors.white, size: 40),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: frameColor,
+                          ),
+                          child: _isCapturing
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 3,
+                                )
+                              : Icon(
+                                  _scanError
+                                      ? Icons.error_outline_rounded
+                                      : Icons.fingerprint_rounded,
+                                  color: Colors.white,
+                                  size: 40,
+                                ),
+                        ),
                       ),
                     ),
                   ),
-                ),
                 const SizedBox(height: 32),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.06),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.info_outline_rounded, color: Colors.white54, size: 14),
+                      const Icon(
+                        Icons.info_outline_rounded,
+                        color: Colors.white54,
+                        size: 14,
+                      ),
                       const SizedBox(width: 12),
                       Text(
-                        _isCapturing ? context.tr('processing') : context.tr('position_face'),
-                        style: GoogleFonts.plusJakartaSans(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                        _isCapturing
+                            ? context.tr('processing')
+                            : context.tr('position_face'),
+                        style: GoogleFonts.plusJakartaSans(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -450,7 +536,7 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
   Widget _buildStatusInfo(GeofenceService geo, AppProvider app) {
     final isRemoteAllowed = app.canBypassGeofence;
     final isAllowed = geo.isInRange || isRemoteAllowed;
-    
+
     String statusText = '';
     IconData icon = Icons.gps_fixed_rounded;
     Color color = isAllowed ? zenCyan : zenRose;
@@ -462,13 +548,15 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       statusText = '${app.hubName} • ${context.tr('in_area')}';
       icon = Icons.location_on_rounded;
     } else {
-      statusText = '${context.tr('out_of_area_label')} • ${(geo.distanceFromOffice/1000).toStringAsFixed(1)} km';
+      statusText =
+          '${context.tr('out_of_area_label')} • ${(geo.distanceFromOffice / 1000).toStringAsFixed(1)} km';
       icon = Icons.warning_amber_rounded;
     }
 
     return Positioned(
       top: 140,
-      left: 0, right: 0,
+      left: 0,
+      right: 0,
       child: Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -489,8 +577,10 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.2,
-                  shadows: [Shadow(color: color.withValues(alpha: 0.5), blurRadius: 10)],
-                )
+                  shadows: [
+                    Shadow(color: color.withValues(alpha: 0.5), blurRadius: 10),
+                  ],
+                ),
               ),
             ],
           ),
@@ -510,7 +600,6 @@ class _AttendancePageState extends State<AttendancePage> with TickerProviderStat
       },
     );
   }
-
 }
 
 class ScannerPainter extends CustomPainter {
@@ -548,30 +637,66 @@ class ScannerPainter extends CustomPainter {
       ..strokeWidth = 4.0
       ..strokeCap = StrokeCap.round;
     const bl = 45.0; // bracket length
-    
+
     // TL
-    canvas.drawPath(Path()..moveTo(center.dx - radius, center.dy - radius + bl)..lineTo(center.dx - radius, center.dy - radius)..lineTo(center.dx - radius + bl, center.dy - radius), bracketPaint);
+    canvas.drawPath(
+      Path()
+        ..moveTo(center.dx - radius, center.dy - radius + bl)
+        ..lineTo(center.dx - radius, center.dy - radius)
+        ..lineTo(center.dx - radius + bl, center.dy - radius),
+      bracketPaint,
+    );
     // TR
-    canvas.drawPath(Path()..moveTo(center.dx + radius - bl, center.dy - radius)..lineTo(center.dx + radius, center.dy - radius)..lineTo(center.dx + radius, center.dy - radius + bl), bracketPaint);
+    canvas.drawPath(
+      Path()
+        ..moveTo(center.dx + radius - bl, center.dy - radius)
+        ..lineTo(center.dx + radius, center.dy - radius)
+        ..lineTo(center.dx + radius, center.dy - radius + bl),
+      bracketPaint,
+    );
     // BL
-    canvas.drawPath(Path()..moveTo(center.dx - radius, center.dy + radius - bl)..lineTo(center.dx - radius, center.dy + radius)..lineTo(center.dx - radius + bl, center.dy + radius), bracketPaint);
+    canvas.drawPath(
+      Path()
+        ..moveTo(center.dx - radius, center.dy + radius - bl)
+        ..lineTo(center.dx - radius, center.dy + radius)
+        ..lineTo(center.dx - radius + bl, center.dy + radius),
+      bracketPaint,
+    );
     // BR
-    canvas.drawPath(Path()..moveTo(center.dx + radius - bl, center.dy + radius)..lineTo(center.dx + radius, center.dy + radius)..lineTo(center.dx + radius, center.dy + radius - bl), bracketPaint);
+    canvas.drawPath(
+      Path()
+        ..moveTo(center.dx + radius - bl, center.dy + radius)
+        ..lineTo(center.dx + radius, center.dy + radius)
+        ..lineTo(center.dx + radius, center.dy + radius - bl),
+      bracketPaint,
+    );
 
     // Scanning Line with Gradient Glow
     final lineY = center.dy - radius + (radius * 2 * scanValue);
-    
+
     final scanLinePaint = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          color.withValues(alpha: 0),
-          color.withValues(alpha: 0.9),
-          color.withValues(alpha: 0),
-        ],
-      ).createShader(Rect.fromLTRB(center.dx - radius, lineY - 15, center.dx + radius, lineY + 15))
+      ..shader =
+          LinearGradient(
+            colors: [
+              color.withValues(alpha: 0),
+              color.withValues(alpha: 0.9),
+              color.withValues(alpha: 0),
+            ],
+          ).createShader(
+            Rect.fromLTRB(
+              center.dx - radius,
+              lineY - 15,
+              center.dx + radius,
+              lineY + 15,
+            ),
+          )
       ..strokeWidth = 4.0;
 
-    canvas.drawLine(Offset(center.dx - radius + 10, lineY), Offset(center.dx + radius - 10, lineY), scanLinePaint);
+    canvas.drawLine(
+      Offset(center.dx - radius + 10, lineY),
+      Offset(center.dx + radius - 10, lineY),
+      scanLinePaint,
+    );
   }
 
   @override

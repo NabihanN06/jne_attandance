@@ -30,7 +30,8 @@ class _NotificationPageState extends State<NotificationPage> {
   bool get _isDark => context.read<AppProvider>().isDarkMode;
   Color get zenNavy => _isDark ? Colors.white : const Color(0xFF121826);
   Color get _card => _isDark ? const Color(0xFF15203A) : Colors.white;
-  Color get _border => _isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0);
+  Color get _border =>
+      _isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFE2E8F0);
   Color get _headerColor => _isDark ? const Color(0xFF15203A) : jneBlue;
 
   // Filter: 'all' | 'unread'
@@ -62,7 +63,11 @@ class _NotificationPageState extends State<NotificationPage> {
             pinned: true,
             expandedHeight: 100,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
               onPressed: () => Navigator.pop(context),
             ),
             flexibleSpace: FlexibleSpaceBar(
@@ -73,14 +78,23 @@ class _NotificationPageState extends State<NotificationPage> {
                 children: [
                   Text(
                     context.tr('notifications').toUpperCase(),
-                    style: GoogleFonts.outfit(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 2),
+                    style: GoogleFonts.outfit(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                    ),
                   ),
                   if (unread > 0)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         '$unread ${context.tr('unread_word')}',
-                        style: GoogleFonts.outfit(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.outfit(
+                          color: Colors.white70,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                 ],
@@ -95,11 +109,18 @@ class _NotificationPageState extends State<NotificationPage> {
                     final messenger = ScaffoldMessenger.of(context);
                     final markedMsg = context.tr('all_marked_read');
                     await provider.markAllNotificationsRead();
-                    messenger.showSnackBar(SnackBar(
-                      content: Text(markedMsg, style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 2),
-                    ));
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          markedMsg,
+                          style: GoogleFonts.outfit(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
                   },
                 ),
             ],
@@ -111,7 +132,11 @@ class _NotificationPageState extends State<NotificationPage> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Row(
                 children: [
-                  _filterChip(context.tr('filter_all'), 'all', allNotifications.length),
+                  _filterChip(
+                    context.tr('filter_all'),
+                    'all',
+                    allNotifications.length,
+                  ),
                   const SizedBox(width: 8),
                   _filterChip(context.tr('filter_unread'), 'unread', unread),
                 ],
@@ -124,26 +149,20 @@ class _NotificationPageState extends State<NotificationPage> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (ctx, i) {
-                    if (i == 0) return _smartSectionHeader(tips.length);
-                    final tip = tips[i - 1];
-                    return FadeInRight(
-                      duration: Duration(milliseconds: 250 + (i * 50)),
-                      child: _tipCard(tip),
-                    );
-                  },
-                  childCount: tips.length + 1,
-                ),
+                delegate: SliverChildBuilderDelegate((ctx, i) {
+                  if (i == 0) return _smartSectionHeader(tips.length);
+                  final tip = tips[i - 1];
+                  return FadeInRight(
+                    duration: Duration(milliseconds: 250 + (i * 50)),
+                    child: _tipCard(tip),
+                  );
+                }, childCount: tips.length + 1),
               ),
             ),
 
           // ── Notifications by date group ──
           if (grouped.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: _buildEmptyState(),
-            )
+            SliverFillRemaining(hasScrollBody: false, child: _buildEmptyState())
           else
             ..._buildGroupedSlivers(grouped, provider),
 
@@ -165,7 +184,13 @@ class _NotificationPageState extends State<NotificationPage> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: active ? jneBlue : _border),
           boxShadow: active
-              ? [BoxShadow(color: jneBlue.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4))]
+              ? [
+                  BoxShadow(
+                    color: jneBlue.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
               : null,
         ),
         child: Row(
@@ -184,7 +209,9 @@ class _NotificationPageState extends State<NotificationPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                 decoration: BoxDecoration(
-                  color: active ? Colors.white.withValues(alpha: 0.25) : zenSlate.withValues(alpha: 0.15),
+                  color: active
+                      ? Colors.white.withValues(alpha: 0.25)
+                      : zenSlate.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -212,7 +239,12 @@ class _NotificationPageState extends State<NotificationPage> {
           const SizedBox(width: 8),
           Text(
             context.tr('for_you').toUpperCase(),
-            style: GoogleFonts.outfit(color: zenNavy, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+            style: GoogleFonts.outfit(
+              color: zenNavy,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+            ),
           ),
           const SizedBox(width: 8),
           Container(
@@ -223,7 +255,11 @@ class _NotificationPageState extends State<NotificationPage> {
             ),
             child: Text(
               '$count',
-              style: GoogleFonts.outfit(color: zenAmber, fontSize: 9, fontWeight: FontWeight.w900),
+              style: GoogleFonts.outfit(
+                color: zenAmber,
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ],
@@ -241,12 +277,19 @@ class _NotificationPageState extends State<NotificationPage> {
         color: _card,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withValues(alpha: 0.2), width: 1.2),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 44, height: 44,
+            width: 44,
+            height: 44,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
@@ -264,19 +307,31 @@ class _NotificationPageState extends State<NotificationPage> {
                     Expanded(
                       child: Text(
                         tip.title,
-                        style: GoogleFonts.outfit(color: zenNavy, fontSize: 13, fontWeight: FontWeight.w900),
+                        style: GoogleFonts.outfit(
+                          color: zenNavy,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
                     if (tip.severity == 'urgent')
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 1,
+                        ),
                         decoration: BoxDecoration(
                           color: zenRose,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           context.tr('important_badge').toUpperCase(),
-                          style: GoogleFonts.outfit(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1),
+                          style: GoogleFonts.outfit(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1,
+                          ),
                         ),
                       ),
                   ],
@@ -284,7 +339,12 @@ class _NotificationPageState extends State<NotificationPage> {
                 const SizedBox(height: 4),
                 Text(
                   tip.message,
-                  style: GoogleFonts.outfit(color: zenSlate, fontSize: 11, fontWeight: FontWeight.w600, height: 1.4),
+                  style: GoogleFonts.outfit(
+                    color: zenSlate,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ),
                 ),
                 if (tip.action.isNotEmpty) ...[
                   const SizedBox(height: 8),
@@ -292,7 +352,12 @@ class _NotificationPageState extends State<NotificationPage> {
                     onTap: () => _handleTipAction(tip.action),
                     child: Text(
                       _actionLabel(tip.action),
-                      style: GoogleFonts.outfit(color: color, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.3),
+                      style: GoogleFonts.outfit(
+                        color: color,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.3,
+                      ),
                     ),
                   ),
                 ],
@@ -306,11 +371,16 @@ class _NotificationPageState extends State<NotificationPage> {
 
   String _actionLabel(String action) {
     switch (action) {
-      case 'attendance': return context.tr('act_attendance');
-      case 'leave_balance': return context.tr('act_leave_balance');
-      case 'dispute': return context.tr('act_dispute');
-      case 'statistic': return context.tr('act_statistic');
-      default: return context.tr('act_open');
+      case 'attendance':
+        return context.tr('act_attendance');
+      case 'leave_balance':
+        return context.tr('act_leave_balance');
+      case 'dispute':
+        return context.tr('act_dispute');
+      case 'statistic':
+        return context.tr('act_statistic');
+      default:
+        return context.tr('act_open');
     }
   }
 
@@ -332,7 +402,9 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   // ── Grouping by date ──
-  Map<String, List<AdminNotification>> _groupByDate(List<AdminNotification> list) {
+  Map<String, List<AdminNotification>> _groupByDate(
+    List<AdminNotification> list,
+  ) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
@@ -356,37 +428,46 @@ class _NotificationPageState extends State<NotificationPage> {
     return result;
   }
 
-  List<Widget> _buildGroupedSlivers(Map<String, List<AdminNotification>> grouped, AppProvider provider) {
+  List<Widget> _buildGroupedSlivers(
+    Map<String, List<AdminNotification>> grouped,
+    AppProvider provider,
+  ) {
     final order = ['grp_today', 'grp_yesterday', 'grp_week', 'grp_older'];
     final out = <Widget>[];
     for (final key in order) {
       final items = grouped[key];
       if (items == null || items.isEmpty) continue;
-      out.add(SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-          child: Text(
-            context.tr(key).toUpperCase(),
-            style: GoogleFonts.outfit(color: zenSlate, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+      out.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+            child: Text(
+              context.tr(key).toUpperCase(),
+              style: GoogleFonts.outfit(
+                color: zenSlate,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
+              ),
+            ),
           ),
         ),
-      ));
-      out.add(SliverPadding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (ctx, i) {
+      );
+      out.add(
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate((ctx, i) {
               final notif = items[i];
               return FadeInUp(
                 key: ValueKey(notif.id),
                 duration: Duration(milliseconds: 200 + (i * 50)),
                 child: _buildNotifCard(notif, provider),
               );
-            },
-            childCount: items.length,
+            }, childCount: items.length),
           ),
         ),
-      ));
+      );
     }
     return out;
   }
@@ -400,22 +481,31 @@ class _NotificationPageState extends State<NotificationPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 88, height: 88,
+              width: 88,
+              height: 88,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: jneBlue.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isFiltered ? Icons.mark_email_read_rounded : Icons.notifications_off_rounded,
+                isFiltered
+                    ? Icons.mark_email_read_rounded
+                    : Icons.notifications_off_rounded,
                 color: jneBlue,
                 size: 36,
               ),
             ),
             const SizedBox(height: 20),
             Text(
-              isFiltered ? context.tr('all_read_title') : context.tr('no_notif_title'),
-              style: GoogleFonts.outfit(color: zenNavy, fontSize: 14, fontWeight: FontWeight.w900),
+              isFiltered
+                  ? context.tr('all_read_title')
+                  : context.tr('no_notif_title'),
+              style: GoogleFonts.outfit(
+                color: zenNavy,
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+              ),
             ),
             const SizedBox(height: 6),
             Text(
@@ -423,7 +513,11 @@ class _NotificationPageState extends State<NotificationPage> {
                   ? context.tr('all_read_sub')
                   : context.tr('no_notif_sub'),
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(color: zenSlate, fontSize: 12, fontWeight: FontWeight.w600),
+              style: GoogleFonts.outfit(
+                color: zenSlate,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -459,7 +553,13 @@ class _NotificationPageState extends State<NotificationPage> {
               ),
               boxShadow: isRead
                   ? null
-                  : [BoxShadow(color: color.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+                  : [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -467,7 +567,8 @@ class _NotificationPageState extends State<NotificationPage> {
                 Stack(
                   children: [
                     Container(
-                      width: 42, height: 42,
+                      width: 42,
+                      height: 42,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: color.withValues(alpha: 0.12),
@@ -477,9 +578,11 @@ class _NotificationPageState extends State<NotificationPage> {
                     ),
                     if (!isRead)
                       Positioned(
-                        right: 0, top: 0,
+                        right: 0,
+                        top: 0,
                         child: Container(
-                          width: 10, height: 10,
+                          width: 10,
+                          height: 10,
                           decoration: BoxDecoration(
                             color: zenRose,
                             shape: BoxShape.circle,
@@ -504,14 +607,20 @@ class _NotificationPageState extends State<NotificationPage> {
                               style: GoogleFonts.outfit(
                                 color: zenNavy,
                                 fontSize: 13,
-                                fontWeight: isRead ? FontWeight.w700 : FontWeight.w900,
+                                fontWeight: isRead
+                                    ? FontWeight.w700
+                                    : FontWeight.w900,
                               ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             _formatTime(notif.createdAt),
-                            style: GoogleFonts.outfit(color: zenSlate, fontSize: 10, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.outfit(
+                              color: zenSlate,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ],
                       ),
@@ -538,7 +647,10 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
-  Future<void> _showNotifActions(AdminNotification notif, AppProvider provider) async {
+  Future<void> _showNotifActions(
+    AdminNotification notif,
+    AppProvider provider,
+  ) async {
     await showModalBottomSheet<void>(
       context: context,
       backgroundColor: _card,
@@ -552,7 +664,8 @@ class _NotificationPageState extends State<NotificationPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
                   color: zenSlate.withValues(alpha: 0.3),
@@ -561,8 +674,17 @@ class _NotificationPageState extends State<NotificationPage> {
               ),
               if (!notif.isRead)
                 ListTile(
-                  leading: const Icon(Icons.mark_email_read_rounded, color: zenIndigo),
-                  title: Text(context.tr('mark_as_read'), style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: zenNavy)),
+                  leading: const Icon(
+                    Icons.mark_email_read_rounded,
+                    color: zenIndigo,
+                  ),
+                  title: Text(
+                    context.tr('mark_as_read'),
+                    style: GoogleFonts.outfit(
+                      fontWeight: FontWeight.w700,
+                      color: zenNavy,
+                    ),
+                  ),
                   onTap: () async {
                     Navigator.pop(ctx);
                     await provider.markNotificationAsRead(notif.id);
@@ -570,7 +692,13 @@ class _NotificationPageState extends State<NotificationPage> {
                 ),
               ListTile(
                 leading: const Icon(Icons.close_rounded, color: zenSlate),
-                title: Text(context.tr('close'), style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: zenSlate)),
+                title: Text(
+                  context.tr('close'),
+                  style: GoogleFonts.outfit(
+                    fontWeight: FontWeight.w700,
+                    color: zenSlate,
+                  ),
+                ),
                 onTap: () => Navigator.pop(ctx),
               ),
             ],
@@ -583,63 +711,92 @@ class _NotificationPageState extends State<NotificationPage> {
   // ── Icon & color mapping ──
   IconData _iconForType(String type) {
     switch (type) {
-      case 'leave_request': return Icons.event_busy_rounded;
-      case 'face_enrolled': return Icons.face_retouching_natural_rounded;
-      case 'face_failed': return Icons.error_outline_rounded;
-      case 'new_employee': return Icons.person_add_rounded;
-      case 'attendance_alert': return Icons.warning_amber_rounded;
-      case 'meeting_reminder': return Icons.event_rounded;
+      case 'leave_request':
+        return Icons.event_busy_rounded;
+      case 'face_enrolled':
+        return Icons.face_retouching_natural_rounded;
+      case 'face_failed':
+        return Icons.error_outline_rounded;
+      case 'new_employee':
+        return Icons.person_add_rounded;
+      case 'attendance_alert':
+        return Icons.warning_amber_rounded;
+      case 'meeting_reminder':
+        return Icons.event_rounded;
       case 'dispute':
       case 'dispute_response':
       case 'dispute_closed':
       case 'dispute_reopened':
       case 'dispute_reply':
         return Icons.report_problem_rounded;
-      case 'sos_alert': return Icons.sos_rounded;
-      case 'broadcast': return Icons.campaign_rounded;
-      default: return Icons.notifications_rounded;
+      case 'sos_alert':
+        return Icons.sos_rounded;
+      case 'broadcast':
+        return Icons.campaign_rounded;
+      default:
+        return Icons.notifications_rounded;
     }
   }
 
   Color _colorForType(String type) {
     switch (type) {
-      case 'leave_request': return zenAmber;
-      case 'face_enrolled': return zenEmerald;
-      case 'face_failed': return zenRose;
-      case 'new_employee': return jneBlue;
-      case 'attendance_alert': return zenAmber;
-      case 'meeting_reminder': return zenIndigo;
+      case 'leave_request':
+        return zenAmber;
+      case 'face_enrolled':
+        return zenEmerald;
+      case 'face_failed':
+        return zenRose;
+      case 'new_employee':
+        return jneBlue;
+      case 'attendance_alert':
+        return zenAmber;
+      case 'meeting_reminder':
+        return zenIndigo;
       case 'dispute':
       case 'dispute_response':
       case 'dispute_closed':
       case 'dispute_reopened':
       case 'dispute_reply':
         return const Color(0xFF8B5CF6);
-      case 'sos_alert': return zenRose;
-      case 'broadcast': return jneBlue;
-      default: return zenSlate;
+      case 'sos_alert':
+        return zenRose;
+      case 'broadcast':
+        return jneBlue;
+      default:
+        return zenSlate;
     }
   }
 
   Color _severityColor(String s) {
     switch (s) {
-      case 'urgent': return zenRose;
-      case 'warning': return zenAmber;
-      case 'success': return zenEmerald;
+      case 'urgent':
+        return zenRose;
+      case 'warning':
+        return zenAmber;
+      case 'success':
+        return zenEmerald;
       case 'info':
-      default: return zenIndigo;
+      default:
+        return zenIndigo;
     }
   }
 
   IconData _iconForName(String name) {
     switch (name) {
-      case 'access_time': return Icons.access_time_rounded;
-      case 'logout': return Icons.logout_rounded;
-      case 'beach_access': return Icons.beach_access_rounded;
-      case 'task_alt': return Icons.task_alt_rounded;
-      case 'trending_down': return Icons.trending_down_rounded;
-      case 'emoji_events': return Icons.emoji_events_rounded;
-      default: return Icons.lightbulb_rounded;
+      case 'access_time':
+        return Icons.access_time_rounded;
+      case 'logout':
+        return Icons.logout_rounded;
+      case 'beach_access':
+        return Icons.beach_access_rounded;
+      case 'task_alt':
+        return Icons.task_alt_rounded;
+      case 'trending_down':
+        return Icons.trending_down_rounded;
+      case 'emoji_events':
+        return Icons.emoji_events_rounded;
+      default:
+        return Icons.lightbulb_rounded;
     }
   }
 

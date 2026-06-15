@@ -1,4 +1,3 @@
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -16,7 +15,8 @@ class DisputeSubmissionScreen extends StatefulWidget {
   const DisputeSubmissionScreen({super.key, required this.record});
 
   @override
-  State<DisputeSubmissionScreen> createState() => _DisputeSubmissionScreenState();
+  State<DisputeSubmissionScreen> createState() =>
+      _DisputeSubmissionScreenState();
 }
 
 class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
@@ -35,15 +35,18 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
   Future<void> _pickImage() async {
     final tooLargeMsg = context.tr('image_too_large');
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera, imageQuality: 50);
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 50,
+    );
     if (pickedFile == null) return;
     final file = File(pickedFile.path);
     final size = await file.length();
     if (size > _maxImageBytes) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tooLargeMsg)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(tooLargeMsg)));
       return;
     }
     setState(() => _imageFile = file);
@@ -57,7 +60,8 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
       return;
     }
 
-    final disputeTitle = '${context.tr('dispute_title_prefix')} ${widget.record.date}';
+    final disputeTitle =
+        '${context.tr('dispute_title_prefix')} ${widget.record.date}';
     final sentMsg = context.tr('dispute_sent');
     final failPre = context.tr('failed_submit');
     setState(() => _isSubmitting = true);
@@ -74,7 +78,8 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
       // Cari dispute yang baru dibuat dari provider state. Jika listener belum
       // catch up, kita buat objek minimal untuk dilempar ke detail screen.
       final provider = context.read<AppProvider>();
-      final dispute = provider.myDisputeRequests
+      final dispute =
+          provider.myDisputeRequests
               .where((d) => d.id == disputeId)
               .firstOrNull ??
           (disputeId == null
@@ -94,23 +99,25 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                   updatedAt: DateTime.now(),
                 ));
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(sentMsg)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(sentMsg)));
 
       if (dispute != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => DisputeDetailScreen(dispute: dispute)),
+          MaterialPageRoute(
+            builder: (_) => DisputeDetailScreen(dispute: dispute),
+          ),
         );
       } else {
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$failPre: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$failPre: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -129,7 +136,12 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
         elevation: 0,
         title: Text(
           context.tr('report_anomaly').toUpperCase(),
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3),
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 3,
+          ),
         ),
         centerTitle: true,
         leading: IconButton(
@@ -150,7 +162,11 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(32),
                   boxShadow: [
-                    BoxShadow(color: zenNavy.withValues(alpha: 0.03), blurRadius: 30, offset: const Offset(0, 10))
+                    BoxShadow(
+                      color: zenNavy.withValues(alpha: 0.03),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
+                    ),
                   ],
                 ),
                 child: Row(
@@ -161,7 +177,11 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                         color: zenRose.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.warning_amber_rounded, color: zenRose, size: 24),
+                      child: const Icon(
+                        Icons.warning_amber_rounded,
+                        color: zenRose,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -169,13 +189,25 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            DateFormat('EEEE, d MMMM yyyy', context.read<AppProvider>().language).format(date),
-                            style: GoogleFonts.outfit(color: zenNavy, fontSize: 14, fontWeight: FontWeight.w900),
+                            DateFormat(
+                              'EEEE, d MMMM yyyy',
+                              context.read<AppProvider>().language,
+                            ).format(date),
+                            style: GoogleFonts.outfit(
+                              color: zenNavy,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '${context.tr('status_label')}: ${widget.record.status.toUpperCase()}',
-                            style: GoogleFonts.outfit(color: zenSlate, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 1),
+                            style: GoogleFonts.outfit(
+                              color: zenSlate,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1,
+                            ),
                           ),
                         ],
                       ),
@@ -189,7 +221,12 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
               delay: const Duration(milliseconds: 200),
               child: Text(
                 context.tr('complaint_details').toUpperCase(),
-                style: GoogleFonts.outfit(color: zenSlate, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
+                style: GoogleFonts.outfit(
+                  color: zenSlate,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -198,19 +235,30 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
               child: TextField(
                 controller: _reasonController,
                 maxLines: 5,
-                style: GoogleFonts.outfit(color: zenNavy, fontSize: 14, fontWeight: FontWeight.w600),
+                style: GoogleFonts.outfit(
+                  color: zenNavy,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
                 decoration: InputDecoration(
                   hintText: context.tr('dispute_explain_hint'),
-                  hintStyle: GoogleFonts.outfit(color: zenSlate.withValues(alpha: 0.5), fontSize: 14),
+                  hintStyle: GoogleFonts.outfit(
+                    color: zenSlate.withValues(alpha: 0.5),
+                    fontSize: 14,
+                  ),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: zenNavy.withValues(alpha: 0.05)),
+                    borderSide: BorderSide(
+                      color: zenNavy.withValues(alpha: 0.05),
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: zenNavy.withValues(alpha: 0.05)),
+                    borderSide: BorderSide(
+                      color: zenNavy.withValues(alpha: 0.05),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
@@ -224,7 +272,12 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
               delay: const Duration(milliseconds: 400),
               child: Text(
                 context.tr('attach_evidence').toUpperCase(),
-                style: GoogleFonts.outfit(color: zenSlate, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
+                style: GoogleFonts.outfit(
+                  color: zenSlate,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -241,21 +294,29 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                     border: Border.all(color: zenNavy.withValues(alpha: 0.05)),
                   ),
                   child: _imageFile != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: Image.file(_imageFile!, fit: BoxFit.cover),
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add_a_photo_rounded, color: zenIndigo.withValues(alpha: 0.4), size: 40),
-                          const SizedBox(height: 12),
-                          Text(
-                            context.tr('tap_capture_photo'),
-                            style: GoogleFonts.outfit(color: zenSlate, fontSize: 12, fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: Image.file(_imageFile!, fit: BoxFit.cover),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_a_photo_rounded,
+                              color: zenIndigo.withValues(alpha: 0.4),
+                              size: 40,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              context.tr('tap_capture_photo'),
+                              style: GoogleFonts.outfit(
+                                color: zenSlate,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
               ),
             ),
@@ -270,15 +331,21 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: zenNavy,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                     elevation: 0,
                   ),
                   child: _isSubmitting
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        context.tr('submit_complaint').toUpperCase(),
-                        style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 2),
-                      ),
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : Text(
+                          context.tr('submit_complaint').toUpperCase(),
+                          style: GoogleFonts.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
+                          ),
+                        ),
                 ),
               ),
             ),

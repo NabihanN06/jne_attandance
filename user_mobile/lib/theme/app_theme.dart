@@ -41,13 +41,22 @@ class AppColors {
   static const Color inkFaint = Color(0xFF94A3B8);
 
   /// Gradient hero navy yang dipakai untuk header & kartu utama.
-  static const List<Color> heroGradient = [Color(0xFF15203A), Color(0xFF0B1120)];
+  static const List<Color> heroGradient = [
+    Color(0xFF15203A),
+    Color(0xFF0B1120),
+  ];
 
   /// Gradient brand JNE oranye → merah (untuk hero bold & tombol utama).
-  static const List<Color> brandGradient = [Color(0xFFFF8A1E), Color(0xFFE31E24)];
+  static const List<Color> brandGradient = [
+    Color(0xFFFF8A1E),
+    Color(0xFFE31E24),
+  ];
 
   /// Gradient ungu→biru untuk aksen sekunder.
-  static const List<Color> coolGradient = [Color(0xFF6366F1), Color(0xFF2563EB)];
+  static const List<Color> coolGradient = [
+    Color(0xFF6366F1),
+    Color(0xFF2563EB),
+  ];
 }
 
 /// Palet sadar tema. Buat sekali per build dari `context.palette`.
@@ -56,6 +65,7 @@ class AppPalette {
   const AppPalette(this.isDark);
 
   Color get bg => isDark ? AppColors.darkBg : AppColors.lightBg;
+
   /// Sama dengan [bg] — disatukan supaya semua layar punya background konsisten.
   Color get auroraBase => bg;
   Color get card => isDark ? AppColors.darkCard : AppColors.lightCard;
@@ -74,7 +84,7 @@ class AppPalette {
             color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 10),
-          )
+          ),
         ];
 
   /// Dekorasi kartu standar.
@@ -88,24 +98,26 @@ class AppPalette {
 
   // ── Glassmorphism ──
   /// Isi kaca translucent (dipakai di atas background aurora + BackdropFilter).
-  Color get glassFill =>
-      isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.55);
-  Color get glassBorder =>
-      isDark ? Colors.white.withValues(alpha: 0.12) : Colors.white.withValues(alpha: 0.7);
+  Color get glassFill => isDark
+      ? Colors.white.withValues(alpha: 0.06)
+      : Colors.white.withValues(alpha: 0.55);
+  Color get glassBorder => isDark
+      ? Colors.white.withValues(alpha: 0.12)
+      : Colors.white.withValues(alpha: 0.7);
 
   /// Dekorasi hero navy SOLID (untuk header utama tiap layar). Tanpa gradient.
   BoxDecoration heroDecoration({double radius = 28}) => BoxDecoration(
-        color: AppColors.darkCard,
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.16),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      );
+    color: AppColors.darkCard,
+    borderRadius: BorderRadius.circular(radius),
+    border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.16),
+        blurRadius: 22,
+        offset: const Offset(0, 12),
+      ),
+    ],
+  );
 }
 
 extension AppPaletteX on BuildContext {

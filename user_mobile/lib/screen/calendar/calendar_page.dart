@@ -36,23 +36,36 @@ class _CalendarPageState extends State<CalendarPage> {
     final events = provider.events.where((e) {
       final depts = e.departments;
       final isBroadcast = depts == null || depts.isEmpty;
-      final matchDept = depts != null && user?.department != null && depts.contains(user!.department);
+      final matchDept =
+          depts != null &&
+          user?.department != null &&
+          depts.contains(user!.department);
       final matchUser = user != null && e.attendees.contains(user.uid);
       return isBroadcast || matchDept || matchUser;
     }).toList();
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0B1120) : const Color(0xFFF8FAFC),
+      backgroundColor: isDark
+          ? const Color(0xFF0B1120)
+          : const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: slate950,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Kalender',
-          style: GoogleFonts.plusJakartaSans(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800),
+          style: GoogleFonts.plusJakartaSans(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         centerTitle: true,
       ),
@@ -80,9 +93,7 @@ class _CalendarPageState extends State<CalendarPage> {
           ),
 
           // ── Events for Selected Day ──
-          Expanded(
-            child: _buildEventList(events, pal),
-          ),
+          Expanded(child: _buildEventList(events, pal)),
         ],
       ),
     );
@@ -94,15 +105,26 @@ class _CalendarPageState extends State<CalendarPage> {
       children: [
         IconButton(
           icon: const Icon(Icons.chevron_left_rounded, color: Colors.white),
-          onPressed: () => setState(() => _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1)),
+          onPressed: () => setState(
+            () =>
+                _focusedDay = DateTime(_focusedDay.year, _focusedDay.month - 1),
+          ),
         ),
         Text(
           DateFormat('MMMM yyyy', 'id').format(_focusedDay).toUpperCase(),
-          style: GoogleFonts.outfit(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1),
+          style: GoogleFonts.outfit(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+          ),
         ),
         IconButton(
           icon: const Icon(Icons.chevron_right_rounded, color: Colors.white),
-          onPressed: () => setState(() => _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1)),
+          onPressed: () => setState(
+            () =>
+                _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + 1),
+          ),
         ),
       ],
     );
@@ -112,17 +134,30 @@ class _CalendarPageState extends State<CalendarPage> {
     final days = ['S', 'S', 'R', 'K', 'J', 'S', 'M'];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: days.map((d) => Text(
-        d,
-        style: GoogleFonts.outfit(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.w800),
-      )).toList(),
+      children: days
+          .map(
+            (d) => Text(
+              d,
+              style: GoogleFonts.outfit(
+                color: Colors.white38,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 
   Widget _buildCalendarGrid(List<CalendarEvent> events) {
-    final daysInMonth = DateTime(_focusedDay.year, _focusedDay.month + 1, 0).day;
-    final firstDayOffset = DateTime(_focusedDay.year, _focusedDay.month, 1).weekday - 1;
-    
+    final daysInMonth = DateTime(
+      _focusedDay.year,
+      _focusedDay.month + 1,
+      0,
+    ).day;
+    final firstDayOffset =
+        DateTime(_focusedDay.year, _focusedDay.month, 1).weekday - 1;
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -134,12 +169,18 @@ class _CalendarPageState extends State<CalendarPage> {
       itemCount: daysInMonth + firstDayOffset,
       itemBuilder: (context, index) {
         if (index < firstDayOffset) return const SizedBox();
-        
+
         final day = index - firstDayOffset + 1;
         final date = DateTime(_focusedDay.year, _focusedDay.month, day);
-        final isSelected = _selectedDay.day == day && _selectedDay.month == _focusedDay.month && _selectedDay.year == _focusedDay.year;
-        final isToday = DateTime.now().day == day && DateTime.now().month == _focusedDay.month && DateTime.now().year == _focusedDay.year;
-        
+        final isSelected =
+            _selectedDay.day == day &&
+            _selectedDay.month == _focusedDay.month &&
+            _selectedDay.year == _focusedDay.year;
+        final isToday =
+            DateTime.now().day == day &&
+            DateTime.now().month == _focusedDay.month &&
+            DateTime.now().year == _focusedDay.year;
+
         // Check for events on this day
         final hasEvents = events.any((e) => isSameDay(e.startDate, date));
 
@@ -148,9 +189,15 @@ class _CalendarPageState extends State<CalendarPage> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
-              color: isSelected ? jneRed : isToday ? Colors.white12 : Colors.transparent,
+              color: isSelected
+                  ? jneRed
+                  : isToday
+                  ? Colors.white12
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(16),
-              border: isToday ? Border.all(color: jneRed.withValues(alpha: 0.5), width: 1) : null,
+              border: isToday
+                  ? Border.all(color: jneRed.withValues(alpha: 0.5), width: 1)
+                  : null,
             ),
             child: Stack(
               alignment: Alignment.center,
@@ -160,7 +207,9 @@ class _CalendarPageState extends State<CalendarPage> {
                   style: GoogleFonts.outfit(
                     color: isSelected ? Colors.white : Colors.white70,
                     fontSize: 14,
-                    fontWeight: isSelected || isToday ? FontWeight.w900 : FontWeight.w600,
+                    fontWeight: isSelected || isToday
+                        ? FontWeight.w900
+                        : FontWeight.w600,
                   ),
                 ),
                 if (hasEvents && !isSelected)
@@ -169,7 +218,10 @@ class _CalendarPageState extends State<CalendarPage> {
                     child: Container(
                       width: 4,
                       height: 4,
-                      decoration: const BoxDecoration(color: jneRed, shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                        color: jneRed,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
               ],
@@ -181,7 +233,9 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   Widget _buildEventList(List<CalendarEvent> events, AppPalette pal) {
-    final dayEvents = events.where((e) => isSameDay(e.startDate, _selectedDay)).toList();
+    final dayEvents = events
+        .where((e) => isSameDay(e.startDate, _selectedDay))
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -194,16 +248,30 @@ class _CalendarPageState extends State<CalendarPage> {
               Expanded(
                 child: Text(
                   DateFormat('EEEE, d MMMM', 'id').format(_selectedDay),
-                  style: GoogleFonts.outfit(color: pal.textPrimary, fontSize: 18, fontWeight: FontWeight.w900),
+                  style: GoogleFonts.outfit(
+                    color: pal.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: jneBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: jneBlue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Text(
                   '${dayEvents.length} ACARA',
-                  style: GoogleFonts.outfit(color: jneBlue, fontSize: 10, fontWeight: FontWeight.w900),
+                  style: GoogleFonts.outfit(
+                    color: jneBlue,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ],
@@ -211,18 +279,18 @@ class _CalendarPageState extends State<CalendarPage> {
         ),
         Expanded(
           child: dayEvents.isEmpty
-            ? _buildEmptyState()
-            : ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                itemCount: dayEvents.length,
-                itemBuilder: (context, index) {
-                  final e = dayEvents[index];
-                  return FadeInUp(
-                    delay: Duration(milliseconds: index * 100),
-                    child: _buildEventCard(e, pal),
-                  );
-                },
-              ),
+              ? _buildEmptyState()
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  itemCount: dayEvents.length,
+                  itemBuilder: (context, index) {
+                    final e = dayEvents[index];
+                    return FadeInUp(
+                      delay: Duration(milliseconds: index * 100),
+                      child: _buildEventCard(e, pal),
+                    );
+                  },
+                ),
         ),
       ],
     );
@@ -239,27 +307,43 @@ class _CalendarPageState extends State<CalendarPage> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: _getCategoryColor(e.category).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   e.category.toUpperCase(),
-                  style: GoogleFonts.outfit(color: _getCategoryColor(e.category), fontSize: 9, fontWeight: FontWeight.w900),
+                  style: GoogleFonts.outfit(
+                    color: _getCategoryColor(e.category),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
               const Spacer(),
               Text(
                 DateFormat('HH:mm').format(e.startDate),
-                style: GoogleFonts.outfit(color: pal.textSub, fontSize: 12, fontWeight: FontWeight.w800),
+                style: GoogleFonts.outfit(
+                  color: pal.textSub,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Text(
             e.title,
-            style: GoogleFonts.outfit(color: pal.textPrimary, fontSize: 16, fontWeight: FontWeight.w900, height: 1.2),
+            style: GoogleFonts.outfit(
+              color: pal.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              height: 1.2,
+            ),
           ),
           if (e.description.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -267,26 +351,46 @@ class _CalendarPageState extends State<CalendarPage> {
               e.description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.outfit(color: pal.textSub, fontSize: 12, fontWeight: FontWeight.w500),
+              style: GoogleFonts.outfit(
+                color: pal.textSub,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
           const SizedBox(height: 16),
           Row(
             children: [
-              const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFF94A3B8)),
+              const Icon(
+                Icons.location_on_rounded,
+                size: 14,
+                color: Color(0xFF94A3B8),
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   e.location ?? 'Hub Martapura',
-                  style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w700),
+                  style: GoogleFonts.outfit(
+                    color: const Color(0xFF94A3B8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
-              const Icon(Icons.people_rounded, size: 14, color: Color(0xFF94A3B8)),
+              const Icon(
+                Icons.people_rounded,
+                size: 14,
+                color: Color(0xFF94A3B8),
+              ),
               const SizedBox(width: 6),
               Text(
                 '${e.attendees.length + (e.departments?.length ?? 0)} Diundang',
-                style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w700),
+                style: GoogleFonts.outfit(
+                  color: const Color(0xFF94A3B8),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -300,15 +404,27 @@ class _CalendarPageState extends State<CalendarPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.calendar_today_rounded, color: const Color(0xFFCBD5E1), size: 48),
+          Icon(
+            Icons.calendar_today_rounded,
+            color: const Color(0xFFCBD5E1),
+            size: 48,
+          ),
           const SizedBox(height: 16),
           Text(
             'Tidak ada acara terjadwal',
-            style: GoogleFonts.outfit(color: const Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w700),
+            style: GoogleFonts.outfit(
+              color: const Color(0xFF94A3B8),
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           Text(
             'Pilih tanggal lain atau hubungi Admin',
-            style: GoogleFonts.outfit(color: const Color(0xFFCBD5E1), fontSize: 12, fontWeight: FontWeight.w500),
+            style: GoogleFonts.outfit(
+              color: const Color(0xFFCBD5E1),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -317,11 +433,16 @@ class _CalendarPageState extends State<CalendarPage> {
 
   Color _getCategoryColor(String cat) {
     switch (cat) {
-      case 'meeting': return jneBlue;
-      case 'training': return Colors.purple;
-      case 'deadline': return jneRed;
-      case 'social': return Colors.orange;
-      default: return const Color(0xFF64748B);
+      case 'meeting':
+        return jneBlue;
+      case 'training':
+        return Colors.purple;
+      case 'deadline':
+        return jneRed;
+      case 'social':
+        return Colors.orange;
+      default:
+        return const Color(0xFF64748B);
     }
   }
 

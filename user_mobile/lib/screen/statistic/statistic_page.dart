@@ -11,7 +11,9 @@ class StatisticPage extends StatefulWidget {
 }
 
 class _StatisticPageState extends State<StatisticPage> {
-  static const Color jneBlue = Color(0xFF4F46E5); // indigo accent (selaras tema app)
+  static const Color jneBlue = Color(
+    0xFF4F46E5,
+  ); // indigo accent (selaras tema app)
   static const Color jneRed = Color(0xFFE31E24);
   static const Color bgLight = Color(0xFFF1F5F9);
 
@@ -19,7 +21,8 @@ class _StatisticPageState extends State<StatisticPage> {
   bool get _isDark => context.read<AppProvider>().isDarkMode;
   Color get _card => _isDark ? const Color(0xFF15203A) : Colors.white;
   Color get _textPrimary => _isDark ? Colors.white : const Color(0xFF0F172A);
-  Color get _border => _isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9);
+  Color get _border =>
+      _isDark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9);
 
   int _bulan = DateTime.now().month;
   int _tahun = DateTime.now().year;
@@ -30,7 +33,10 @@ class _StatisticPageState extends State<StatisticPage> {
   double? _locationCompliance(AppProvider p) {
     final monthRecords = p.myAttendance.where((r) {
       final d = DateTime.tryParse(r.date);
-      return d != null && d.month == _bulan && d.year == _tahun && r.checkIn != null;
+      return d != null &&
+          d.month == _bulan &&
+          d.year == _tahun &&
+          r.checkIn != null;
     }).toList();
     if (monthRecords.isEmpty) return null;
     final radius = p.officeRadius;
@@ -48,7 +54,9 @@ class _StatisticPageState extends State<StatisticPage> {
       return d != null && d.month == _bulan && d.year == _tahun;
     }).toList();
     if (monthRecords.isEmpty) return null;
-    final complete = monthRecords.where((r) => r.checkIn != null && r.checkOut != null).length;
+    final complete = monthRecords
+        .where((r) => r.checkIn != null && r.checkOut != null)
+        .length;
     return complete / monthRecords.length;
   }
 
@@ -69,7 +77,11 @@ class _StatisticPageState extends State<StatisticPage> {
             backgroundColor: _card,
             surfaceTintColor: _card,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios_new_rounded, color: _textPrimary, size: 20),
+              icon: Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: _textPrimary,
+                size: 20,
+              ),
               onPressed: () => Navigator.pop(context),
             ),
             flexibleSpace: FlexibleSpaceBar(
@@ -88,7 +100,11 @@ class _StatisticPageState extends State<StatisticPage> {
                 child: Center(
                   child: Opacity(
                     opacity: _isDark ? 0.06 : 0.04,
-                    child: Icon(Icons.insights_rounded, size: 200, color: jneBlue),
+                    child: Icon(
+                      Icons.insights_rounded,
+                      size: 200,
+                      color: jneBlue,
+                    ),
                   ),
                 ),
               ),
@@ -96,9 +112,7 @@ class _StatisticPageState extends State<StatisticPage> {
           ),
 
           // ── Content ──
-          SliverFillRemaining(
-            child: _buildMonthlyStats(),
-          ),
+          SliverFillRemaining(child: _buildMonthlyStats()),
         ],
       ),
     );
@@ -126,7 +140,7 @@ class _StatisticPageState extends State<StatisticPage> {
                       color: Colors.black.withValues(alpha: 0.02),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
-                    )
+                    ),
                   ],
           ),
           child: Row(
@@ -135,11 +149,16 @@ class _StatisticPageState extends State<StatisticPage> {
               IconButton(
                 icon: const Icon(Icons.chevron_left_rounded, color: jneBlue),
                 onPressed: () => setState(() {
-                  _bulan--; if (_bulan < 1) { _bulan = 12; _tahun--; }
+                  _bulan--;
+                  if (_bulan < 1) {
+                    _bulan = 12;
+                    _tahun--;
+                  }
                 }),
               ),
               Text(
-                '${AppStrings.months(provider.language)[_bulan - 1]} $_tahun'.toUpperCase(),
+                '${AppStrings.months(provider.language)[_bulan - 1]} $_tahun'
+                    .toUpperCase(),
                 style: GoogleFonts.outfit(
                   color: _textPrimary,
                   fontSize: 15,
@@ -150,35 +169,63 @@ class _StatisticPageState extends State<StatisticPage> {
               IconButton(
                 icon: const Icon(Icons.chevron_right_rounded, color: jneBlue),
                 onPressed: () => setState(() {
-                  _bulan++; if (_bulan > 12) { _bulan = 1; _tahun++; }
+                  _bulan++;
+                  if (_bulan > 12) {
+                    _bulan = 1;
+                    _tahun++;
+                  }
                 }),
               ),
             ],
           ),
         ),
         const SizedBox(height: 32),
-        
+
         // Bento Grid for Stats
         LayoutBuilder(
           builder: (context, constraints) {
             final double spacing = 16;
             final double itemWidth = (constraints.maxWidth - spacing) / 2;
-            
+
             return Wrap(
               spacing: spacing,
               runSpacing: spacing,
               children: [
-                _buildBentoStat(stats['present'], context.tr('days_present'), Icons.check_circle_rounded, const Color(0xFF10B981), itemWidth),
-                _buildBentoStat(stats['leaves'], context.tr('leave_sick_label'), Icons.assignment_rounded, const Color(0xFFF59E0B), itemWidth),
-                _buildBentoStat(stats['late'], context.tr('late_minutes'), Icons.alarm_rounded, jneRed, itemWidth),
-                _buildBentoStat(stats['hours'], context.tr('total_hours'), Icons.timer_rounded, const Color(0xFF3B82F6), itemWidth),
+                _buildBentoStat(
+                  stats['present'],
+                  context.tr('days_present'),
+                  Icons.check_circle_rounded,
+                  const Color(0xFF10B981),
+                  itemWidth,
+                ),
+                _buildBentoStat(
+                  stats['leaves'],
+                  context.tr('leave_sick_label'),
+                  Icons.assignment_rounded,
+                  const Color(0xFFF59E0B),
+                  itemWidth,
+                ),
+                _buildBentoStat(
+                  stats['late'],
+                  context.tr('late_minutes'),
+                  Icons.alarm_rounded,
+                  jneRed,
+                  itemWidth,
+                ),
+                _buildBentoStat(
+                  stats['hours'],
+                  context.tr('total_hours'),
+                  Icons.timer_rounded,
+                  const Color(0xFF3B82F6),
+                  itemWidth,
+                ),
               ],
             );
           },
         ),
-        
+
         const SizedBox(height: 32),
-        
+
         // Performance Analysis Section
         _buildPerformanceAnalysis(
           punctuality: (stats['punctuality'] as num?)?.toDouble() ?? 0.0,
@@ -189,7 +236,13 @@ class _StatisticPageState extends State<StatisticPage> {
     );
   }
 
-  Widget _buildBentoStat(String value, String label, IconData icon, Color color, double width) {
+  Widget _buildBentoStat(
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+    double width,
+  ) {
     return Container(
       width: width,
       padding: const EdgeInsets.all(24),
@@ -204,7 +257,7 @@ class _StatisticPageState extends State<StatisticPage> {
                   color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
-                )
+                ),
               ],
       ),
       child: Column(
@@ -259,7 +312,7 @@ class _StatisticPageState extends State<StatisticPage> {
             color: const Color(0xFF0F172A).withValues(alpha: 0.1),
             blurRadius: 30,
             offset: const Offset(0, 20),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -267,7 +320,11 @@ class _StatisticPageState extends State<StatisticPage> {
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome_rounded, color: Colors.amber, size: 20),
+              const Icon(
+                Icons.auto_awesome_rounded,
+                color: Colors.amber,
+                size: 20,
+              ),
               const SizedBox(width: 12),
               Text(
                 context.tr('performance_analysis').toUpperCase(),
@@ -281,11 +338,23 @@ class _StatisticPageState extends State<StatisticPage> {
             ],
           ),
           const SizedBox(height: 32),
-          _buildAnalysisRow(context.tr('punctuality_label'), punctuality, const Color(0xFF10B981)),
+          _buildAnalysisRow(
+            context.tr('punctuality_label'),
+            punctuality,
+            const Color(0xFF10B981),
+          ),
           const SizedBox(height: 24),
-          _buildAnalysisRow(context.tr('location_compliance'), locationCompliance, const Color(0xFF3B82F6)),
+          _buildAnalysisRow(
+            context.tr('location_compliance'),
+            locationCompliance,
+            const Color(0xFF3B82F6),
+          ),
           const SizedBox(height: 24),
-          _buildAnalysisRow(context.tr('hour_effectiveness'), hourEffectiveness, const Color(0xFFF59E0B)),
+          _buildAnalysisRow(
+            context.tr('hour_effectiveness'),
+            hourEffectiveness,
+            const Color(0xFFF59E0B),
+          ),
         ],
       ),
     );
@@ -336,13 +405,15 @@ class _StatisticPageState extends State<StatisticPage> {
               decoration: BoxDecoration(
                 color: hasData ? color : Colors.white12,
                 borderRadius: BorderRadius.circular(10),
-                boxShadow: hasData ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  )
-                ] : null,
+                boxShadow: hasData
+                    ? [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
             ),
           ],

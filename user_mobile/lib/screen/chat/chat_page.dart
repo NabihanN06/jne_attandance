@@ -62,7 +62,8 @@ class _ChatPageState extends State<ChatPage> {
   Future<String?> _uploadImage(File file) async {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
-      final fileName = 'chat_${uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final fileName =
+          'chat_${uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final ref = FirebaseStorage.instance.ref().child('chat_images/$fileName');
       await ref.putFile(file);
       return await ref.getDownloadURL();
@@ -89,7 +90,9 @@ class _ChatPageState extends State<ChatPage> {
     if (admin != null && mounted) {
       setState(() => _targetAdmin = admin);
       _adminPresenceSub?.cancel();
-      _adminPresenceSub = PresenceService.subscribeToUser(admin.uid).listen((online) {
+      _adminPresenceSub = PresenceService.subscribeToUser(admin.uid).listen((
+        online,
+      ) {
         if (mounted) setState(() => _adminOnline = online);
       });
     }
@@ -103,7 +106,10 @@ class _ChatPageState extends State<ChatPage> {
       chat.updateTyping(id, true);
       // Auto-reset kalau berhenti ngetik 3 dtk (biar tidak nyangkut "mengetik").
       _typingTimer?.cancel();
-      _typingTimer = Timer(const Duration(seconds: 3), () => chat.updateTyping(id, false));
+      _typingTimer = Timer(
+        const Duration(seconds: 3),
+        () => chat.updateTyping(id, false),
+      );
     } else {
       _typingTimer?.cancel();
       chat.updateTyping(id, false);
@@ -130,9 +136,9 @@ class _ChatPageState extends State<ChatPage> {
     final size = await file.length();
     if (size > _maxImageBytes) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tooLargeMsg)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(tooLargeMsg)));
       return;
     }
     setState(() {
@@ -146,7 +152,9 @@ class _ChatPageState extends State<ChatPage> {
     final chat = context.read<ChatProvider>();
     final app = context.read<AppProvider>();
 
-    if (_messageController.text.trim().isEmpty && _selectedImage == null) return;
+    if (_messageController.text.trim().isEmpty && _selectedImage == null) {
+      return;
+    }
 
     setState(() => _isSending = true);
 
@@ -188,7 +196,10 @@ class _ChatPageState extends State<ChatPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$sendFailPre: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('$sendFailPre: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -224,7 +235,11 @@ class _ChatPageState extends State<ChatPage> {
                     color: _accent.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.support_agent_rounded, color: _accent, size: 20),
+                  child: const Icon(
+                    Icons.support_agent_rounded,
+                    color: _accent,
+                    size: 20,
+                  ),
                 ),
                 Positioned(
                   right: 0,
@@ -248,14 +263,20 @@ class _ChatPageState extends State<ChatPage> {
                 Text(
                   _targetAdmin?.name ?? context.tr('admin_hr'),
                   style: GoogleFonts.plusJakartaSans(
-                      color: pal.textPrimary, fontSize: 15, fontWeight: FontWeight.w800),
+                    color: pal.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 Text(
-                  online ? context.tr('online_word') : context.tr('offline_word'),
+                  online
+                      ? context.tr('online_word')
+                      : context.tr('offline_word'),
                   style: GoogleFonts.plusJakartaSans(
-                      color: online ? _accent : pal.textSub,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600),
+                    color: online ? _accent : pal.textSub,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -268,24 +289,25 @@ class _ChatPageState extends State<ChatPage> {
             child: chat.isLoading
                 ? const Center(child: CircularProgressIndicator(color: _accent))
                 : chat.messages.isEmpty
-                    ? EmptyState(
-                        icon: Icons.forum_rounded,
-                        title: context.tr('start_conversation'),
-                        subtitle: context.tr('start_conversation_sub'),
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(20),
-                        itemCount: chat.messages.length + (chat.otherUserTyping ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index == chat.messages.length) {
-                            return _buildTypingIndicator(pal);
-                          }
-                          final msg = chat.messages[index];
-                          bool isMe = msg.senderId == app.currentUser?.uid;
-                          return _buildMessageBubble(msg, isMe, chat, pal);
-                        },
-                      ),
+                ? EmptyState(
+                    icon: Icons.forum_rounded,
+                    title: context.tr('start_conversation'),
+                    subtitle: context.tr('start_conversation_sub'),
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(20),
+                    itemCount:
+                        chat.messages.length + (chat.otherUserTyping ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == chat.messages.length) {
+                        return _buildTypingIndicator(pal);
+                      }
+                      final msg = chat.messages[index];
+                      bool isMe = msg.senderId == app.currentUser?.uid;
+                      return _buildMessageBubble(msg, isMe, chat, pal);
+                    },
+                  ),
           ),
           _buildInputArea(pal),
         ],
@@ -307,9 +329,14 @@ class _ChatPageState extends State<ChatPage> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(context.tr('admin_typing'),
-                style: GoogleFonts.plusJakartaSans(
-                    fontSize: 10, fontWeight: FontWeight.w600, color: pal.textSub)),
+            Text(
+              context.tr('admin_typing'),
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: pal.textSub,
+              ),
+            ),
             const SizedBox(width: 8),
             SizedBox(
               width: 20,
@@ -320,7 +347,10 @@ class _ChatPageState extends State<ChatPage> {
                   (i) => Container(
                     width: 4,
                     height: 4,
-                    decoration: const BoxDecoration(color: _accent, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                      color: _accent,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
               ),
@@ -331,7 +361,12 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage msg, bool isMe, ChatProvider chat, AppPalette pal) {
+  Widget _buildMessageBubble(
+    ChatMessage msg,
+    bool isMe,
+    ChatProvider chat,
+    AppPalette pal,
+  ) {
     final bool isDeleted = msg.text == '🚫 Pesan telah dihapus';
     final bubbleColor = isMe ? _accent : pal.card;
     final textColor = isMe ? Colors.white : pal.textPrimary;
@@ -339,10 +374,14 @@ class _ChatPageState extends State<ChatPage> {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
-        onLongPress: isMe && !isDeleted ? () => _showDeleteDialog(msg, chat, pal) : null,
+        onLongPress: isMe && !isDeleted
+            ? () => _showDeleteDialog(msg, chat, pal)
+            : null,
         child: Container(
           margin: const EdgeInsets.only(bottom: 16),
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.75,
+          ),
           decoration: BoxDecoration(
             color: bubbleColor,
             borderRadius: BorderRadius.only(
@@ -356,14 +395,17 @@ class _ChatPageState extends State<ChatPage> {
                 ? null
                 : [
                     BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4)),
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
           ),
           padding: const EdgeInsets.all(14),
           child: Column(
-            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            crossAxisAlignment: isMe
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
             children: [
               if (msg.imageUrl != null) ...[
                 ClipRRect(
@@ -429,16 +471,28 @@ class _ChatPageState extends State<ChatPage> {
         backgroundColor: pal.card,
         surfaceTintColor: pal.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(context.tr('delete_message_q'),
-            style: GoogleFonts.plusJakartaSans(
-                fontWeight: FontWeight.w800, fontSize: 16, color: pal.textPrimary)),
-        content: Text(context.tr('delete_message_desc'),
-            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: pal.textSub)),
+        title: Text(
+          context.tr('delete_message_q'),
+          style: GoogleFonts.plusJakartaSans(
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+            color: pal.textPrimary,
+          ),
+        ),
+        content: Text(
+          context.tr('delete_message_desc'),
+          style: GoogleFonts.plusJakartaSans(fontSize: 14, color: pal.textSub),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(context.tr('cancel').toUpperCase(),
-                style: GoogleFonts.plusJakartaSans(color: pal.textSub, fontWeight: FontWeight.bold)),
+            child: Text(
+              context.tr('cancel').toUpperCase(),
+              style: GoogleFonts.plusJakartaSans(
+                color: pal.textSub,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () {
@@ -447,9 +501,13 @@ class _ChatPageState extends State<ChatPage> {
                 Navigator.pop(context);
               }
             },
-            child: Text(context.tr('delete_word').toUpperCase(),
-                style: GoogleFonts.plusJakartaSans(
-                    color: AppColors.brandRed, fontWeight: FontWeight.bold)),
+            child: Text(
+              context.tr('delete_word').toUpperCase(),
+              style: GoogleFonts.plusJakartaSans(
+                color: AppColors.brandRed,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -480,17 +538,31 @@ class _ChatPageState extends State<ChatPage> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.file(_selectedImage!, height: 40, width: 40, fit: BoxFit.cover),
+                      child: Image.file(
+                        _selectedImage!,
+                        height: 40,
+                        width: 40,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(context.tr('photo_selected'),
-                          style: GoogleFonts.plusJakartaSans(
-                              fontSize: 12, fontWeight: FontWeight.w700, color: pal.textPrimary)),
+                      child: Text(
+                        context.tr('photo_selected'),
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: pal.textPrimary,
+                        ),
+                      ),
                     ),
                     IconButton(
                       onPressed: () => setState(() => _selectedImage = null),
-                      icon: Icon(Icons.close_rounded, size: 20, color: pal.textSub),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        size: 20,
+                        color: pal.textSub,
+                      ),
                     ),
                   ],
                 ),
@@ -499,7 +571,10 @@ class _ChatPageState extends State<ChatPage> {
               children: [
                 IconButton(
                   onPressed: _pickImage,
-                  icon: Icon(Icons.add_photo_alternate_outlined, color: pal.textSub),
+                  icon: Icon(
+                    Icons.add_photo_alternate_outlined,
+                    color: pal.textSub,
+                  ),
                 ),
                 Expanded(
                   child: Container(
@@ -511,13 +586,21 @@ class _ChatPageState extends State<ChatPage> {
                       controller: _messageController,
                       textCapitalization: TextCapitalization.sentences,
                       style: GoogleFonts.plusJakartaSans(
-                          fontSize: 13, fontWeight: FontWeight.w600, color: pal.textPrimary),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: pal.textPrimary,
+                      ),
                       onChanged: _onTypingChanged,
                       decoration: InputDecoration(
                         hintText: context.tr('type_message'),
-                        hintStyle: GoogleFonts.plusJakartaSans(color: pal.textFaint),
+                        hintStyle: GoogleFonts.plusJakartaSans(
+                          color: pal.textFaint,
+                        ),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -528,13 +611,16 @@ class _ChatPageState extends State<ChatPage> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: _isSending ? _accent.withValues(alpha: 0.6) : _accent,
+                      color: _isSending
+                          ? _accent.withValues(alpha: 0.6)
+                          : _accent,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                            color: _accent.withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4)),
+                          color: _accent.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
                       ],
                     ),
                     child: _isSending
@@ -542,10 +628,17 @@ class _ChatPageState extends State<ChatPage> {
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
                           )
-                        : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                        : const Icon(
+                            Icons.send_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                   ),
                 ),
               ],

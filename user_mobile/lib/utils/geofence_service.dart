@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class GeofenceService extends ChangeNotifier {
   // Office location (Default: JNE Martapura)
-  double _officeLat = -3.4150; 
+  double _officeLat = -3.4150;
   double _officeLng = 114.8465;
   double _radiusInMeters = 500.0;
 
@@ -12,11 +12,11 @@ class GeofenceService extends ChangeNotifier {
   bool _isInRange = false;
   String _errorMessage = '';
 
-   Position? get currentPosition => _currentPosition;
-   double get distanceFromOffice => _distanceFromOffice;
-   bool get isInRange => _isInRange;
-   String get errorMessage => _errorMessage;
-   bool get isLocationMocked => _currentPosition?.isMocked ?? false;
+  Position? get currentPosition => _currentPosition;
+  double get distanceFromOffice => _distanceFromOffice;
+  bool get isInRange => _isInRange;
+  String get errorMessage => _errorMessage;
+  bool get isLocationMocked => _currentPosition?.isMocked ?? false;
 
   double get officeLat => _officeLat;
   double get officeLng => _officeLng;
@@ -77,7 +77,7 @@ class GeofenceService extends ChangeNotifier {
 
   void _calculateDistance() {
     if (_currentPosition == null) return;
-    
+
     _distanceFromOffice = Geolocator.distanceBetween(
       _currentPosition!.latitude,
       _currentPosition!.longitude,

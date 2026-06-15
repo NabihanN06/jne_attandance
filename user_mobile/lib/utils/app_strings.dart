@@ -61,7 +61,8 @@ class AppStrings {
       'recap_hi': 'Hai,',
       'recap_msg_great': 'Kinerja kamu bulan ini luar biasa! Pertahankan ya.',
       'recap_msg_good': 'Bulan ini bagus! Sedikit lagi menuju sempurna.',
-      'recap_msg_improve': 'Yuk tingkatkan kehadiran & ketepatan waktu bulan depan.',
+      'recap_msg_improve':
+          'Yuk tingkatkan kehadiran & ketepatan waktu bulan depan.',
       'sec_location': 'Lokasi Saya',
       'sec_leave_balance': 'Saldo Cuti',
       'sec_quick_menu': 'Menu Cepat',
@@ -105,9 +106,11 @@ class AppStrings {
       'data_error_banner': 'Sebagian data gagal dimuat • ketuk untuk detail',
       // sos
       'sos_title': 'Kirim Sinyal SOS?',
-      'sos_desc': 'Lokasi dan sinyal darurat Anda akan langsung dipantau oleh admin hub. Gunakan hanya saat darurat.',
+      'sos_desc':
+          'Lokasi dan sinyal darurat Anda akan langsung dipantau oleh admin hub. Gunakan hanya saat darurat.',
       'sos_sent': 'Sinyal SOS terkirim!',
-      'out_of_radius': 'Anda berada di luar radius kantor. Mendekatlah ke lokasi kantor.',
+      'out_of_radius':
+          'Anda berada di luar radius kantor. Mendekatlah ke lokasi kantor.',
       // profile
       'profile_title': 'Profil Saya',
       'sec_account': 'Informasi Akun',
@@ -139,7 +142,8 @@ class AppStrings {
       'photo_updated': 'Foto profil berhasil diperbarui',
       'app_footer': 'JNE Attendance • Martapura Hub',
       'logout_confirm': 'Keluar dari akun?',
-      'logout_confirm_desc': 'Anda perlu masuk kembali untuk mengakses absensi dan data Anda.',
+      'logout_confirm_desc':
+          'Anda perlu masuk kembali untuk mengakses absensi dan data Anda.',
       'cp_desc': 'Masukkan kata sandi baru minimal 6 karakter.',
       'new_password_hint': 'Kata sandi baru',
       'cp_min': 'Kata sandi minimal 6 karakter.',
@@ -179,7 +183,8 @@ class AppStrings {
       'update_available': 'Update tersedia',
       'update_now': 'Update',
       'update_force_title': 'Wajib Update',
-      'update_force_desc': 'Versi aplikasi ini sudah tidak didukung. Update dulu untuk melanjutkan.',
+      'update_force_desc':
+          'Versi aplikasi ini sudah tidak didukung. Update dulu untuk melanjutkan.',
       'privacy_policy': 'Kebijakan Privasi',
       'privacy_policy_sub': 'Bagaimana kami menangani data Anda',
       'terms_conditions': 'Syarat & Ketentuan',
@@ -192,7 +197,8 @@ class AppStrings {
       'min_6_chars': 'Minimal 6 karakter',
       'password_changed2': 'Password berhasil diubah',
       'clear_cache_confirm': 'Bersihkan Cache?',
-      'clear_cache_confirm_desc': 'Data sementara akan dihapus. Preferensi (mode gelap, bahasa, dll) tetap tersimpan.',
+      'clear_cache_confirm_desc':
+          'Data sementara akan dihapus. Preferensi (mode gelap, bahasa, dll) tetap tersimpan.',
       'clear_btn': 'Bersihkan',
       'cache_cleared': 'Cache dibersihkan',
       // history
@@ -233,7 +239,8 @@ class AppStrings {
       'send_failed': 'Gagal mengirim',
       // login
       'login_title': 'Masuk',
-      'login_subtitle': 'Gunakan akun karyawan JNE Martapura\nuntuk melanjutkan.',
+      'login_subtitle':
+          'Gunakan akun karyawan JNE Martapura\nuntuk melanjutkan.',
       'email_or_id': 'Email atau ID Karyawan',
       'password_label': 'Kata Sandi',
       'enter_password': 'Masukkan kata sandi',
@@ -244,7 +251,8 @@ class AppStrings {
       'report_to_admin': 'Lapor ke admin',
       'report_to_admin_sub': 'Akun belum dibuat / kendala lain',
       'reset_password': 'Reset Password',
-      'reset_sent': 'Kalau email terdaftar, link reset sudah dikirim. Cek inbox/spam.',
+      'reset_sent':
+          'Kalau email terdaftar, link reset sudah dikirim. Cek inbox/spam.',
       'reset_need_email': 'Masukkan email dulu.',
       'reset_invalid_email': 'Format email tidak valid.',
       'reset_failed': 'Gagal mengirim email reset. Coba lagi.',
@@ -253,7 +261,8 @@ class AppStrings {
       // attendance (face check-in)
       'camera_not_detected': 'Kamera tidak terdeteksi',
       'error_occurred': 'Terjadi kesalahan',
-      'camera_denied': 'Akses kamera ditolak\n\nAktifkan izin kamera di pengaturan ponsel Anda.',
+      'camera_denied':
+          'Akses kamera ditolak\n\nAktifkan izin kamera di pengaturan ponsel Anda.',
       'camera_start_failed': 'Gagal memulai kamera',
       'waiting_gps': 'Menunggu sinyal GPS...',
       'mock_location_rejected': 'Lokasi palsu terdeteksi • absensi ditolak',
@@ -270,7 +279,8 @@ class AppStrings {
       'outside_office_loc': 'Lokasi Luar Kantor',
       'already_checked_in': 'Anda sudah absen masuk hari ini.',
       'no_checkin_yet': 'Belum ada absen masuk hari ini.',
-      'connection_issue': 'Koneksi bermasalah. Periksa internet lalu coba lagi.',
+      'connection_issue':
+          'Koneksi bermasalah. Periksa internet lalu coba lagi.',
       'save_attendance_failed': 'Gagal menyimpan absensi. Coba lagi sebentar.',
       'face_verification': 'Verifikasi Wajah',
       'tap_for_map': 'Ketuk untuk peta',
@@ -310,7 +320,8 @@ class AppStrings {
       'list_prefix': 'Daftar',
       'list_suffix': 'kamu akan muncul & terpantau statusnya di sini.',
       'cancel_request_q': 'Batalkan Pengajuan?',
-      'cancel_request_desc': 'Yakin ingin menarik pengajuan ini? Tindakan tidak bisa dibatalkan.',
+      'cancel_request_desc':
+          'Yakin ingin menarik pengajuan ini? Tindakan tidak bisa dibatalkan.',
       'yes_cancel': 'Ya, Batalkan',
       'request_cancelled': 'Pengajuan berhasil dibatalkan',
       'fail_prefix': 'Gagal',
@@ -326,12 +337,14 @@ class AppStrings {
       'st_cancelled': 'Dibatalkan',
       // my location
       'mock_loc_title': 'Lokasi Palsu Terdeteksi',
-      'mock_loc_sub': 'Nonaktifkan aplikasi lokasi palsu (fake GPS) untuk bisa absen.',
+      'mock_loc_sub':
+          'Nonaktifkan aplikasi lokasi palsu (fake GPS) untuk bisa absen.',
       'in_office_title': 'Anda di Dalam Area Kantor',
       'in_office_sub': 'Posisi terverifikasi. Anda bisa melakukan absensi.',
       'remote_attendance_sub': 'Anda diizinkan absen dari luar radius kantor.',
       'out_office_title': 'Anda di Luar Area Kantor',
-      'out_office_sub': 'Mendekatlah ke kantor hingga masuk radius untuk absen.',
+      'out_office_sub':
+          'Mendekatlah ke kantor hingga masuk radius untuk absen.',
       'distance_to_office': 'Jarak ke Kantor',
       'area_radius': 'Radius Area',
       // overtime
@@ -347,7 +360,8 @@ class AppStrings {
       'ot_reason': 'Alasan Lembur',
       'submit_request': 'Kirim Pengajuan',
       'limit_reached': 'Batas Tercapai',
-      'ot_reason_hint': 'Contoh: Menyelesaikan pengiriman paket overload di area Martapura Kota.',
+      'ot_reason_hint':
+          'Contoh: Menyelesaikan pengiriman paket overload di area Martapura Kota.',
       // notifications
       'notifications': 'Notifikasi',
       'unread_word': 'belum dibaca',
@@ -383,7 +397,8 @@ class AppStrings {
       'online_word': 'Online',
       'offline_word': 'Offline',
       'start_conversation': 'Mulai Percakapan',
-      'start_conversation_sub': 'Sampaikan pertanyaan, kendala absensi, atau pengajuan langsung ke admin HUB.',
+      'start_conversation_sub':
+          'Sampaikan pertanyaan, kendala absensi, atau pengajuan langsung ke admin HUB.',
       'admin_typing': 'Admin sedang mengetik',
       'delete_message_q': 'Hapus Pesan?',
       'delete_message_desc': 'Pesan ini akan dihapus untuk semua orang.',
@@ -397,7 +412,8 @@ class AppStrings {
       'dispute_sent': 'Komplain terkirim. Lanjut ke percakapan dengan admin.',
       'failed_submit': 'Gagal mengirim',
       'complaint_details': 'Detail Komplain',
-      'dispute_explain_hint': 'Jelaskan kenapa Anda mengajukan komplain atas catatan absensi ini...',
+      'dispute_explain_hint':
+          'Jelaskan kenapa Anda mengajukan komplain atas catatan absensi ini...',
       'attach_evidence': 'Lampirkan Bukti (Opsional)',
       'tap_capture_photo': 'Ketuk untuk ambil foto',
       'submit_complaint': 'Kirim Komplain',
@@ -444,9 +460,11 @@ class AppStrings {
       'recap_packages': 'Packages',
       'recap_absent': 'Absent',
       'recap_hi': 'Hi,',
-      'recap_msg_great': 'Your performance this month is outstanding! Keep it up.',
+      'recap_msg_great':
+          'Your performance this month is outstanding! Keep it up.',
       'recap_msg_good': 'Good month! Almost perfect.',
-      'recap_msg_improve': 'Let\'s improve attendance & punctuality next month.',
+      'recap_msg_improve':
+          'Let\'s improve attendance & punctuality next month.',
       'sec_location': 'My Location',
       'sec_leave_balance': 'Leave Balance',
       'sec_quick_menu': 'Quick Menu',
@@ -484,9 +502,11 @@ class AppStrings {
       'offline_banner': 'Offline Mode • data will sync automatically',
       'data_error_banner': 'Some data failed to load • tap for details',
       'sos_title': 'Send SOS Signal?',
-      'sos_desc': 'Your location and emergency signal will be monitored by the hub admin immediately. Use only in emergencies.',
+      'sos_desc':
+          'Your location and emergency signal will be monitored by the hub admin immediately. Use only in emergencies.',
       'sos_sent': 'SOS signal sent!',
-      'out_of_radius': 'You are outside the office radius. Please move closer to the office.',
+      'out_of_radius':
+          'You are outside the office radius. Please move closer to the office.',
       'profile_title': 'My Profile',
       'sec_account': 'Account Info',
       'sec_services': 'Services',
@@ -517,7 +537,8 @@ class AppStrings {
       'photo_updated': 'Profile photo updated',
       'app_footer': 'JNE Attendance • Martapura Hub',
       'logout_confirm': 'Sign out?',
-      'logout_confirm_desc': 'You need to sign in again to access your attendance and data.',
+      'logout_confirm_desc':
+          'You need to sign in again to access your attendance and data.',
       'cp_desc': 'Enter a new password with at least 6 characters.',
       'new_password_hint': 'New password',
       'cp_min': 'Password must be at least 6 characters.',
@@ -556,7 +577,8 @@ class AppStrings {
       'update_available': 'Update available',
       'update_now': 'Update',
       'update_force_title': 'Update Required',
-      'update_force_desc': 'This app version is no longer supported. Please update to continue.',
+      'update_force_desc':
+          'This app version is no longer supported. Please update to continue.',
       'privacy_policy': 'Privacy Policy',
       'privacy_policy_sub': 'How we handle your data',
       'terms_conditions': 'Terms & Conditions',
@@ -569,7 +591,8 @@ class AppStrings {
       'min_6_chars': 'Minimum 6 characters',
       'password_changed2': 'Password changed successfully',
       'clear_cache_confirm': 'Clear Cache?',
-      'clear_cache_confirm_desc': 'Temporary data will be deleted. Preferences (dark mode, language, etc.) are kept.',
+      'clear_cache_confirm_desc':
+          'Temporary data will be deleted. Preferences (dark mode, language, etc.) are kept.',
       'clear_btn': 'Clear',
       'cache_cleared': 'Cache cleared',
       'history_title': 'Attendance History',
@@ -618,7 +641,8 @@ class AppStrings {
       'report_to_admin': 'Report to admin',
       'report_to_admin_sub': 'Account not created / other issues',
       'reset_password': 'Reset Password',
-      'reset_sent': 'If the email is registered, a reset link has been sent. Check inbox/spam.',
+      'reset_sent':
+          'If the email is registered, a reset link has been sent. Check inbox/spam.',
       'reset_need_email': 'Enter your email first.',
       'reset_invalid_email': 'Invalid email format.',
       'reset_failed': 'Failed to send reset email. Try again.',
@@ -627,7 +651,8 @@ class AppStrings {
       // attendance (face check-in)
       'camera_not_detected': 'Camera not detected',
       'error_occurred': 'An error occurred',
-      'camera_denied': 'Camera access denied\n\nEnable camera permission in your phone settings.',
+      'camera_denied':
+          'Camera access denied\n\nEnable camera permission in your phone settings.',
       'camera_start_failed': 'Failed to start camera',
       'waiting_gps': 'Waiting for GPS signal...',
       'mock_location_rejected': 'Mock location detected • attendance rejected',
@@ -644,8 +669,10 @@ class AppStrings {
       'outside_office_loc': 'Remote Location',
       'already_checked_in': 'You already checked in today.',
       'no_checkin_yet': 'No check-in yet today.',
-      'connection_issue': 'Connection problem. Check your internet and try again.',
-      'save_attendance_failed': 'Failed to save attendance. Please try again shortly.',
+      'connection_issue':
+          'Connection problem. Check your internet and try again.',
+      'save_attendance_failed':
+          'Failed to save attendance. Please try again shortly.',
       'face_verification': 'Face Verification',
       'tap_for_map': 'Tap for map',
       'processing': 'Processing...',
@@ -684,7 +711,8 @@ class AppStrings {
       'list_prefix': 'Your',
       'list_suffix': 'list will appear and be tracked here.',
       'cancel_request_q': 'Cancel Request?',
-      'cancel_request_desc': 'Are you sure you want to withdraw this request? This cannot be undone.',
+      'cancel_request_desc':
+          'Are you sure you want to withdraw this request? This cannot be undone.',
       'yes_cancel': 'Yes, Cancel',
       'request_cancelled': 'Request cancelled successfully',
       'fail_prefix': 'Failed',
@@ -703,15 +731,18 @@ class AppStrings {
       'mock_loc_sub': 'Disable fake GPS apps to be able to check in.',
       'in_office_title': 'You Are Inside the Office Area',
       'in_office_sub': 'Position verified. You can check in.',
-      'remote_attendance_sub': 'You are allowed to check in from outside the office radius.',
+      'remote_attendance_sub':
+          'You are allowed to check in from outside the office radius.',
       'out_office_title': 'You Are Outside the Office Area',
-      'out_office_sub': 'Move closer to the office until within radius to check in.',
+      'out_office_sub':
+          'Move closer to the office until within radius to check in.',
       'distance_to_office': 'Distance to Office',
       'area_radius': 'Area Radius',
       // overtime
       'overtime_request_title': 'Overtime Request',
       'fill_overtime_reason': 'Please fill in the overtime reason',
-      'ot_exists_for_date': 'There is already an overtime request for this date.',
+      'ot_exists_for_date':
+          'There is already an overtime request for this date.',
       'exceed_limit': 'Exceeds limit',
       'per_month': 'hrs/month',
       'remaining_word': 'Remaining',
@@ -721,7 +752,8 @@ class AppStrings {
       'ot_reason': 'Overtime Reason',
       'submit_request': 'Submit Request',
       'limit_reached': 'Limit Reached',
-      'ot_reason_hint': 'Example: Completing overflow package delivery in Martapura Kota area.',
+      'ot_reason_hint':
+          'Example: Completing overflow package delivery in Martapura Kota area.',
       // notifications
       'notifications': 'Notifications',
       'unread_word': 'unread',
@@ -757,7 +789,8 @@ class AppStrings {
       'online_word': 'Online',
       'offline_word': 'Offline',
       'start_conversation': 'Start a Conversation',
-      'start_conversation_sub': 'Send questions, attendance issues, or requests directly to the HUB admin.',
+      'start_conversation_sub':
+          'Send questions, attendance issues, or requests directly to the HUB admin.',
       'admin_typing': 'Admin is typing',
       'delete_message_q': 'Delete Message?',
       'delete_message_desc': 'This message will be deleted for everyone.',
@@ -768,10 +801,12 @@ class AppStrings {
       'report_anomaly': 'Report Anomaly',
       'dispute_reason_required': 'Please provide a reason for the dispute',
       'dispute_title_prefix': 'Attendance complaint',
-      'dispute_sent': 'Complaint sent. Continuing to the conversation with admin.',
+      'dispute_sent':
+          'Complaint sent. Continuing to the conversation with admin.',
       'failed_submit': 'Failed to submit',
       'complaint_details': 'Complaint Details',
-      'dispute_explain_hint': 'Explain why you are disputing this attendance record...',
+      'dispute_explain_hint':
+          'Explain why you are disputing this attendance record...',
       'attach_evidence': 'Attach Evidence (Optional)',
       'tap_capture_photo': 'Tap to capture photo',
       'submit_complaint': 'Submit Complaint',
@@ -787,16 +822,37 @@ class AppStrings {
   /// Nama bulan terlokalisasi (untuk dropdown/format manual).
   static const Map<String, List<String>> _months = {
     'id': [
-      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
     ],
     'en': [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ],
   };
 
-  static List<String> months(String lang) => _months[lang] ?? _months[fallback]!;
+  static List<String> months(String lang) =>
+      _months[lang] ?? _months[fallback]!;
 
   /// Inisial hari (Senin-first) terlokalisasi untuk grid kalender.
   static const Map<String, List<String>> _weekdays = {
@@ -804,7 +860,8 @@ class AppStrings {
     'en': ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
   };
 
-  static List<String> weekdays(String lang) => _weekdays[lang] ?? _weekdays[fallback]!;
+  static List<String> weekdays(String lang) =>
+      _weekdays[lang] ?? _weekdays[fallback]!;
 
   static String of(String lang, String key) {
     return _t[lang]?[key] ?? _t[fallback]?[key] ?? key;
