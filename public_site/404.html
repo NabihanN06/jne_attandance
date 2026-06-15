@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — Halaman Tidak Ditemukan | JNE Martapura</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/icon-192.png">
+  <meta name="theme-color" content="#CC0000">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .premium-gradient { background: linear-gradient(135deg, #CC0000 0%, #990000 100%); }
+    .text-gradient {
+      background: linear-gradient(135deg, #CC0000 0%, #ff4d4d 100%);
+      background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.22; pointer-events: none; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 flex items-center justify-center px-6 overflow-hidden selection:bg-red-500 selection:text-white">
+
+  <div class="blob w-[420px] h-[420px] bg-red-500 -top-32 -left-24"></div>
+  <div class="blob w-[360px] h-[360px] bg-blue-500 -bottom-32 -right-24"></div>
+
+  <div class="relative z-10 text-center max-w-lg">
+    <div class="inline-flex items-center gap-3 mb-8">
+      <div class="w-11 h-11 premium-gradient rounded-2xl flex items-center justify-center p-2 shadow-xl shadow-red-500/20">
+        <img src="/assets/logo-jne.svg" class="brightness-0 invert object-contain" alt="JNE">
+      </div>
+      <p class="text-[10px] font-black uppercase tracking-[0.3em] text-red-600">JNE Martapura</p>
+    </div>
+
+    <h1 class="text-7xl sm:text-8xl md:text-9xl font-black italic tracking-tighter leading-none mb-4">
+      <span class="text-gradient">404</span>
+    </h1>
+    <h2 class="text-xl sm:text-2xl font-black italic uppercase tracking-tight mb-3">Paket Ini Nyasar.</h2>
+    <p class="text-sm sm:text-base text-slate-500 font-medium leading-relaxed mb-9 max-w-md mx-auto">
+      Halaman yang kamu cari tidak ditemukan atau sudah dipindahkan.
+      Yuk kembali ke beranda atau hubungi CS kami.
+    </p>
+
+    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+      <a href="/"
+         class="px-8 py-4 premium-gradient text-white font-black text-xs rounded-full shadow-2xl shadow-red-500/30 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest flex items-center justify-center gap-2">
+        <i data-lucide="home" class="w-4 h-4"></i> Kembali ke Beranda
+      </a>
+      <a href="https://wa.me/6285167394246" target="_blank" rel="noopener"
+         class="px-8 py-4 bg-white border border-slate-200 text-slate-900 font-black text-xs rounded-full hover:bg-slate-50 transition-all uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm">
+        <i data-lucide="message-circle" class="w-4 h-4"></i> Chat CS
+      </a>
+    </div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>
