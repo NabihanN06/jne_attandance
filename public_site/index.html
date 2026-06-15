@@ -1,1281 +1,2002 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JNE Martapura | Connecting Happiness</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JNE Martapura | Connecting Happiness</title>
 
-  <!-- Favicon / App Icon -->
-  <link rel="icon" href="assets/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#CC0000">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="JNE Martapura">
+    <!-- Favicon / App Icon -->
+    <link rel="icon" href="assets/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#CC0000" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="JNE Martapura" />
 
-  <!-- SEO / Meta Tags -->
-  <meta name="description" content="Pusat layanan JNE Martapura. Kirim paket YES, Reguler, dan JTR (Kargo) dengan aman dan terpercaya ke seluruh Indonesia.">
-  <meta name="keywords" content="JNE Martapura, JNE Kabupaten Banjar, Kirim Paket Martapura, Cek Resi JNE, JNE Trucking Martapura">
-  
-  <!-- Open Graph / Social Sharing -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://jne-martapura-kalsel.web.app/">
-  <meta property="og:title" content="JNE Martapura | Connecting Happiness">
-  <meta property="og:description" content="Layanan pengiriman paket tercepat dan terpercaya di Martapura. Cek resi dan ongkir sekarang.">
-  <meta property="og:image" content="https://jne-martapura-kalsel.web.app/assets/icon-512.png">
+    <!-- SEO / Meta Tags -->
+    <meta
+      name="description"
+      content="Pusat layanan JNE Martapura. Kirim paket YES, Reguler, dan JTR (Kargo) dengan aman dan terpercaya ke seluruh Indonesia."
+    />
+    <meta
+      name="keywords"
+      content="JNE Martapura, JNE Kabupaten Banjar, Kirim Paket Martapura, Cek Resi JNE, JNE Trucking Martapura"
+    />
 
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="JNE Martapura | Connecting Happiness">
-  <meta name="twitter:description" content="Layanan pengiriman paket tercepat dan terpercaya di Martapura. Cek resi dan ongkir sekarang.">
-  <meta name="twitter:image" content="https://jne-martapura-kalsel.web.app/assets/icon-512.png">
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://jne-martapura-kalsel.web.app/" />
+    <meta property="og:title" content="JNE Martapura | Connecting Happiness" />
+    <meta
+      property="og:description"
+      content="Layanan pengiriman paket tercepat dan terpercaya di Martapura. Cek resi dan ongkir sekarang."
+    />
+    <meta property="og:image" content="https://jne-martapura-kalsel.web.app/assets/icon-512.png" />
 
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config = { darkMode: ['selector', '[data-theme="dark"]'] };</script>
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="JNE Martapura | Connecting Happiness" />
+    <meta
+      name="twitter:description"
+      content="Layanan pengiriman paket tercepat dan terpercaya di Martapura. Cek resi dan ongkir sekarang."
+    />
+    <meta name="twitter:image" content="https://jne-martapura-kalsel.web.app/assets/icon-512.png" />
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: ['selector', '[data-theme="dark"]'] };
+    </script>
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
 
-  <!-- GSAP Animation -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Lenis Smooth Scroll -->
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+    <!-- GSAP Animation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 
-  <style>
-    :root {
-      --jne-red: #CC0000;
-      --jne-red-dark: #990000;
-      --bg-main: #f8fafc;
-      --text-main: #0f172a;
-      --text-dim: #64748b;
-      --glass-bg: rgba(255, 255, 255, 0.9);
-      --glass-border: rgba(255, 255, 255, 0.4);
-      --card-bg: rgba(255, 255, 255, 0.8);
-    }
+    <!-- Lenis Smooth Scroll -->
+    <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
 
-    [data-theme='dark'] {
-      --bg-main: #020617;
-      --text-main: #f8fafc;
-      --text-dim: #94a3b8;
-      --glass-bg: rgba(15, 23, 42, 0.85);
-      --glass-border: rgba(255, 255, 255, 0.1);
-      --card-bg: rgba(30, 41, 59, 0.5);
-    }
-    
-    body {
-      font-family: 'Inter', sans-serif;
-      scroll-behavior: smooth;
-      overflow-x: hidden;
-      background-color: var(--bg-main);
-      color: var(--text-main);
-      transition: background-color 0.5s ease, color 0.5s ease;
-    }
+    <style>
+      :root {
+        --jne-red: #cc0000;
+        --jne-red-dark: #990000;
+        --bg-main: #f8fafc;
+        --text-main: #0f172a;
+        --text-dim: #64748b;
+        --glass-bg: rgba(255, 255, 255, 0.9);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --card-bg: rgba(255, 255, 255, 0.8);
+      }
 
-    .premium-gradient {
-      background: linear-gradient(135deg, var(--jne-red) 0%, var(--jne-red-dark) 100%);
-    }
+      [data-theme='dark'] {
+        --bg-main: #020617;
+        --text-main: #f8fafc;
+        --text-dim: #94a3b8;
+        --glass-bg: rgba(15, 23, 42, 0.85);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --card-bg: rgba(30, 41, 59, 0.5);
+      }
 
-    .text-gradient {
-      background: linear-gradient(135deg, var(--jne-red) 0%, #ff4d4d 100%);
-      background-clip: text;                /* standard prop */ /* [web:62] */
-      -webkit-background-clip: text;        /* webkit compat */ /* [web:58][web:60] */
-      -webkit-text-fill-color: transparent;
-    }
+      body {
+        font-family: 'Inter', sans-serif;
+        scroll-behavior: smooth;
+        overflow-x: hidden;
+        background-color: var(--bg-main);
+        color: var(--text-main);
+        transition:
+          background-color 0.5s ease,
+          color 0.5s ease;
+      }
 
-    .glass-nav {
-      background: var(--glass-bg);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--glass-border);
-    }
+      .premium-gradient {
+        background: linear-gradient(135deg, var(--jne-red) 0%, var(--jne-red-dark) 100%);
+      }
 
-    .glass-card {
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--glass-border);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.03);
-      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .glass-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 16px 36px rgba(204, 0, 0, 0.08);
-      border-color: rgba(204, 0, 0, 0.2);
-    }
+      .text-gradient {
+        background: linear-gradient(135deg, var(--jne-red) 0%, #ff4d4d 100%);
+        background-clip: text; /* standard prop */ /* [web:62] */
+        -webkit-background-clip: text; /* webkit compat */ /* [web:58][web:60] */
+        -webkit-text-fill-color: transparent;
+      }
 
-    .blob {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(90px);
-      z-index: 0;
-      opacity: 0.26;
-      pointer-events: none;
-    }
-    .blob-1 {
-      width: 420px;
-      height: 420px;
-      background: var(--jne-red);
-      top: -160px;
-      left: -120px;
-    }
-    .blob-2 {
-      width: 360px;
-      height: 360px;
-      background: #3b82f6;
-      bottom: -140px;
-      right: -120px;
-    }
-
-    @media (max-width: 640px) {
       .glass-nav {
-        backdrop-filter: blur(10px);
+        background: var(--glass-bg);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-bottom: 1px solid var(--glass-border);
       }
+
       .glass-card {
-        backdrop-filter: blur(8px);
-        box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+        background: var(--card-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.03);
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       }
-      h1 {
-        letter-spacing: -0.03em;
+      .glass-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 16px 36px rgba(204, 0, 0, 0.08);
+        border-color: rgba(204, 0, 0, 0.2);
       }
-    }
 
-    /* Drawer anim */
-    #mobile-menu {
-      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-      transform: translateX(100%);
-    }
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        z-index: 0;
+        opacity: 0.26;
+        pointer-events: none;
+      }
+      .blob-1 {
+        width: 420px;
+        height: 420px;
+        background: var(--jne-red);
+        top: -160px;
+        left: -120px;
+      }
+      .blob-2 {
+        width: 360px;
+        height: 360px;
+        background: #3b82f6;
+        bottom: -140px;
+        right: -120px;
+      }
 
-    /* Scroll reveal kini ditangani GSAP ScrollTrigger (lihat skrip di bawah) */
-    
-    /* Fix for section scroll padding */
-    section {
-      scroll-margin-top: 100px;
-    }
+      @media (max-width: 640px) {
+        .glass-nav {
+          backdrop-filter: blur(10px);
+        }
+        .glass-card {
+          backdrop-filter: blur(8px);
+          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+        }
+        h1 {
+          letter-spacing: -0.03em;
+        }
+      }
 
-    /* Paket Loading Animation (kotak berjalan di garis) */
-    .package-loader {
-      position: relative;
-      width: 80px;
-      height: 22px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .package-loader__track {
-      position: absolute;
-      left: 8px;
-      right: 8px;
-      height: 3px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, rgba(148,163,184,0.3), rgba(248,250,252,0.9), rgba(148,163,184,0.3));
-      opacity: 0.9;
-    }
-    .package-loader__box {
-      position: relative;
-      width: 18px;
-      height: 18px;
-      border-radius: 6px;
-      background: linear-gradient(135deg, #fee2e2, #ef4444);
-      box-shadow: 0 6px 14px rgba(239, 68, 68, 0.45);
-      animation: package-move 1.2s ease-in-out infinite;
-      transform-origin: center;
-    }
-    .package-loader__box::before {
-      content: "";
-      position: absolute;
-      inset: 3px 4px;
-      border-radius: 4px;
-      border: 2px solid rgba(248,250,252,0.5);
-      border-style: dashed;
-      opacity: 0.8;
-    }
-    .package-loader__shadow {
-      position: absolute;
-      bottom: 0;
-      width: 24px;
-      height: 8px;
-      border-radius: 999px;
-      background: radial-gradient(circle, rgba(15,23,42,0.45), transparent 70%);
-      filter: blur(2px);
-      transform-origin: center;
-      animation: package-shadow 1.2s ease-in-out infinite;
-    }
+      /* Drawer anim */
+      #mobile-menu {
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        transform: translateX(100%);
+      }
 
-    @keyframes package-move {
-      0% {
-        transform: translateX(-26px) translateY(0) scale(1) rotate(-4deg);
-      }
-      25% {
-        transform: translateX(-8px) translateY(-3px) scale(1.02) rotate(-1deg);
-      }
-      50% {
-        transform: translateX(10px) translateY(0) scale(1) rotate(1deg);
-      }
-      75% {
-        transform: translateX(26px) translateY(-2px) scale(1.02) rotate(3deg);
-      }
-      100% {
-        transform: translateX(-26px) translateY(0) scale(1) rotate(-4deg);
-      }
-    }
+      /* Scroll reveal kini ditangani GSAP ScrollTrigger (lihat skrip di bawah) */
 
-    @keyframes package-shadow {
-      0% {
-        transform: translateX(-26px) scale(0.9);
-        opacity: 0.45;
+      /* Fix for section scroll padding */
+      section {
+        scroll-margin-top: 100px;
       }
-      25% {
-        transform: translateX(-8px) scale(1);
-        opacity: 0.6;
+
+      /* Paket Loading Animation (kotak berjalan di garis) */
+      .package-loader {
+        position: relative;
+        width: 80px;
+        height: 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
       }
-      50% {
-        transform: translateX(10px) scale(0.95);
-        opacity: 0.5;
+      .package-loader__track {
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        height: 3px;
+        border-radius: 999px;
+        background: linear-gradient(
+          90deg,
+          rgba(148, 163, 184, 0.3),
+          rgba(248, 250, 252, 0.9),
+          rgba(148, 163, 184, 0.3)
+        );
+        opacity: 0.9;
       }
-      75% {
-        transform: translateX(26px) scale(1);
-        opacity: 0.6;
+      .package-loader__box {
+        position: relative;
+        width: 18px;
+        height: 18px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, #fee2e2, #ef4444);
+        box-shadow: 0 6px 14px rgba(239, 68, 68, 0.45);
+        animation: package-move 1.2s ease-in-out infinite;
+        transform-origin: center;
       }
-      100% {
-        transform: translateX(-26px) scale(0.9);
-        opacity: 0.45;
+      .package-loader__box::before {
+        content: '';
+        position: absolute;
+        inset: 3px 4px;
+        border-radius: 4px;
+        border: 2px solid rgba(248, 250, 252, 0.5);
+        border-style: dashed;
+        opacity: 0.8;
       }
-    }
-    /* ===== GSAP enhancement styles ===== */
-    .line-mask { display: block; overflow: hidden; padding-bottom: 0.08em; }
-    .word { display: inline-block; will-change: transform; }
+      .package-loader__shadow {
+        position: absolute;
+        bottom: 0;
+        width: 24px;
+        height: 8px;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(15, 23, 42, 0.45), transparent 70%);
+        filter: blur(2px);
+        transform-origin: center;
+        animation: package-shadow 1.2s ease-in-out infinite;
+      }
 
-    .hero-card { will-change: transform; transform-style: preserve-3d; }
-    .float-chip {
-      position: absolute; z-index: 20; will-change: transform;
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      padding: 0.55rem 0.85rem; border-radius: 1rem;
-      background: var(--glass-bg); backdrop-filter: blur(10px);
-      border: 1px solid var(--glass-border);
-      box-shadow: 0 12px 30px rgba(0,0,0,0.14);
-      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
-    }
+      @keyframes package-move {
+        0% {
+          transform: translateX(-26px) translateY(0) scale(1) rotate(-4deg);
+        }
+        25% {
+          transform: translateX(-8px) translateY(-3px) scale(1.02) rotate(-1deg);
+        }
+        50% {
+          transform: translateX(10px) translateY(0) scale(1) rotate(1deg);
+        }
+        75% {
+          transform: translateX(26px) translateY(-2px) scale(1.02) rotate(3deg);
+        }
+        100% {
+          transform: translateX(-26px) translateY(0) scale(1) rotate(-4deg);
+        }
+      }
 
-    /* Bento grid */
-    .bento {
-      position: relative; overflow: hidden; border-radius: 1.75rem;
-      background: var(--card-bg); backdrop-filter: blur(12px);
-      border: 1px solid var(--glass-border);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.05);
-      will-change: transform;
-    }
-    .bento-glow {
-      position: absolute; inset: 0; opacity: 0; pointer-events: none;
-      background: radial-gradient(420px circle at var(--mx,50%) var(--my,50%), rgba(204,0,0,0.16), transparent 45%);
-      transition: opacity 0.4s ease;
-    }
-    .bento:hover .bento-glow { opacity: 1; }
+      @keyframes package-shadow {
+        0% {
+          transform: translateX(-26px) scale(0.9);
+          opacity: 0.45;
+        }
+        25% {
+          transform: translateX(-8px) scale(1);
+          opacity: 0.6;
+        }
+        50% {
+          transform: translateX(10px) scale(0.95);
+          opacity: 0.5;
+        }
+        75% {
+          transform: translateX(26px) scale(1);
+          opacity: 0.6;
+        }
+        100% {
+          transform: translateX(-26px) scale(0.9);
+          opacity: 0.45;
+        }
+      }
+      /* ===== GSAP enhancement styles ===== */
+      .line-mask {
+        display: block;
+        overflow: hidden;
+        padding-bottom: 0.08em;
+      }
+      .word {
+        display: inline-block;
+        will-change: transform;
+      }
 
-    /* Timeline alur */
-    .alur-fill { transform-origin: top center; transform: scaleY(0); }
-    .alur-node { box-shadow: 0 0 0 6px rgba(204,0,0,0.10); }
-  </style>
-</head>
-<body class="selection:bg-red-500 selection:text-white">
+      .hero-card {
+        will-change: transform;
+        transform-style: preserve-3d;
+      }
+      .float-chip {
+        position: absolute;
+        z-index: 20;
+        will-change: transform;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.55rem 0.85rem;
+        border-radius: 1rem;
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.14);
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
 
-  <!-- Background Blobs -->
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
+      /* Bento grid */
+      .bento {
+        position: relative;
+        overflow: hidden;
+        border-radius: 1.75rem;
+        background: var(--card-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        will-change: transform;
+      }
+      .bento-glow {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        pointer-events: none;
+        background: radial-gradient(
+          420px circle at var(--mx, 50%) var(--my, 50%),
+          rgba(204, 0, 0, 0.16),
+          transparent 45%
+        );
+        transition: opacity 0.4s ease;
+      }
+      .bento:hover .bento-glow {
+        opacity: 1;
+      }
 
-  <!-- NAVIGATION -->
-  <nav class="fixed top-0 w-full z-30 glass-nav">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 md:h-24 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 premium-gradient rounded-2xl flex items-center justify-center p-1.5 sm:p-2 shadow-xl shadow-red-500/20">
-          <img src="assets/logo-jne.svg" class="brightness-0 invert object-contain" alt="JNE">
+      /* Timeline alur */
+      .alur-fill {
+        transform-origin: top center;
+        transform: scaleY(0);
+      }
+      .alur-node {
+        box-shadow: 0 0 0 6px rgba(204, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body class="selection:bg-red-500 selection:text-white">
+    <!-- Background Blobs -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <!-- NAVIGATION -->
+    <nav class="fixed top-0 w-full z-30 glass-nav">
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 md:h-24 flex items-center justify-between"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 premium-gradient rounded-2xl flex items-center justify-center p-1.5 sm:p-2 shadow-xl shadow-red-500/20"
+          >
+            <img src="assets/logo-jne.svg" class="brightness-0 invert object-contain" alt="JNE" />
+          </div>
+          <div>
+            <p
+              class="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.28em] sm:tracking-[0.3em] text-red-600 leading-none mb-1"
+            >
+              JNE Martapura
+            </p>
+            <p
+              class="text-sm sm:text-base md:text-lg font-black tracking-tight text-slate-900 leading-none italic uppercase"
+            >
+              Branch
+            </p>
+          </div>
         </div>
-        <div>
-          <p class="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.28em] sm:tracking-[0.3em] text-red-600 leading-none mb-1">
-            JNE Martapura
-          </p>
-          <p class="text-sm sm:text-base md:text-lg font-black tracking-tight text-slate-900 leading-none italic uppercase">
-            Branch
-          </p>
+
+        <!-- Desktop Menu -->
+        <div class="hidden lg:flex items-center gap-8">
+          <a
+            href="#layanan"
+            class="text-[10px] font-black text-slate-500 hover:text-red-600 transition-colors uppercase tracking-[0.18em]"
+          >
+            Layanan
+          </a>
+          <a
+            href="#tracking"
+            class="text-[10px] font-black text-slate-500 hover:text-red-600 transition-colors uppercase tracking-[0.18em]"
+          >
+            Cek Status
+          </a>
+          <a
+            href="#profil"
+            class="text-[10px] font-black text-slate-500 hover:text-red-600 transition-colors uppercase tracking-[0.18em]"
+          >
+            Cabang
+          </a>
+          <a
+            href="#alur"
+            class="text-[10px] font-black text-slate-500 hover:text-red-600 transition-colors uppercase tracking-[0.18em]"
+          >
+            Alur
+          </a>
+
+          <!-- Theme Toggle -->
+          <button
+            id="theme-toggle"
+            class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-110 transition-all"
+          >
+            <i data-lucide="sun" id="sun-icon" class="hidden"></i>
+            <i data-lucide="moon" id="moon-icon"></i>
+          </button>
+
+          <a
+            href="https://wa.me/6285167394246"
+            class="px-6 xl:px-8 py-3 premium-gradient text-white rounded-2xl text-[10px] font-black tracking-[0.2em] shadow-xl shadow-red-500/20 hover:scale-105 transition-all uppercase"
+          >
+            WhatsApp CS
+          </a>
+        </div>
+
+        <!-- Mobile menu button -->
+        <div class="flex items-center gap-3 lg:hidden">
+          <button
+            id="theme-toggle-mobile"
+            class="w-10 h-10 flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+          >
+            <i data-lucide="moon" class="w-5 h-5"></i>
+          </button>
+          <button
+            id="menu-toggle"
+            class="w-10 h-10 flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white active:scale-90 transition-all"
+            aria-label="Buka menu"
+          >
+            <i data-lucide="menu"></i>
+          </button>
         </div>
       </div>
+    </nav>
 
-      <!-- Desktop Menu -->
-      <div class="hidden lg:flex items-center gap-8">
-        <a href="#layanan" class="text-[10px] font-black text-slate-500 hover:text-red-600 transition-colors uppercase tracking-[0.18em]">
+    <!-- MOBILE MENU OVERLAY -->
+    <div
+      id="mobile-menu-overlay"
+      class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 lg:hidden transition-opacity duration-300 opacity-0 hidden"
+    ></div>
+
+    <!-- MOBILE MENU DRAWER -->
+    <aside
+      id="mobile-menu"
+      class="fixed inset-y-0 right-0 w-72 sm:w-80 bg-white z-50 p-6 sm:p-8 shadow-2xl flex flex-col"
+    >
+      <div class="flex justify-between items-center mb-8">
+        <div class="w-10 h-10 premium-gradient rounded-xl flex items-center justify-center p-2">
+          <img src="assets/logo-jne.svg" class="brightness-0 invert object-contain" alt="JNE" />
+        </div>
+        <button
+          id="menu-close"
+          class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400"
+          aria-label="Tutup menu"
+        >
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <nav class="flex flex-col gap-4 text-left">
+        <a
+          href="#layanan"
+          class="mobile-link text-base font-black uppercase tracking-tight text-slate-900 dark:text-white italic"
+        >
           Layanan
         </a>
-        <a href="#tracking" class="text-[10px] font-black text-slate-500 hover:text-red-600 transition-colors uppercase tracking-[0.18em]">
+        <a
+          href="#tracking"
+          class="mobile-link text-base font-black uppercase tracking-tight text-slate-900 dark:text-white italic"
+        >
           Cek Status
         </a>
-        <a href="#profil" class="text-[10px] font-black text-slate-500 hover:text-red-600 transition-colors uppercase tracking-[0.18em]">
+        <a
+          href="#profil"
+          class="mobile-link text-base font-black uppercase tracking-tight text-slate-900 dark:text-white italic"
+        >
           Cabang
         </a>
-        <a href="#alur" class="text-[10px] font-black text-slate-500 hover:text-red-600 transition-colors uppercase tracking-[0.18em]">
-          Alur
+        <a
+          href="#alur"
+          class="mobile-link text-base font-black uppercase tracking-tight text-slate-900 dark:text-white italic"
+        >
+          Alur Kirim
         </a>
-        
-        <!-- Theme Toggle -->
-        <button id="theme-toggle" class="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:scale-110 transition-all">
-          <i data-lucide="sun" id="sun-icon" class="hidden"></i>
-          <i data-lucide="moon" id="moon-icon"></i>
-        </button>
-
-        <a href="https://wa.me/6285167394246"
-           class="px-6 xl:px-8 py-3 premium-gradient text-white rounded-2xl text-[10px] font-black tracking-[0.2em] shadow-xl shadow-red-500/20 hover:scale-105 transition-all uppercase">
-          WhatsApp CS
+        <hr class="border-slate-100 dark:border-slate-800 my-4" />
+        <a
+          href="https://wa.me/6285167394246"
+          class="w-full py-4 premium-gradient text-white rounded-4xl text-center font-black text-xs uppercase tracking-widest shadow-xl shadow-red-500/20"
+        >
+          Chat CS Sekarang
         </a>
-      </div>
+      </nav>
+    </aside>
 
-      <!-- Mobile menu button -->
-      <div class="flex items-center gap-3 lg:hidden">
-        <button id="theme-toggle-mobile" class="w-10 h-10 flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-           <i data-lucide="moon" class="w-5 h-5"></i>
-        </button>
-        <button id="menu-toggle"
-                class="w-10 h-10 flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white active:scale-90 transition-all"
-                aria-label="Buka menu">
-          <i data-lucide="menu"></i>
-        </button>
-      </div>
-    </div>
-  </nav>
-
-  <!-- MOBILE MENU OVERLAY -->
-  <div id="mobile-menu-overlay"
-       class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 lg:hidden transition-opacity duration-300 opacity-0 hidden"></div>
-
-  <!-- MOBILE MENU DRAWER -->
-  <aside id="mobile-menu"
-         class="fixed inset-y-0 right-0 w-72 sm:w-80 bg-white z-50 p-6 sm:p-8 shadow-2xl flex flex-col">
-    <div class="flex justify-between items-center mb-8">
-      <div class="w-10 h-10 premium-gradient rounded-xl flex items-center justify-center p-2">
-        <img src="assets/logo-jne.svg" class="brightness-0 invert object-contain" alt="JNE">
-      </div>
-      <button id="menu-close" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400" aria-label="Tutup menu">
-        <i data-lucide="x"></i>
-      </button>
-    </div>
-
-    <nav class="flex flex-col gap-4 text-left">
-      <a href="#layanan" class="mobile-link text-base font-black uppercase tracking-tight text-slate-900 dark:text-white italic">
-        Layanan
-      </a>
-      <a href="#tracking" class="mobile-link text-base font-black uppercase tracking-tight text-slate-900 dark:text-white italic">
-        Cek Status
-      </a>
-      <a href="#profil" class="mobile-link text-base font-black uppercase tracking-tight text-slate-900 dark:text-white italic">
-        Cabang
-      </a>
-      <a href="#alur" class="mobile-link text-base font-black uppercase tracking-tight text-slate-900 dark:text-white italic">
-        Alur Kirim
-      </a>
-      <hr class="border-slate-100 dark:border-slate-800 my-4">
-      <a href="https://wa.me/6285167394246"
-         class="w-full py-4 premium-gradient text-white rounded-4xl text-center font-black text-xs uppercase tracking-widest shadow-xl shadow-red-500/20">
-        Chat CS Sekarang
-      </a>
-    </nav>
-  </aside>
-
-  <!-- HERO -->
-  <main>
-    <section id="hero" class="relative min-h-[85vh] md:min-h-screen flex items-center pt-20 sm:pt-24 md:pt-32 overflow-hidden">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center">
-        <!-- Text Content -->
-        <div class="max-w-4xl mx-auto mb-10 md:mb-16">
-          <div class="inline-flex items-center gap-3 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl bg-red-50 border border-red-100 mb-5 md:mb-8">
-            <div class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+    <!-- HERO -->
+    <main>
+      <section
+        id="hero"
+        class="relative min-h-[85vh] md:min-h-screen flex items-center pt-20 sm:pt-24 md:pt-32 overflow-hidden"
+      >
+        <div
+          class="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 flex flex-col items-center text-center"
+        >
+          <!-- Text Content -->
+          <div class="max-w-4xl mx-auto mb-10 md:mb-16">
+            <div
+              class="inline-flex items-center gap-3 px-3 sm:px-4 py-1.5 sm:py-2 rounded-2xl bg-red-50 border border-red-100 mb-5 md:mb-8"
+            >
+              <div class="relative flex h-2 w-2">
+                <span
+                  class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"
+                ></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
+              </div>
+              <span
+                class="text-[9px] sm:text-[10px] font-black text-red-600 uppercase tracking-widest"
+              >
+                Pusat Layanan JNE Martapura Terpadu
+              </span>
             </div>
-            <span class="text-[9px] sm:text-[10px] font-black text-red-600 uppercase tracking-widest">
-              Pusat Layanan JNE Martapura Terpadu
-            </span>
+
+            <h1
+              class="text-4xl sm:text-5xl md:text-[5rem] lg:text-[6.5rem] font-black leading-[1.05] md:leading-[0.95] tracking-tight mb-6 md:mb-10 uppercase italic"
+            >
+              <span class="line-mask"
+                ><span class="word">Kirim</span> <span class="word">Paket</span></span
+              >
+              <span class="line-mask"
+                ><span class="word text-gradient">Tanpa</span>
+                <span class="word text-gradient">Khawatir.</span></span
+              >
+            </h1>
+
+            <p
+              class="text-sm sm:text-base md:text-xl text-slate-500 max-w-2xl mb-8 md:mb-12 leading-relaxed font-medium mx-auto"
+            >
+              JNE Martapura melayani kiriman dokumen, paket, hingga kargo berat dengan jaringan
+              nasional JNE. Pilih layanan YES, Reguler, atau JTR sesuai kebutuhan Anda.
+            </p>
+
+            <div class="flex flex-wrap justify-center gap-3 mb-10 md:mb-14">
+              <span
+                class="px-4 py-2 rounded-full bg-white text-[10px] sm:text-xs font-semibold text-slate-600 border border-slate-200 shadow-sm"
+              >
+                YES: Esok hari sampai*
+              </span>
+              <span
+                class="px-4 py-2 rounded-full bg-white text-[10px] sm:text-xs font-semibold text-slate-600 border border-slate-200 shadow-sm"
+              >
+                JTR: Minimal 10 kg hemat
+              </span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center">
+              <a
+                href="https://wa.me/6285167394246"
+                class="px-10 sm:px-14 py-5 premium-gradient text-white font-black text-xs rounded-full shadow-2xl shadow-red-500/40 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest flex items-center justify-center gap-3"
+              >
+                Mulai Kirim Sekarang
+                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+              </a>
+              <a
+                href="#layanan"
+                class="px-10 sm:px-14 py-5 bg-white border border-slate-200 text-slate-900 font-black text-xs rounded-full hover:bg-slate-50 transition-all uppercase tracking-widest flex items-center justify-center shadow-sm"
+              >
+                Lihat Layanan
+              </a>
+            </div>
           </div>
 
-          <h1 class="text-4xl sm:text-5xl md:text-[5rem] lg:text-[6.5rem] font-black leading-[1.05] md:leading-[0.95] tracking-tight mb-6 md:mb-10 uppercase italic">
-            <span class="line-mask"><span class="word">Kirim</span> <span class="word">Paket</span></span>
-            <span class="line-mask"><span class="word text-gradient">Tanpa</span> <span class="word text-gradient">Khawatir.</span></span>
-          </h1>
-
-          <p class="text-sm sm:text-base md:text-xl text-slate-500 max-w-2xl mb-8 md:mb-12 leading-relaxed font-medium mx-auto">
-            JNE Martapura melayani kiriman dokumen, paket, hingga kargo berat dengan jaringan nasional JNE.
-            Pilih layanan YES, Reguler, atau JTR sesuai kebutuhan Anda.
-          </p>
-
-          <div class="flex flex-wrap justify-center gap-3 mb-10 md:mb-14">
-            <span class="px-4 py-2 rounded-full bg-white text-[10px] sm:text-xs font-semibold text-slate-600 border border-slate-200 shadow-sm">
-              YES: Esok hari sampai*
-            </span>
-            <span class="px-4 py-2 rounded-full bg-white text-[10px] sm:text-xs font-semibold text-slate-600 border border-slate-200 shadow-sm">
-              JTR: Minimal 10 kg hemat
-            </span>
-          </div>
-
-          <div class="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center">
-            <a href="https://wa.me/6285167394246"
-               class="px-10 sm:px-14 py-5 premium-gradient text-white font-black text-xs rounded-full shadow-2xl shadow-red-500/40 hover:scale-105 active:scale-95 transition-all uppercase tracking-widest flex items-center justify-center gap-3">
-              Mulai Kirim Sekarang
-              <i data-lucide="arrow-right" class="w-5 h-5"></i>
-            </a>
-            <a href="#layanan"
-               class="px-10 sm:px-14 py-5 bg-white border border-slate-200 text-slate-900 font-black text-xs rounded-full hover:bg-slate-50 transition-all uppercase tracking-widest flex items-center justify-center shadow-sm">
-              Lihat Layanan
-            </a>
-          </div>
-        </div>
-
-        <!-- Visual Content (Kurir Image) -->
-        <div class="max-w-2xl w-full relative reveal">
-          <div class="absolute inset-0 bg-red-600/5 rounded-4xl rotate-3 scale-105 border border-red-500/10"></div>
-          <div class="float-chip -top-4 left-2 sm:-left-4 text-red-600"><i data-lucide="truck" class="w-4 h-4"></i> On The Way</div>
-          <div class="float-chip top-1/2 -right-2 sm:-right-5 text-emerald-600"><i data-lucide="badge-check" class="w-4 h-4"></i> Verified</div>
-          <div class="float-chip -bottom-3 left-6 text-slate-700 dark:text-slate-200"><i data-lucide="map-pin" class="w-4 h-4"></i> Martapura</div>
-          <div class="glass-card hero-card rounded-[3rem] md:rounded-[4rem] p-8 md:p-12 flex flex-col items-center overflow-hidden">
-             <div class="w-full flex justify-between items-center mb-10">
+          <!-- Visual Content (Kurir Image) -->
+          <div class="max-w-2xl w-full relative reveal">
+            <div
+              class="absolute inset-0 bg-red-600/5 rounded-4xl rotate-3 scale-105 border border-red-500/10"
+            ></div>
+            <div class="float-chip -top-4 left-2 sm:-left-4 text-red-600">
+              <i data-lucide="truck" class="w-4 h-4"></i> On The Way
+            </div>
+            <div class="float-chip top-1/2 -right-2 sm:-right-5 text-emerald-600">
+              <i data-lucide="badge-check" class="w-4 h-4"></i> Verified
+            </div>
+            <div class="float-chip -bottom-3 left-6 text-slate-700 dark:text-slate-200">
+              <i data-lucide="map-pin" class="w-4 h-4"></i> Martapura
+            </div>
+            <div
+              class="glass-card hero-card rounded-[3rem] md:rounded-[4rem] p-8 md:p-12 flex flex-col items-center overflow-hidden"
+            >
+              <div class="w-full flex justify-between items-center mb-10">
                 <div class="p-4 rounded-2xl bg-red-50 text-red-600">
                   <i data-lucide="package-check" class="w-8 h-8"></i>
                 </div>
                 <div class="text-right">
-                  <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Safe Delivery</p>
-                  <p id="stat-accuracy" class="text-3xl font-black text-slate-900 leading-none mt-1 italic tracking-tighter">99.9%</p>
+                  <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                    Safe Delivery
+                  </p>
+                  <p
+                    id="stat-accuracy"
+                    class="text-3xl font-black text-slate-900 leading-none mt-1 italic tracking-tighter"
+                  >
+                    99.9%
+                  </p>
                 </div>
-             </div>
-             <img src="assets/JNE-logo-orang-paket.svg"
-                  class="w-full h-auto max-h-[300px] object-contain drop-shadow-2xl mb-10"
-                  alt="Kurir JNE">
-             
-             <div class="w-full p-6 bg-slate-950 rounded-[2.5rem] text-white flex items-center gap-5 shadow-2xl">
+              </div>
+              <img
+                src="assets/JNE-logo-orang-paket.svg"
+                class="w-full h-auto max-h-[300px] object-contain drop-shadow-2xl mb-10"
+                alt="Kurir JNE"
+              />
+
+              <div
+                class="w-full p-6 bg-slate-950 rounded-[2.5rem] text-white flex items-center gap-5 shadow-2xl"
+              >
                 <div class="package-loader shrink-0">
                   <div class="package-loader__track"></div>
                   <div class="package-loader__shadow"></div>
                   <div class="package-loader__box"></div>
                 </div>
                 <div class="text-left">
-                  <p class="text-[9px] font-black text-red-500 uppercase tracking-widest mb-1">Live Update</p>
+                  <p class="text-[9px] font-black text-red-500 uppercase tracking-widest mb-1">
+                    Live Update
+                  </p>
                   <p class="text-xs font-bold leading-tight opacity-80">
                     Kurir sedang menuju alamat Anda di Martapura.
                   </p>
                 </div>
-             </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- BENTO: KENAPA KAMI -->
-    <section id="kenapa" class="py-16 md:py-28 relative z-10">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6">
-        <div class="text-center mb-10 md:mb-16">
-          <p class="text-red-600 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] mb-3">Kenapa JNE Martapura</p>
-          <h2 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter italic uppercase leading-tight">Cepat, Aman, Terjangkau.</h2>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-4 auto-rows-[150px] md:auto-rows-[168px] gap-4 md:gap-5">
-          <!-- Big -->
-          <div class="bento group col-span-2 row-span-2 p-7 md:p-9 flex flex-col justify-between">
-            <div class="bento-glow"></div>
-            <div class="relative z-10 flex items-center gap-3">
-              <div class="w-12 h-12 rounded-2xl premium-gradient flex items-center justify-center shadow-xl shadow-red-500/20"><i data-lucide="globe-2" class="w-6 h-6 text-white"></i></div>
-              <p class="text-[10px] font-black text-red-600 uppercase tracking-[0.3em]">Jaringan Nasional</p>
-            </div>
-            <img src="assets/peta-jne-indonesia.svg" class="relative z-10 w-full max-h-24 md:max-h-36 object-contain opacity-80 my-2" alt="Jaringan JNE">
-            <div class="relative z-10">
-              <h3 class="text-2xl md:text-3xl font-black italic tracking-tighter leading-none mb-1">Ke Seluruh Indonesia.</h3>
-              <p class="text-xs md:text-sm text-(--text-dim) font-medium">Dari Martapura, paketmu terhubung ke ribuan titik JNE se-Nusantara.</p>
-            </div>
-          </div>
-
-          <!-- Lacak real-time (wide) -->
-          <div class="bento group col-span-2 p-6 md:p-7 flex flex-col justify-between cursor-pointer" data-scroll-to="#tracking">
-            <div class="bento-glow"></div>
-            <div class="relative z-10 w-11 h-11 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20"><i data-lucide="radar" class="w-5 h-5 text-white"></i></div>
-            <div class="relative z-10">
-              <h3 class="text-lg md:text-xl font-black italic tracking-tight uppercase">Lacak Real-time</h3>
-              <p class="text-[11px] md:text-xs text-(--text-dim) font-medium mt-0.5">Pantau posisi paket kapan saja lewat nomor resi. Klik untuk lacak →</p>
-            </div>
-          </div>
-
-          <!-- YES -->
-          <div class="bento group col-span-1 p-5 md:p-6 flex flex-col justify-between">
-            <div class="bento-glow"></div>
-            <div class="relative z-10 w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20"><i data-lucide="zap" class="w-5 h-5 text-white"></i></div>
-            <div class="relative z-10">
-              <p class="text-xl md:text-2xl font-black italic tracking-tighter leading-none">Esok<br>Sampai</p>
-              <p class="text-[9px] font-black text-(--text-dim) uppercase tracking-widest mt-1">Layanan YES</p>
-            </div>
-          </div>
-
-          <!-- JTR -->
-          <div class="bento group col-span-1 p-5 md:p-6 flex flex-col justify-between">
-            <div class="bento-glow"></div>
-            <div class="relative z-10 w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20"><i data-lucide="truck" class="w-5 h-5 text-white"></i></div>
-            <div class="relative z-10">
-              <p class="text-xl md:text-2xl font-black italic tracking-tighter leading-none">10kg+<br>Hemat</p>
-              <p class="text-[9px] font-black text-(--text-dim) uppercase tracking-widest mt-1">Kargo JTR</p>
-            </div>
-          </div>
-
-          <!-- Jam + WA (full width) -->
-          <div class="bento group col-span-2 md:col-span-4 p-6 md:p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer" data-wa="Halo JNE Martapura, saya mau tanya layanan pengiriman.">
-            <div class="bento-glow"></div>
-            <div class="relative z-10 flex items-center gap-4">
-              <div class="w-11 h-11 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20"><i data-lucide="clock" class="w-5 h-5 text-white"></i></div>
-              <div>
-                <h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">Buka 08.00 – 20.30 WITA</h3>
-                <p class="text-[11px] md:text-xs text-(--text-dim) font-medium">Senin – Sabtu · CS WhatsApp responsif untuk pickup &amp; info ongkir.</p>
-              </div>
-            </div>
-            <span class="relative z-10 px-5 py-2.5 premium-gradient text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20 inline-flex items-center gap-2 shrink-0">Chat CS <i data-lucide="message-circle" class="w-4 h-4"></i></span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TRACKING SECTION -->
-  <section id="tracking" class="py-20 md:py-32 relative z-20 reveal">
-    <div class="max-w-5xl mx-auto px-6">
-      <div class="p-8 md:p-20 rounded-[3rem] md:rounded-[5rem] bg-(--bg-main) dark:bg-slate-900 shadow-2xl relative overflow-hidden text-center border border-(--glass-border)">
-        <div class="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
-          <i data-lucide="search" class="w-48 h-48 md:w-80 md:h-80 text-(--text-main)"></i>
-        </div>
-        
-        <h2 class="text-3xl md:text-5xl font-black text-(--text-main) italic tracking-tighter mb-4 uppercase">Lacak Paket.</h2>
-        <p class="text-(--text-dim) font-medium mb-10 md:mb-16 text-sm md:text-base max-w-xl mx-auto leading-relaxed">
-          Masukkan nomor resi Anda untuk memantau perjalanan paket secara real-time.
-        </p>
-
-        <div class="max-w-2xl mx-auto">
-          <div class="flex flex-col md:flex-row gap-3 md:gap-4 p-2 bg-(--card-bg) backdrop-blur-xl border border-(--glass-border) rounded-3xl md:rounded-full">
-            <input
-              id="input-resi"
-              type="text"
-              placeholder="CONTOH: 0123 4567 8901"
-              class="w-full md:flex-1 bg-transparent px-6 md:px-8 py-4 md:py-5 text-(--text-main) placeholder:text-slate-400 focus:outline-none font-bold text-lg text-center md:text-left uppercase">
-            <button id="btn-track"
-              class="w-full md:w-auto px-8 md:px-12 py-4 md:py-5 premium-gradient text-white rounded-2xl md:rounded-full font-black text-[10px] md:text-xs uppercase tracking-widest shadow-xl shadow-red-600/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
-              <span id="btn-track-text">Lacak</span>
-              <span id="btn-track-spinner" class="hidden package-loader scale-75">
-                <span class="package-loader__track"></span>
-                <span class="package-loader__shadow"></span>
-                <span class="package-loader__box"></span>
-              </span>
-            </button>
-          </div>
-        </div>
-
-          <p id="resi-error" class="hidden max-w-2xl mx-auto mb-2 text-xs sm:text-sm font-bold text-red-600 flex items-center justify-center gap-2">
-            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
-            <span id="resi-error-text">Nomor resi belum valid.</span>
-          </p>
-
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5 mt-8 md:mt-12">
-          <div id="card-ongkir" role="button" tabindex="0" class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group">
-            <i data-lucide="map-pin" class="mx-auto mb-2 text-(--text-dim) group-hover:text-red-500 transition-colors w-5 h-5"></i>
-            <p class="text-[9px] font-black text-(--text-main) uppercase tracking-widest">Cek Ongkir</p>
-            <p class="mt-1 text-[10px] text-(--text-dim)">Hitung tarif JNE berdasarkan kota asal, tujuan, dan berat paket.</p>
-          </div>
-          <div id="card-agen" role="button" tabindex="0" class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group">
-            <i data-lucide="navigation" class="mx-auto mb-2 text-(--text-dim) group-hover:text-red-500 transition-colors w-5 h-5"></i>
-            <p class="text-[9px] font-black text-(--text-main) uppercase tracking-widest">Peta Agen</p>
-            <p class="mt-1 text-[10px] text-(--text-dim)">Temukan agen/cabang JNE terdekat dari lokasi Anda.</p>
-          </div>
-          <div id="card-faq" role="button" tabindex="0" class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group">
-            <i data-lucide="help-circle" class="mx-auto mb-2 text-(--text-dim) group-hover:text-red-500 transition-colors w-5 h-5"></i>
-            <p class="text-[9px] font-black text-(--text-main) uppercase tracking-widest">FAQ</p>
-            <p class="mt-1 text-[10px] text-(--text-dim)">Panduan packing, barang terlarang, dan tips kirim aman.</p>
-          </div>
-          <div id="card-callcenter" role="button" tabindex="0" class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group">
-            <i data-lucide="phone" class="mx-auto mb-2 text-(--text-dim) group-hover:text-red-500 transition-colors w-5 h-5"></i>
-            <p class="text-[9px] font-black text-(--text-main) uppercase tracking-widest">Call Center</p>
-            <p class="mt-1 text-[10px] text-(--text-dim)">021-2927-8888 · Customer Care JNE Pusat.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ALUR PENGIRIMAN (garis menggambar sendiri saat scroll) -->
-    <section id="alur" class="py-20 md:py-32 relative">
-      <div class="max-w-3xl mx-auto px-5 sm:px-6">
-        <div class="text-center mb-12 md:mb-20">
-          <p class="text-red-600 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] mb-3">Alur Pengiriman</p>
-          <h2 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter italic uppercase leading-tight">Perjalanan Paketmu.</h2>
-          <p class="text-sm md:text-base text-(--text-dim) max-w-xl mx-auto mt-4 leading-relaxed">Dari tanganmu sampai ke tujuan — lima tahap yang dilalui setiap kiriman JNE.</p>
-        </div>
-
-        <div id="alur-track" class="relative">
-          <!-- garis vertikal -->
-          <div class="absolute left-5 md:left-6 top-2 bottom-2 w-[3px] rounded-full overflow-hidden bg-slate-200/60 dark:bg-slate-700/50">
-            <div class="alur-fill absolute inset-0 bg-gradient-to-b from-red-500 to-red-700"></div>
-          </div>
-
-          <div class="space-y-8 md:space-y-12">
-            <div class="alur-item relative pl-16 md:pl-20">
-              <span class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-red-500"></span>
-              <div class="glass-card rounded-3xl p-5 md:p-6">
-                <div class="flex items-center gap-3 mb-2"><div class="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0"><i data-lucide="package-plus" class="w-4 h-4"></i></div><h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">1 · Paket Diterima</h3></div>
-                <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">Paket di-input di counter JNE Martapura, ditimbang, lalu mendapat nomor resi untuk pelacakan.</p>
-              </div>
-            </div>
-
-            <div class="alur-item relative pl-16 md:pl-20">
-              <span class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-red-500"></span>
-              <div class="glass-card rounded-3xl p-5 md:p-6">
-                <div class="flex items-center gap-3 mb-2"><div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0"><i data-lucide="boxes" class="w-4 h-4"></i></div><h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">2 · Disortir</h3></div>
-                <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">Di gudang sortir, paket dikelompokkan sesuai kota tujuan dan moda pengiriman.</p>
-              </div>
-            </div>
-
-            <div class="alur-item relative pl-16 md:pl-20">
-              <span class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-red-500"></span>
-              <div class="glass-card rounded-3xl p-5 md:p-6">
-                <div class="flex items-center gap-3 mb-2"><div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><i data-lucide="plane" class="w-4 h-4"></i></div><h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">3 · Dalam Perjalanan</h3></div>
-                <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">Paket bergerak via jalur darat, laut, atau udara menuju kota tujuan lewat jaringan nasional JNE.</p>
-              </div>
-            </div>
-
-            <div class="alur-item relative pl-16 md:pl-20">
-              <span class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-red-500"></span>
-              <div class="glass-card rounded-3xl p-5 md:p-6">
-                <div class="flex items-center gap-3 mb-2"><div class="w-9 h-9 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center shrink-0"><i data-lucide="bike" class="w-4 h-4"></i></div><h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">4 · Kurir Mengantar</h3></div>
-                <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">Kurir cabang tujuan membawa paket ke alamat penerima — status berubah jadi "Out for Delivery".</p>
-              </div>
-            </div>
-
-            <div class="alur-item relative pl-16 md:pl-20">
-              <span class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-emerald-500"></span>
-              <div class="glass-card rounded-3xl p-5 md:p-6">
-                <div class="flex items-center gap-3 mb-2"><div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i data-lucide="check-check" class="w-4 h-4"></i></div><h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">5 · Sampai Tujuan</h3></div>
-                <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">Paket diterima penerima &amp; ditandai "Delivered". Selesai — happiness terhubung. 🎉</p>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- SERVICES -->
-    <section id="layanan" class="py-20 md:py-32 reveal">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6">
-        <div class="text-center mb-12 md:mb-16">
-          <p class="text-red-600 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] mb-3">
-            Layanan Utama
-          </p>
-          <h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-4 italic uppercase leading-tight">
-            Pilihan Layanan JNE.
-          </h2>
-          <p class="text-sm md:text-base text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            Sesuaikan layanan dengan tingkat urgensi dan berat kiriman.
-            Untuk Martapura, layanan Reguler dan JTR banyak digunakan oleh UMKM dan toko online. <!-- [web:30][web:33] -->
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-7 md:gap-10">
-          <!-- YES -->
-          <article data-service="YES (Yakin Esok Sampai)" class="glass-card p-8 md:p-10 rounded-3xl md:rounded-[3rem] relative overflow-hidden cursor-pointer">
-            <div class="absolute top-0 right-0 w-20 h-20 bg-amber-400/10 rounded-bl-[3rem]"></div>
-            <div class="w-14 h-14 md:w-16 md:h-16 rounded-3xl bg-amber-400 flex items-center justify-center mb-6 md:mb-8 shadow-xl shadow-amber-500/20">
-              <i data-lucide="zap" class="text-white w-7 h-7"></i>
-            </div>
-            <h3 class="text-xl md:text-2xl font-black mb-3 uppercase tracking-tighter italic">
-              YES (Yakin Esok Sampai)
-            </h3>
-            <p class="text-xs md:text-sm text-slate-500 font-medium leading-relaxed mb-4">
-              Layanan premium dengan waktu penyampaian esok hari (next day) termasuk Minggu dan hari libur nasional di area tertentu. <!-- [web:28][web:35] -->
+      <!-- BENTO: KENAPA KAMI -->
+      <section id="kenapa" class="py-16 md:py-28 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+          <div class="text-center mb-10 md:mb-16">
+            <p
+              class="text-red-600 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] mb-3"
+            >
+              Kenapa JNE Martapura
             </p>
-            <ul class="text-[11px] text-slate-500 space-y-1 mb-6">
-              <li>• SLA: tiba esok hari maksimal pukul 23.59.</li> <!-- [web:28] -->
-              <li>• Berlaku cut off time di tiap kota.</li> <!-- [web:28] -->
-              <li>• Money back guarantee jika terjadi keterlambatan karena JNE. <!-- [web:28][web:48] --></li>
-            </ul>
-            <div class="flex items-center justify-between pt-5 border-t border-slate-100">
-              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                Express Service
-              </span>
-              <div class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm">
-                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-              </div>
-            </div>
-          </article>
-
-          <!-- REG -->
-          <article data-service="JNE Reguler" class="glass-card p-8 md:p-10 rounded-3xl md:rounded-[3rem] relative overflow-hidden border-red-100 shadow-red-500/5 cursor-pointer">
-            <div class="absolute top-0 right-0 w-20 h-20 premium-gradient opacity-5 rounded-bl-[3rem]"></div>
-            <div class="w-14 h-14 md:w-16 md:h-16 rounded-3xl premium-gradient flex items-center justify-center mb-6 md:mb-8 shadow-xl shadow-red-500/20">
-              <i data-lucide="package" class="text-white w-7 h-7"></i>
-            </div>
-            <h3 class="text-xl md:text-2xl font-black mb-3 uppercase tracking-tighter italic">
-              JNE Reguler
-            </h3>
-            <p class="text-xs md:text-sm text-slate-500 font-medium leading-relaxed mb-4">
-              Layanan standar dengan cakupan ke hampir seluruh Indonesia, cocok untuk kiriman harian dan pengiriman toko online. <!-- [web:30] -->
-            </p>
-            <ul class="text-[11px] text-slate-500 space-y-1 mb-6">
-              <li>• Estimasi 1–7 hari kerja tergantung jarak kota.</li> <!-- [web:30] -->
-              <li>• Tracking online real-time via website dan aplikasi JNE.</li> <!-- [web:30] -->
-              <li>• Pilihan paling seimbang antara kecepatan dan tarif.</li>
-            </ul>
-            <div class="flex items-center justify-between pt-5 border-t border-slate-100">
-              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                National Service
-              </span>
-              <div class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm">
-                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-              </div>
-            </div>
-          </article>
-
-          <!-- JTR -->
-          <article data-service="JTR (JNE Trucking)" class="glass-card p-8 md:p-10 rounded-3xl md:rounded-[3rem] relative overflow-hidden cursor-pointer">
-            <div class="absolute top-0 right-0 w-20 h-20 bg-blue-600/8 rounded-bl-[3rem]"></div>
-            <div class="w-14 h-14 md:w-16 md:h-16 rounded-3xl bg-blue-600 flex items-center justify-center mb-6 md:mb-8 shadow-xl shadow-blue-500/20">
-              <i data-lucide="truck" class="text-white w-7 h-7"></i>
-            </div>
-            <h3 class="text-xl md:text-2xl font-black mb-3 uppercase tracking-tighter italic">
-              JTR (JNE Trucking)
-            </h3>
-            <p class="text-xs md:text-sm text-slate-500 font-medium leading-relaxed mb-4">
-              Layanan pengiriman kargo melalui jalur darat dan laut dengan tarif hemat untuk barang berukuran besar. <!-- [web:33][web:51] -->
-            </p>
-            <ul class="text-[11px] text-slate-500 space-y-1 mb-6">
-              <li>• Minimal berat 10 kg per kiriman (dibawahnya dihitung 10 kg). <!-- [web:33][web:51] --></li>
-              <li>• Menggunakan perhitungan berat aktual dan volumetrik.</li> <!-- [web:33] -->
-              <li>• Estimasi lebih lama dari Reguler, tapi jauh lebih ekonomis. <!-- [web:51] --></li>
-            </ul>
-            <div class="flex items-center justify-between pt-5 border-t border-slate-100">
-              <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                Cargo Service
-              </span>
-              <div class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm">
-                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-              </div>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- BRANCH INFO -->
-  <section id="profil" class="py-22 md:py-28 bg-(--bg-main) text-(--text-main) relative overflow-hidden reveal">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-14 md:gap-20 items-start">
-        <div>
-          <p class="text-red-500 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.45em] mb-4">
-            Hub JNE Martapura
-          </p>
-          <h2 class="text-3xl sm:text-4xl md:text-5xl font-black italic mb-6 md:mb-8 tracking-tighter uppercase leading-tight">
-            Cabang Resmi<br>
-            <span class="opacity-40 font-normal">Martapura.</span>
-          </h2>
-          <p class="text-sm sm:text-base md:text-lg text-(--text-dim) leading-relaxed mb-8 md:mb-10">
-            JNE Martapura melayani pelanggan di kawasan Martapura dan Kabupaten Banjar.
-            Berada di jalur utama, cabang ini menjadi titik penting distribusi paket ke dan dari Kalimantan Selatan.
-          </p>
-
-          <div class="space-y-7">
-            <div class="flex items-start gap-4 sm:gap-5">
-              <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-(--card-bg) flex items-center justify-center text-red-500 border border-(--glass-border)">
-                <i data-lucide="map-pin" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <p class="text-[9px] sm:text-[10px] font-black text-(--text-dim) uppercase tracking-widest mb-1">
-                  Alamat Utama
-                </p>
-                <p class="text-sm sm:text-base md:text-lg font-bold leading-snug">
-                  Jl. A. Yani (sekitar Martapura Kota), Kab. Banjar, Kalimantan Selatan 70611*
-                </p>
-              </div>
-            </div>
-
-            <div class="flex items-start gap-4 sm:gap-5">
-              <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-(--card-bg) flex items-center justify-center text-emerald-500 border border-(--glass-border)">
-                <i data-lucide="phone" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <p class="text-[9px] sm:text-[10px] font-black text-(--text-dim) uppercase tracking-widest mb-1">
-                  Kontak & WhatsApp
-                </p>
-                <p class="text-sm sm:text-base md:text-lg font-bold leading-snug">
-                  WA CS: 0851-6739-4246
-                </p>
-              </div>
-            </div>
-
-            <div class="flex items-start gap-4 sm:gap-5">
-              <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-(--card-bg) flex items-center justify-center text-amber-400 border border-(--glass-border)">
-                <i data-lucide="clock" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <p class="text-[9px] sm:text-[10px] font-black text-(--text-dim) uppercase tracking-widest mb-1">
-                  Jam Operasional
-                </p>
-                <p class="text-sm sm:text-base md:text-lg font-bold leading-snug italic">
-                  08.00 – 20.30 WITA (Senin – Sabtu)*
-                </p>
-              </div>
-            </div>
+            <h2
+              class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter italic uppercase leading-tight"
+            >
+              Cepat, Aman, Terjangkau.
+            </h2>
           </div>
 
-            <div class="mt-8 flex flex-wrap gap-3">
-              <a href="https://wa.me/6285167394246"
-                 class="px-6 py-3 premium-gradient rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                Chat via WhatsApp
-                <i data-lucide="message-circle" class="w-4 h-4"></i>
-              </a>
-              <a href="https://www.google.com/maps/search/?api=1&query=JNE+Martapura+Banjar+Kalimantan+Selatan"
-                 target="_blank"
-                 class="px-6 py-3 bg-white text-slate-900 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest border border-slate-200">
-                Buka di Google Maps
-              </a>
-            </div>
-          </div>
-
-          <!-- Map visual -->
-          <div class="relative mt-6 lg:mt-0">
-            <div class="w-full aspect-4/3 rounded-3xl md:rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden relative shadow-2xl reveal">
-              <img src="assets/peta-jne-indonesia.svg"
-                   class="w-full h-full object-contain p-8 md:p-10 opacity-25 brightness-150"
-                   alt="Peta jaringan JNE">
-              <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
-                <div class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 flex items-center justify-center shadow-2xl shadow-red-600/50">
-                  <i data-lucide="navigation" class="w-6 h-6 text-white"></i>
+          <div
+            class="grid grid-cols-2 md:grid-cols-4 auto-rows-[150px] md:auto-rows-[168px] gap-4 md:gap-5"
+          >
+            <!-- Big -->
+            <div class="bento group col-span-2 row-span-2 p-7 md:p-9 flex flex-col justify-between">
+              <div class="bento-glow"></div>
+              <div class="relative z-10 flex items-center gap-3">
+                <div
+                  class="w-12 h-12 rounded-2xl premium-gradient flex items-center justify-center shadow-xl shadow-red-500/20"
+                >
+                  <i data-lucide="globe-2" class="w-6 h-6 text-white"></i>
                 </div>
-                <p class="text-xs sm:text-sm text-slate-200 max-w-sm">
-                  Terhubung dengan jaringan nasional JNE dari Martapura ke seluruh Indonesia. <!-- [web:30][web:32] -->
+                <p class="text-[10px] font-black text-red-600 uppercase tracking-[0.3em]">
+                  Jaringan Nasional
                 </p>
-                <a href="https://www.google.com/maps/search/?api=1&query=JNE+Martapura+Banjar+Kalimantan+Selatan"
-                   target="_blank"
-                   class="px-7 md:px-9 py-3 bg-white text-slate-900 rounded-full font-black text-[10px] sm:text-xs uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all">
-                  Open in Google Maps
+              </div>
+              <img
+                src="assets/peta-jne-indonesia.svg"
+                class="relative z-10 w-full max-h-24 md:max-h-36 object-contain opacity-80 my-2"
+                alt="Jaringan JNE"
+              />
+              <div class="relative z-10">
+                <h3
+                  class="text-2xl md:text-3xl font-black italic tracking-tighter leading-none mb-1"
+                >
+                  Ke Seluruh Indonesia.
+                </h3>
+                <p class="text-xs md:text-sm text-(--text-dim) font-medium">
+                  Dari Martapura, paketmu terhubung ke ribuan titik JNE se-Nusantara.
+                </p>
+              </div>
+            </div>
+
+            <!-- Lacak real-time (wide) -->
+            <div
+              class="bento group col-span-2 p-6 md:p-7 flex flex-col justify-between cursor-pointer"
+              data-scroll-to="#tracking"
+            >
+              <div class="bento-glow"></div>
+              <div
+                class="relative z-10 w-11 h-11 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20"
+              >
+                <i data-lucide="radar" class="w-5 h-5 text-white"></i>
+              </div>
+              <div class="relative z-10">
+                <h3 class="text-lg md:text-xl font-black italic tracking-tight uppercase">
+                  Lacak Real-time
+                </h3>
+                <p class="text-[11px] md:text-xs text-(--text-dim) font-medium mt-0.5">
+                  Pantau posisi paket kapan saja lewat nomor resi. Klik untuk lacak →
+                </p>
+              </div>
+            </div>
+
+            <!-- YES -->
+            <div class="bento group col-span-1 p-5 md:p-6 flex flex-col justify-between">
+              <div class="bento-glow"></div>
+              <div
+                class="relative z-10 w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20"
+              >
+                <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+              </div>
+              <div class="relative z-10">
+                <p class="text-xl md:text-2xl font-black italic tracking-tighter leading-none">
+                  Esok<br />Sampai
+                </p>
+                <p class="text-[9px] font-black text-(--text-dim) uppercase tracking-widest mt-1">
+                  Layanan YES
+                </p>
+              </div>
+            </div>
+
+            <!-- JTR -->
+            <div class="bento group col-span-1 p-5 md:p-6 flex flex-col justify-between">
+              <div class="bento-glow"></div>
+              <div
+                class="relative z-10 w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20"
+              >
+                <i data-lucide="truck" class="w-5 h-5 text-white"></i>
+              </div>
+              <div class="relative z-10">
+                <p class="text-xl md:text-2xl font-black italic tracking-tighter leading-none">
+                  10kg+<br />Hemat
+                </p>
+                <p class="text-[9px] font-black text-(--text-dim) uppercase tracking-widest mt-1">
+                  Kargo JTR
+                </p>
+              </div>
+            </div>
+
+            <!-- Jam + WA (full width) -->
+            <div
+              class="bento group col-span-2 md:col-span-4 p-6 md:p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer"
+              data-wa="Halo JNE Martapura, saya mau tanya layanan pengiriman."
+            >
+              <div class="bento-glow"></div>
+              <div class="relative z-10 flex items-center gap-4">
+                <div
+                  class="w-11 h-11 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20"
+                >
+                  <i data-lucide="clock" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                  <h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">
+                    Buka 08.00 – 20.30 WITA
+                  </h3>
+                  <p class="text-[11px] md:text-xs text-(--text-dim) font-medium">
+                    Senin – Sabtu · CS WhatsApp responsif untuk pickup &amp; info ongkir.
+                  </p>
+                </div>
+              </div>
+              <span
+                class="relative z-10 px-5 py-2.5 premium-gradient text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20 inline-flex items-center gap-2 shrink-0"
+                >Chat CS <i data-lucide="message-circle" class="w-4 h-4"></i
+              ></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TRACKING SECTION -->
+      <section id="tracking" class="py-20 md:py-32 relative z-20 reveal">
+        <div class="max-w-5xl mx-auto px-6">
+          <div
+            class="p-8 md:p-20 rounded-[3rem] md:rounded-[5rem] bg-(--bg-main) dark:bg-slate-900 shadow-2xl relative overflow-hidden text-center border border-(--glass-border)"
+          >
+            <div class="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
+              <i data-lucide="search" class="w-48 h-48 md:w-80 md:h-80 text-(--text-main)"></i>
+            </div>
+
+            <h2
+              class="text-3xl md:text-5xl font-black text-(--text-main) italic tracking-tighter mb-4 uppercase"
+            >
+              Lacak Paket.
+            </h2>
+            <p
+              class="text-(--text-dim) font-medium mb-10 md:mb-16 text-sm md:text-base max-w-xl mx-auto leading-relaxed"
+            >
+              Masukkan nomor resi Anda untuk memantau perjalanan paket secara real-time.
+            </p>
+
+            <div class="max-w-2xl mx-auto">
+              <div
+                class="flex flex-col md:flex-row gap-3 md:gap-4 p-2 bg-(--card-bg) backdrop-blur-xl border border-(--glass-border) rounded-3xl md:rounded-full"
+              >
+                <input
+                  id="input-resi"
+                  type="text"
+                  placeholder="CONTOH: 0123 4567 8901"
+                  class="w-full md:flex-1 bg-transparent px-6 md:px-8 py-4 md:py-5 text-(--text-main) placeholder:text-slate-400 focus:outline-none font-bold text-lg text-center md:text-left uppercase"
+                />
+                <button
+                  id="btn-track"
+                  class="w-full md:w-auto px-8 md:px-12 py-4 md:py-5 premium-gradient text-white rounded-2xl md:rounded-full font-black text-[10px] md:text-xs uppercase tracking-widest shadow-xl shadow-red-600/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <span id="btn-track-text">Lacak</span>
+                  <span id="btn-track-spinner" class="hidden package-loader scale-75">
+                    <span class="package-loader__track"></span>
+                    <span class="package-loader__shadow"></span>
+                    <span class="package-loader__box"></span>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <p
+              id="resi-error"
+              class="hidden max-w-2xl mx-auto mb-2 text-xs sm:text-sm font-bold text-red-600 flex items-center justify-center gap-2"
+            >
+              <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+              <span id="resi-error-text">Nomor resi belum valid.</span>
+            </p>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5 mt-8 md:mt-12">
+              <div
+                id="card-ongkir"
+                role="button"
+                tabindex="0"
+                class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group"
+              >
+                <i
+                  data-lucide="map-pin"
+                  class="mx-auto mb-2 text-(--text-dim) group-hover:text-red-500 transition-colors w-5 h-5"
+                ></i>
+                <p class="text-[9px] font-black text-(--text-main) uppercase tracking-widest">
+                  Cek Ongkir
+                </p>
+                <p class="mt-1 text-[10px] text-(--text-dim)">
+                  Hitung tarif JNE berdasarkan kota asal, tujuan, dan berat paket.
+                </p>
+              </div>
+              <div
+                id="card-agen"
+                role="button"
+                tabindex="0"
+                class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group"
+              >
+                <i
+                  data-lucide="navigation"
+                  class="mx-auto mb-2 text-(--text-dim) group-hover:text-red-500 transition-colors w-5 h-5"
+                ></i>
+                <p class="text-[9px] font-black text-(--text-main) uppercase tracking-widest">
+                  Peta Agen
+                </p>
+                <p class="mt-1 text-[10px] text-(--text-dim)">
+                  Temukan agen/cabang JNE terdekat dari lokasi Anda.
+                </p>
+              </div>
+              <div
+                id="card-faq"
+                role="button"
+                tabindex="0"
+                class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group"
+              >
+                <i
+                  data-lucide="help-circle"
+                  class="mx-auto mb-2 text-(--text-dim) group-hover:text-red-500 transition-colors w-5 h-5"
+                ></i>
+                <p class="text-[9px] font-black text-(--text-main) uppercase tracking-widest">
+                  FAQ
+                </p>
+                <p class="mt-1 text-[10px] text-(--text-dim)">
+                  Panduan packing, barang terlarang, dan tips kirim aman.
+                </p>
+              </div>
+              <div
+                id="card-callcenter"
+                role="button"
+                tabindex="0"
+                class="p-4 md:p-5 rounded-2xl bg-(--card-bg) border border-(--glass-border) hover:bg-red-500/5 transition-all cursor-pointer group"
+              >
+                <i
+                  data-lucide="phone"
+                  class="mx-auto mb-2 text-(--text-dim) group-hover:text-red-500 transition-colors w-5 h-5"
+                ></i>
+                <p class="text-[9px] font-black text-(--text-main) uppercase tracking-widest">
+                  Call Center
+                </p>
+                <p class="mt-1 text-[10px] text-(--text-dim)">
+                  021-2927-8888 · Customer Care JNE Pusat.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ALUR PENGIRIMAN (garis menggambar sendiri saat scroll) -->
+      <section id="alur" class="py-20 md:py-32 relative">
+        <div class="max-w-3xl mx-auto px-5 sm:px-6">
+          <div class="text-center mb-12 md:mb-20">
+            <p
+              class="text-red-600 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] mb-3"
+            >
+              Alur Pengiriman
+            </p>
+            <h2
+              class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter italic uppercase leading-tight"
+            >
+              Perjalanan Paketmu.
+            </h2>
+            <p class="text-sm md:text-base text-(--text-dim) max-w-xl mx-auto mt-4 leading-relaxed">
+              Dari tanganmu sampai ke tujuan — lima tahap yang dilalui setiap kiriman JNE.
+            </p>
+          </div>
+
+          <div id="alur-track" class="relative">
+            <!-- garis vertikal -->
+            <div
+              class="absolute left-5 md:left-6 top-2 bottom-2 w-[3px] rounded-full overflow-hidden bg-slate-200/60 dark:bg-slate-700/50"
+            >
+              <div
+                class="alur-fill absolute inset-0 bg-gradient-to-b from-red-500 to-red-700"
+              ></div>
+            </div>
+
+            <div class="space-y-8 md:space-y-12">
+              <div class="alur-item relative pl-16 md:pl-20">
+                <span
+                  class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-red-500"
+                ></span>
+                <div class="glass-card rounded-3xl p-5 md:p-6">
+                  <div class="flex items-center gap-3 mb-2">
+                    <div
+                      class="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0"
+                    >
+                      <i data-lucide="package-plus" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">
+                      1 · Paket Diterima
+                    </h3>
+                  </div>
+                  <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">
+                    Paket di-input di counter JNE Martapura, ditimbang, lalu mendapat nomor resi
+                    untuk pelacakan.
+                  </p>
+                </div>
+              </div>
+
+              <div class="alur-item relative pl-16 md:pl-20">
+                <span
+                  class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-red-500"
+                ></span>
+                <div class="glass-card rounded-3xl p-5 md:p-6">
+                  <div class="flex items-center gap-3 mb-2">
+                    <div
+                      class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0"
+                    >
+                      <i data-lucide="boxes" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">
+                      2 · Disortir
+                    </h3>
+                  </div>
+                  <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">
+                    Di gudang sortir, paket dikelompokkan sesuai kota tujuan dan moda pengiriman.
+                  </p>
+                </div>
+              </div>
+
+              <div class="alur-item relative pl-16 md:pl-20">
+                <span
+                  class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-red-500"
+                ></span>
+                <div class="glass-card rounded-3xl p-5 md:p-6">
+                  <div class="flex items-center gap-3 mb-2">
+                    <div
+                      class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"
+                    >
+                      <i data-lucide="plane" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">
+                      3 · Dalam Perjalanan
+                    </h3>
+                  </div>
+                  <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">
+                    Paket bergerak via jalur darat, laut, atau udara menuju kota tujuan lewat
+                    jaringan nasional JNE.
+                  </p>
+                </div>
+              </div>
+
+              <div class="alur-item relative pl-16 md:pl-20">
+                <span
+                  class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-red-500"
+                ></span>
+                <div class="glass-card rounded-3xl p-5 md:p-6">
+                  <div class="flex items-center gap-3 mb-2">
+                    <div
+                      class="w-9 h-9 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center shrink-0"
+                    >
+                      <i data-lucide="bike" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">
+                      4 · Kurir Mengantar
+                    </h3>
+                  </div>
+                  <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">
+                    Kurir cabang tujuan membawa paket ke alamat penerima — status berubah jadi "Out
+                    for Delivery".
+                  </p>
+                </div>
+              </div>
+
+              <div class="alur-item relative pl-16 md:pl-20">
+                <span
+                  class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-emerald-500"
+                ></span>
+                <div class="glass-card rounded-3xl p-5 md:p-6">
+                  <div class="flex items-center gap-3 mb-2">
+                    <div
+                      class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"
+                    >
+                      <i data-lucide="check-check" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">
+                      5 · Sampai Tujuan
+                    </h3>
+                  </div>
+                  <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">
+                    Paket diterima penerima &amp; ditandai "Delivered". Selesai — happiness
+                    terhubung. 🎉
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SERVICES -->
+      <section id="layanan" class="py-20 md:py-32 reveal">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6">
+          <div class="text-center mb-12 md:mb-16">
+            <p
+              class="text-red-600 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] mb-3"
+            >
+              Layanan Utama
+            </p>
+            <h2
+              class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-4 italic uppercase leading-tight"
+            >
+              Pilihan Layanan JNE.
+            </h2>
+            <p class="text-sm md:text-base text-slate-500 max-w-2xl mx-auto leading-relaxed">
+              Sesuaikan layanan dengan tingkat urgensi dan berat kiriman. Untuk Martapura, layanan
+              Reguler dan JTR banyak digunakan oleh UMKM dan toko online.
+              <!-- [web:30][web:33] -->
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-7 md:gap-10">
+            <!-- YES -->
+            <article
+              data-service="YES (Yakin Esok Sampai)"
+              class="glass-card p-8 md:p-10 rounded-3xl md:rounded-[3rem] relative overflow-hidden cursor-pointer"
+            >
+              <div class="absolute top-0 right-0 w-20 h-20 bg-amber-400/10 rounded-bl-[3rem]"></div>
+              <div
+                class="w-14 h-14 md:w-16 md:h-16 rounded-3xl bg-amber-400 flex items-center justify-center mb-6 md:mb-8 shadow-xl shadow-amber-500/20"
+              >
+                <i data-lucide="zap" class="text-white w-7 h-7"></i>
+              </div>
+              <h3 class="text-xl md:text-2xl font-black mb-3 uppercase tracking-tighter italic">
+                YES (Yakin Esok Sampai)
+              </h3>
+              <p class="text-xs md:text-sm text-slate-500 font-medium leading-relaxed mb-4">
+                Layanan premium dengan waktu penyampaian esok hari (next day) termasuk Minggu dan
+                hari libur nasional di area tertentu.
+                <!-- [web:28][web:35] -->
+              </p>
+              <ul class="text-[11px] text-slate-500 space-y-1 mb-6">
+                <li>• SLA: tiba esok hari maksimal pukul 23.59.</li>
+                <!-- [web:28] -->
+                <li>• Berlaku cut off time di tiap kota.</li>
+                <!-- [web:28] -->
+                <li>
+                  • Money back guarantee jika terjadi keterlambatan karena JNE.
+                  <!-- [web:28][web:48] -->
+                </li>
+              </ul>
+              <div class="flex items-center justify-between pt-5 border-t border-slate-100">
+                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  Express Service
+                </span>
+                <div
+                  class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                >
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </div>
+              </div>
+            </article>
+
+            <!-- REG -->
+            <article
+              data-service="JNE Reguler"
+              class="glass-card p-8 md:p-10 rounded-3xl md:rounded-[3rem] relative overflow-hidden border-red-100 shadow-red-500/5 cursor-pointer"
+            >
+              <div
+                class="absolute top-0 right-0 w-20 h-20 premium-gradient opacity-5 rounded-bl-[3rem]"
+              ></div>
+              <div
+                class="w-14 h-14 md:w-16 md:h-16 rounded-3xl premium-gradient flex items-center justify-center mb-6 md:mb-8 shadow-xl shadow-red-500/20"
+              >
+                <i data-lucide="package" class="text-white w-7 h-7"></i>
+              </div>
+              <h3 class="text-xl md:text-2xl font-black mb-3 uppercase tracking-tighter italic">
+                JNE Reguler
+              </h3>
+              <p class="text-xs md:text-sm text-slate-500 font-medium leading-relaxed mb-4">
+                Layanan standar dengan cakupan ke hampir seluruh Indonesia, cocok untuk kiriman
+                harian dan pengiriman toko online.
+                <!-- [web:30] -->
+              </p>
+              <ul class="text-[11px] text-slate-500 space-y-1 mb-6">
+                <li>• Estimasi 1–7 hari kerja tergantung jarak kota.</li>
+                <!-- [web:30] -->
+                <li>• Tracking online real-time via website dan aplikasi JNE.</li>
+                <!-- [web:30] -->
+                <li>• Pilihan paling seimbang antara kecepatan dan tarif.</li>
+              </ul>
+              <div class="flex items-center justify-between pt-5 border-t border-slate-100">
+                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  National Service
+                </span>
+                <div
+                  class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                >
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </div>
+              </div>
+            </article>
+
+            <!-- JTR -->
+            <article
+              data-service="JTR (JNE Trucking)"
+              class="glass-card p-8 md:p-10 rounded-3xl md:rounded-[3rem] relative overflow-hidden cursor-pointer"
+            >
+              <div class="absolute top-0 right-0 w-20 h-20 bg-blue-600/8 rounded-bl-[3rem]"></div>
+              <div
+                class="w-14 h-14 md:w-16 md:h-16 rounded-3xl bg-blue-600 flex items-center justify-center mb-6 md:mb-8 shadow-xl shadow-blue-500/20"
+              >
+                <i data-lucide="truck" class="text-white w-7 h-7"></i>
+              </div>
+              <h3 class="text-xl md:text-2xl font-black mb-3 uppercase tracking-tighter italic">
+                JTR (JNE Trucking)
+              </h3>
+              <p class="text-xs md:text-sm text-slate-500 font-medium leading-relaxed mb-4">
+                Layanan pengiriman kargo melalui jalur darat dan laut dengan tarif hemat untuk
+                barang berukuran besar.
+                <!-- [web:33][web:51] -->
+              </p>
+              <ul class="text-[11px] text-slate-500 space-y-1 mb-6">
+                <li>
+                  • Minimal berat 10 kg per kiriman (dibawahnya dihitung 10 kg).
+                  <!-- [web:33][web:51] -->
+                </li>
+                <li>• Menggunakan perhitungan berat aktual dan volumetrik.</li>
+                <!-- [web:33] -->
+                <li>
+                  • Estimasi lebih lama dari Reguler, tapi jauh lebih ekonomis.
+                  <!-- [web:51] -->
+                </li>
+              </ul>
+              <div class="flex items-center justify-between pt-5 border-t border-slate-100">
+                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  Cargo Service
+                </span>
+                <div
+                  class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                >
+                  <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- BRANCH INFO -->
+      <section
+        id="profil"
+        class="py-22 md:py-28 bg-(--bg-main) text-(--text-main) relative overflow-hidden reveal"
+      >
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-14 md:gap-20 items-start">
+            <div>
+              <p
+                class="text-red-500 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.45em] mb-4"
+              >
+                Hub JNE Martapura
+              </p>
+              <h2
+                class="text-3xl sm:text-4xl md:text-5xl font-black italic mb-6 md:mb-8 tracking-tighter uppercase leading-tight"
+              >
+                Cabang Resmi<br />
+                <span class="opacity-40 font-normal">Martapura.</span>
+              </h2>
+              <p
+                class="text-sm sm:text-base md:text-lg text-(--text-dim) leading-relaxed mb-8 md:mb-10"
+              >
+                JNE Martapura melayani pelanggan di kawasan Martapura dan Kabupaten Banjar. Berada
+                di jalur utama, cabang ini menjadi titik penting distribusi paket ke dan dari
+                Kalimantan Selatan.
+              </p>
+
+              <div class="space-y-7">
+                <div class="flex items-start gap-4 sm:gap-5">
+                  <div
+                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-(--card-bg) flex items-center justify-center text-red-500 border border-(--glass-border)"
+                  >
+                    <i data-lucide="map-pin" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <p
+                      class="text-[9px] sm:text-[10px] font-black text-(--text-dim) uppercase tracking-widest mb-1"
+                    >
+                      Alamat Utama
+                    </p>
+                    <p class="text-sm sm:text-base md:text-lg font-bold leading-snug">
+                      Jl. A. Yani (sekitar Martapura Kota), Kab. Banjar, Kalimantan Selatan 70611*
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-4 sm:gap-5">
+                  <div
+                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-(--card-bg) flex items-center justify-center text-emerald-500 border border-(--glass-border)"
+                  >
+                    <i data-lucide="phone" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <p
+                      class="text-[9px] sm:text-[10px] font-black text-(--text-dim) uppercase tracking-widest mb-1"
+                    >
+                      Kontak & WhatsApp
+                    </p>
+                    <p class="text-sm sm:text-base md:text-lg font-bold leading-snug">
+                      WA CS: 0851-6739-4246
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-start gap-4 sm:gap-5">
+                  <div
+                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-(--card-bg) flex items-center justify-center text-amber-400 border border-(--glass-border)"
+                  >
+                    <i data-lucide="clock" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <p
+                      class="text-[9px] sm:text-[10px] font-black text-(--text-dim) uppercase tracking-widest mb-1"
+                    >
+                      Jam Operasional
+                    </p>
+                    <p class="text-sm sm:text-base md:text-lg font-bold leading-snug italic">
+                      08.00 – 20.30 WITA (Senin – Sabtu)*
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-8 flex flex-wrap gap-3">
+                <a
+                  href="https://wa.me/6285167394246"
+                  class="px-6 py-3 premium-gradient rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest flex items-center gap-2"
+                >
+                  Chat via WhatsApp
+                  <i data-lucide="message-circle" class="w-4 h-4"></i>
+                </a>
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query=JNE+Martapura+Banjar+Kalimantan+Selatan"
+                  target="_blank"
+                  class="px-6 py-3 bg-white text-slate-900 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest border border-slate-200"
+                >
+                  Buka di Google Maps
                 </a>
               </div>
             </div>
+
+            <!-- Map visual -->
+            <div class="relative mt-6 lg:mt-0">
+              <div
+                class="w-full aspect-4/3 rounded-3xl md:rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden relative shadow-2xl reveal"
+              >
+                <img
+                  src="assets/peta-jne-indonesia.svg"
+                  class="w-full h-full object-contain p-8 md:p-10 opacity-25 brightness-150"
+                  alt="Peta jaringan JNE"
+                />
+                <div
+                  class="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center"
+                >
+                  <div
+                    class="w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 flex items-center justify-center shadow-2xl shadow-red-600/50"
+                  >
+                    <i data-lucide="navigation" class="w-6 h-6 text-white"></i>
+                  </div>
+                  <p class="text-xs sm:text-sm text-slate-200 max-w-sm">
+                    Terhubung dengan jaringan nasional JNE dari Martapura ke seluruh Indonesia.
+                    <!-- [web:30][web:32] -->
+                  </p>
+                  <a
+                    href="https://www.google.com/maps/search/?api=1&query=JNE+Martapura+Banjar+Kalimantan+Selatan"
+                    target="_blank"
+                    class="px-7 md:px-9 py-3 bg-white text-slate-900 rounded-full font-black text-[10px] sm:text-xs uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all"
+                  >
+                    Open in Google Maps
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="py-18 md:py-24 bg-white reveal">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6">
+          <div class="text-center mb-8 md:mb-12">
+            <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter mb-3">
+              Pertanyaan Umum.
+            </h2>
+            <p class="text-sm md:text-base text-slate-500 max-w-xl mx-auto">
+              Beberapa hal yang sering ditanyakan pelanggan JNE Martapura.
+            </p>
           </div>
 
-        </div>
-      </div>
-    </section>
+          <div class="space-y-4">
+            <details class="glass-card rounded-2xl p-4 sm:p-5">
+              <summary class="flex items-center justify-between gap-3 cursor-pointer">
+                <span class="text-sm md:text-base font-semibold text-slate-800">
+                  Apakah JNE Martapura melayani jemput paket (pick-up)?
+                </span>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+              </summary>
+              <p class="mt-3 text-sm text-slate-600">
+                Ya, untuk area tertentu di Martapura dan sekitarnya tersedia layanan jemput paket.
+                Silakan hubungi WhatsApp CS untuk penjadwalan dan ketersediaan kurir di hari
+                tersebut.
+              </p>
+            </details>
 
-    <!-- FAQ -->
-    <section id="faq" class="py-18 md:py-24 bg-white reveal">
-      <div class="max-w-5xl mx-auto px-4 sm:px-6">
-        <div class="text-center mb-8 md:mb-12">
-          <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter mb-3">
-            Pertanyaan Umum.
-          </h2>
-          <p class="text-sm md:text-base text-slate-500 max-w-xl mx-auto">
-            Beberapa hal yang sering ditanyakan pelanggan JNE Martapura.
+            <details class="glass-card rounded-2xl p-4 sm:p-5">
+              <summary class="flex items-center justify-between gap-3 cursor-pointer">
+                <span class="text-sm md:text-base font-semibold text-slate-800">
+                  Bagaimana cara cek tarif dan estimasi tiba?
+                </span>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+              </summary>
+              <p class="mt-3 text-sm text-slate-600">
+                Kamu bisa cek ongkir dan estimasi tiba melalui website resmi JNE atau dengan
+                bertanya ke CS Martapura, cukup sebutkan kota asal, tujuan, dan berat kiriman.
+                <!-- [web:30] -->
+              </p>
+            </details>
+
+            <details class="glass-card rounded-2xl p-4 sm:p-5">
+              <summary class="flex items-center justify-between gap-3 cursor-pointer">
+                <span class="text-sm md:text-base font-semibold text-slate-800">
+                  Jika paket terlambat untuk layanan YES, apa yang terjadi?
+                </span>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+              </summary>
+              <p class="mt-3 text-sm text-slate-600">
+                Layanan YES memiliki ketentuan money back guarantee jika keterlambatan terjadi
+                karena kelalaian JNE, mengikuti syarat dan ketentuan resmi JNE pusat.
+                <!-- [web:28][web:48] -->
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="py-14 md:py-18 bg-white border-t border-slate-100">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <div
+          class="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-10 text-center md:text-left"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 sm:w-11 sm:h-11 premium-gradient rounded-2xl flex items-center justify-center p-2 shadow-xl shadow-red-500/20"
+            >
+              <img src="assets/logo-jne.svg" class="brightness-0 invert object-contain" alt="JNE" />
+            </div>
+            <div>
+              <p class="text-sm font-black text-slate-900 uppercase tracking-tight italic">
+                JNE Martapura Branch
+              </p>
+              <p class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.35em] mt-1">
+                Connecting Happiness
+              </p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap justify-center gap-6 md:gap-10">
+            <a
+              href="https://www.instagram.com/jne_id/"
+              target="_blank"
+              rel="noopener"
+              class="text-[10px] font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors italic"
+            >
+              Instagram
+            </a>
+            <a
+              href="https://www.facebook.com/JNE"
+              target="_blank"
+              rel="noopener"
+              class="text-[10px] font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors italic"
+            >
+              Facebook
+            </a>
+            <a
+              href="https://x.com/jne_id"
+              target="_blank"
+              rel="noopener"
+              class="text-[10px] font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors italic"
+            >
+              Twitter / X
+            </a>
+          </div>
+
+          <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
+            © 2026 JNE Martapura · All Rights Reserved
           </p>
         </div>
-
-        <div class="space-y-4">
-          <details class="glass-card rounded-2xl p-4 sm:p-5">
-            <summary class="flex items-center justify-between gap-3 cursor-pointer">
-              <span class="text-sm md:text-base font-semibold text-slate-800">
-                Apakah JNE Martapura melayani jemput paket (pick-up)?
-              </span>
-              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
-            </summary>
-            <p class="mt-3 text-sm text-slate-600">
-              Ya, untuk area tertentu di Martapura dan sekitarnya tersedia layanan jemput paket.
-              Silakan hubungi WhatsApp CS untuk penjadwalan dan ketersediaan kurir di hari tersebut.
-            </p>
-          </details>
-
-          <details class="glass-card rounded-2xl p-4 sm:p-5">
-            <summary class="flex items-center justify-between gap-3 cursor-pointer">
-              <span class="text-sm md:text-base font-semibold text-slate-800">
-                Bagaimana cara cek tarif dan estimasi tiba?
-              </span>
-              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
-            </summary>
-            <p class="mt-3 text-sm text-slate-600">
-              Kamu bisa cek ongkir dan estimasi tiba melalui website resmi JNE atau dengan bertanya ke CS Martapura,
-              cukup sebutkan kota asal, tujuan, dan berat kiriman. <!-- [web:30] -->
-            </p>
-          </details>
-
-          <details class="glass-card rounded-2xl p-4 sm:p-5">
-            <summary class="flex items-center justify-between gap-3 cursor-pointer">
-              <span class="text-sm md:text-base font-semibold text-slate-800">
-                Jika paket terlambat untuk layanan YES, apa yang terjadi?
-              </span>
-              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
-            </summary>
-            <p class="mt-3 text-sm text-slate-600">
-              Layanan YES memiliki ketentuan money back guarantee jika keterlambatan terjadi karena kelalaian JNE,
-              mengikuti syarat dan ketentuan resmi JNE pusat. <!-- [web:28][web:48] -->
-            </p>
-          </details>
-        </div>
       </div>
-    </section>
-  </main>
+    </footer>
 
-  <!-- FOOTER -->
-  <footer class="py-14 md:py-18 bg-white border-t border-slate-100">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6">
-      <div class="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-10 text-center md:text-left">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 sm:w-11 sm:h-11 premium-gradient rounded-2xl flex items-center justify-center p-2 shadow-xl shadow-red-500/20">
-            <img src="assets/logo-jne.svg" class="brightness-0 invert object-contain" alt="JNE">
-          </div>
-          <div>
-            <p class="text-sm font-black text-slate-900 uppercase tracking-tight italic">
-              JNE Martapura Branch
-            </p>
-            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.35em] mt-1">
-              Connecting Happiness
-            </p>
-          </div>
+    <!-- FLOATING WA BUTTON -->
+    <a
+      href="https://wa.me/6285167394246"
+      class="fixed bottom-8 right-8 sm:bottom-10 sm:right-10 z-40 w-12 h-12 sm:w-16 sm:h-16 premium-gradient rounded-full flex items-center justify-center text-white shadow-2xl shadow-red-500/40 hover:scale-110 active:scale-95 transition-all"
+      aria-label="WhatsApp JNE Martapura"
+    >
+      <i data-lucide="message-circle" class="w-5 h-5 sm:w-7 sm:h-7"></i>
+    </a>
+
+    <!-- FULL PAGE LOADING OVERLAY (paket animasi) -->
+    <div
+      id="page-loader"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none"
+    >
+      <div class="flex flex-col items-center gap-3 text-white">
+        <div class="package-loader scale-110">
+          <div class="package-loader__track"></div>
+          <div class="package-loader__shadow"></div>
+          <div class="package-loader__box"></div>
         </div>
-
-        <div class="flex flex-wrap justify-center gap-6 md:gap-10">
-          <a href="https://www.instagram.com/jne_id/" target="_blank" rel="noopener" class="text-[10px] font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors italic">
-            Instagram
-          </a>
-          <a href="https://www.facebook.com/JNE" target="_blank" rel="noopener" class="text-[10px] font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors italic">
-            Facebook
-          </a>
-          <a href="https://x.com/jne_id" target="_blank" rel="noopener" class="text-[10px] font-black text-slate-400 hover:text-red-600 uppercase tracking-widest transition-colors italic">
-            Twitter / X
-          </a>
-        </div>
-
-        <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
-          © 2026 JNE Martapura · All Rights Reserved
+        <p class="text-xs sm:text-sm font-semibold tracking-wide text-slate-200">
+          Memuat data pengiriman...
         </p>
       </div>
     </div>
-  </footer>
 
-  <!-- FLOATING WA BUTTON -->
-  <a href="https://wa.me/6285167394246"
-     class="fixed bottom-8 right-8 sm:bottom-10 sm:right-10 z-40 w-12 h-12 sm:w-16 sm:h-16 premium-gradient rounded-full flex items-center justify-center text-white shadow-2xl shadow-red-500/40 hover:scale-110 active:scale-95 transition-all"
-     aria-label="WhatsApp JNE Martapura">
-    <i data-lucide="message-circle" class="w-5 h-5 sm:w-7 sm:h-7"></i>
-  </a>
+    <script>
+      lucide.createIcons();
 
-  <!-- FULL PAGE LOADING OVERLAY (paket animasi) -->
-  <div id="page-loader"
-       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none">
-    <div class="flex flex-col items-center gap-3 text-white">
-      <div class="package-loader scale-110">
-        <div class="package-loader__track"></div>
-        <div class="package-loader__shadow"></div>
-        <div class="package-loader__box"></div>
-      </div>
-      <p class="text-xs sm:text-sm font-semibold tracking-wide text-slate-200">
-        Memuat data pengiriman...
-      </p>
-    </div>
-  </div>
+      // Mobile menu
+      const menuToggle = document.getElementById('menu-toggle');
+      const menuClose = document.getElementById('menu-close');
+      const mobileMenu = document.getElementById('mobile-menu');
+      const overlay = document.getElementById('mobile-menu-overlay');
+      const mobileLinks = document.querySelectorAll('.mobile-link');
 
-  <script>
-    lucide.createIcons();
-
-    // Mobile menu
-    const menuToggle = document.getElementById('menu-toggle');
-    const menuClose = document.getElementById('menu-close');
-    const mobileMenu = document.getElementById('mobile-menu');
-    const overlay = document.getElementById('mobile-menu-overlay');
-    const mobileLinks = document.querySelectorAll('.mobile-link');
-
-    function openMenu() {
-      mobileMenu.style.transform = 'translateX(0)';
-      overlay.classList.remove('hidden');
-      requestAnimationFrame(() => overlay.style.opacity = '1');
-    }
-
-    function closeMenu() {
-      mobileMenu.style.transform = 'translateX(100%)';
-      overlay.style.opacity = '0';
-      setTimeout(() => overlay.classList.add('hidden'), 280);
-    }
-
-    menuToggle.addEventListener('click', openMenu);
-    menuClose.addEventListener('click', closeMenu);
-    overlay.addEventListener('click', closeMenu);
-    mobileLinks.forEach(link => link.addEventListener('click', closeMenu));
-
-    // (Scroll reveal kini ditangani GSAP ScrollTrigger di blok bawah)
-
-    // Theme Toggle Logic
-    const themeToggle = document.getElementById('theme-toggle');
-    const themeToggleMobile = document.getElementById('theme-toggle-mobile');
-    const sunIcon = document.getElementById('sun-icon');
-    const moonIcon = document.getElementById('moon-icon');
-    
-    function setTheme(theme) {
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('theme', theme);
-      if (theme === 'dark') {
-        sunIcon?.classList.remove('hidden');
-        moonIcon?.classList.add('hidden');
-      } else {
-        sunIcon?.classList.add('hidden');
-        moonIcon?.classList.remove('hidden');
+      function openMenu() {
+        mobileMenu.style.transform = 'translateX(0)';
+        overlay.classList.remove('hidden');
+        requestAnimationFrame(() => (overlay.style.opacity = '1'));
       }
-    }
 
-    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    setTheme(savedTheme);
-
-    themeToggle?.addEventListener('click', () => {
-      const currentTheme = document.documentElement.getAttribute('data-theme');
-      setTheme(currentTheme === 'dark' ? 'light' : 'dark');
-    });
-
-    themeToggleMobile?.addEventListener('click', () => {
-      const currentTheme = document.documentElement.getAttribute('data-theme');
-      setTheme(currentTheme === 'dark' ? 'light' : 'dark');
-    });
-
-    // Loader tombol Lacak & Functional Tracking
-    const btnTrack = document.getElementById('btn-track');
-    const btnTrackText = document.getElementById('btn-track-text');
-    const btnTrackSpinner = document.getElementById('btn-track-spinner');
-    const inputResi = document.getElementById('input-resi');
-
-    function setTrackLoading(isLoading) {
-      if (!btnTrack) return;
-      if (isLoading) {
-        btnTrack.disabled = true;
-        btnTrack.classList.add('opacity-80', 'cursor-not-allowed');
-        btnTrackText.textContent = 'Memproses...';
-        btnTrackSpinner.classList.remove('hidden');
-      } else {
-        btnTrack.disabled = false;
-        btnTrack.classList.remove('opacity-80', 'cursor-not-allowed');
-        btnTrackText.textContent = 'Lacak';
-        btnTrackSpinner.classList.add('hidden');
+      function closeMenu() {
+        mobileMenu.style.transform = 'translateX(100%)';
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.classList.add('hidden'), 280);
       }
-    }
 
-    btnTrack?.addEventListener('click', (e) => {
-      e.preventDefault();
-      const resiValue = inputResi.value.trim();
-      
-      if (resiValue.replace(/\s+/g, '').length < 8) {
-        showResiError('Nomor resi belum valid — biasanya 10–16 karakter. Cek lagi ya.');
-        return;
+      menuToggle.addEventListener('click', openMenu);
+      menuClose.addEventListener('click', closeMenu);
+      overlay.addEventListener('click', closeMenu);
+      mobileLinks.forEach((link) => link.addEventListener('click', closeMenu));
+
+      // (Scroll reveal kini ditangani GSAP ScrollTrigger di blok bawah)
+
+      // Theme Toggle Logic
+      const themeToggle = document.getElementById('theme-toggle');
+      const themeToggleMobile = document.getElementById('theme-toggle-mobile');
+      const sunIcon = document.getElementById('sun-icon');
+      const moonIcon = document.getElementById('moon-icon');
+
+      function setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        if (theme === 'dark') {
+          sunIcon?.classList.remove('hidden');
+          moonIcon?.classList.add('hidden');
+        } else {
+          sunIcon?.classList.add('hidden');
+          moonIcon?.classList.remove('hidden');
+        }
       }
-      resiError?.classList.add('hidden');
 
-      setTrackLoading(true);
-      
-      // Real JNE Tracking Redirect
-      setTimeout(() => {
-        setTrackLoading(false);
-        const trackingUrl = `https://www.jne.co.id/id/tracking/trace/${encodeURIComponent(resiValue.replace(/\s+/g, ''))}`;
-        window.open(trackingUrl, '_blank');
-      }, 1200);
-    });
+      const savedTheme =
+        localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      setTheme(savedTheme);
 
-    // Page loader demo (show sebentar pas awal)
-    const pageLoader = document.getElementById('page-loader');
-    if (pageLoader) {
-      pageLoader.style.opacity = '1';
-      pageLoader.style.pointerEvents = 'auto';
-      setTimeout(() => {
-        pageLoader.style.opacity = '0';
-        pageLoader.style.pointerEvents = 'none';
-      }, 900);
-    }
-
-    // ---------- Error resi + tombol fungsional ----------
-    const resiError = document.getElementById('resi-error');
-    const resiErrorText = document.getElementById('resi-error-text');
-    const waBase = 'https://wa.me/6285167394246';
-
-    function showResiError(msg) {
-      if (resiErrorText) resiErrorText.textContent = msg;
-      resiError?.classList.remove('hidden');
-      if (window.gsap) gsap.fromTo('#input-resi', { x: -8 }, { x: 0, duration: 0.5, ease: 'elastic.out(1, 0.4)' });
-      if (window.lucide) lucide.createIcons();
-    }
-
-    inputResi?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); btnTrack?.click(); } });
-    inputResi?.addEventListener('input', () => resiError?.classList.add('hidden'));
-
-    // Kartu utilitas — Cek Ongkir / Peta Agen / FAQ / Call Center
-    document.getElementById('card-ongkir')?.addEventListener('click', () => {
-      window.open(waBase + '?text=' + encodeURIComponent('Halo JNE Martapura, saya mau cek ongkir.\nKota asal: \nKota tujuan: \nBerat (kg): '), '_blank');
-    });
-    document.getElementById('card-agen')?.addEventListener('click', () => {
-      window.open('https://www.google.com/maps/search/?api=1&query=JNE+terdekat', '_blank');
-    });
-    document.getElementById('card-faq')?.addEventListener('click', () => {
-      document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
-    });
-    document.getElementById('card-callcenter')?.addEventListener('click', () => {
-      window.location.href = 'tel:02129278888';
-    });
-    document.querySelectorAll('#card-ongkir, #card-agen, #card-faq, #card-callcenter').forEach((c) => {
-      c.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.click(); } });
-    });
-
-    // Kartu layanan — klik buka WhatsApp dengan layanan terpilih
-    document.querySelectorAll('[data-service]').forEach((card) => {
-      card.addEventListener('click', () => {
-        const svc = card.getAttribute('data-service');
-        window.open(waBase + '?text=' + encodeURIComponent('Halo JNE Martapura, saya ingin kirim paket menggunakan layanan ' + svc + '. Mohon info tarif & estimasinya.'), '_blank');
+      themeToggle?.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        setTheme(currentTheme === 'dark' ? 'light' : 'dark');
       });
-    });
 
-    // ---------- GSAP ANIMATION + INTERAKSI ----------
-    function countUpStat() {
-      const el = document.getElementById('stat-accuracy');
-      if (!el || !window.gsap) return;
-      const obj = { val: 0 };
-      gsap.to(obj, { val: 99.9, duration: 1.6, ease: 'power2.out', onUpdate: () => { el.textContent = obj.val.toFixed(1) + '%'; } });
-    }
+      themeToggleMobile?.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+      });
 
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const isTouch = window.matchMedia('(hover: none)').matches;
+      // Loader tombol Lacak & Functional Tracking
+      const btnTrack = document.getElementById('btn-track');
+      const btnTrackText = document.getElementById('btn-track-text');
+      const btnTrackSpinner = document.getElementById('btn-track-spinner');
+      const inputResi = document.getElementById('input-resi');
 
-    // ----- Lenis smooth scroll -----
-    let lenis = null;
-    if (window.Lenis && !reduceMotion) {
-      lenis = new Lenis({ duration: 1.1, smoothWheel: true, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
-      if (window.gsap && window.ScrollTrigger) {
-        lenis.on('scroll', ScrollTrigger.update);
-        gsap.ticker.add((time) => lenis.raf(time * 1000));
-        gsap.ticker.lagSmoothing(0);
-      } else {
-        const raf = (t) => { lenis.raf(t); requestAnimationFrame(raf); };
-        requestAnimationFrame(raf);
+      function setTrackLoading(isLoading) {
+        if (!btnTrack) return;
+        if (isLoading) {
+          btnTrack.disabled = true;
+          btnTrack.classList.add('opacity-80', 'cursor-not-allowed');
+          btnTrackText.textContent = 'Memproses...';
+          btnTrackSpinner.classList.remove('hidden');
+        } else {
+          btnTrack.disabled = false;
+          btnTrack.classList.remove('opacity-80', 'cursor-not-allowed');
+          btnTrackText.textContent = 'Lacak';
+          btnTrackSpinner.classList.add('hidden');
+        }
       }
-    }
-    function smoothTo(target, offset = -80) {
-      if (lenis) lenis.scrollTo(target, { offset });
-      else if (target && target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth' });
-    }
 
-    // Smooth anchor links
-    document.querySelectorAll('a[href^="#"]').forEach((a) => {
-      a.addEventListener('click', (e) => {
-        const href = a.getAttribute('href');
-        if (!href || href === '#') return;
-        const target = document.querySelector(href);
-        if (!target) return;
+      btnTrack?.addEventListener('click', (e) => {
         e.preventDefault();
-        smoothTo(target);
-        if (typeof closeMenu === 'function') closeMenu();
+        const resiValue = inputResi.value.trim();
+
+        if (resiValue.replace(/\s+/g, '').length < 8) {
+          showResiError('Nomor resi belum valid — biasanya 10–16 karakter. Cek lagi ya.');
+          return;
+        }
+        resiError?.classList.add('hidden');
+
+        setTrackLoading(true);
+
+        // Real JNE Tracking Redirect
+        setTimeout(() => {
+          setTrackLoading(false);
+          const trackingUrl = `https://www.jne.co.id/id/tracking/trace/${encodeURIComponent(resiValue.replace(/\s+/g, ''))}`;
+          window.open(trackingUrl, '_blank');
+        }, 1200);
       });
-    });
 
-    // Bento: aksi klik + glow mengikuti kursor
-    document.querySelectorAll('[data-scroll-to]').forEach((el) => {
-      el.addEventListener('click', () => { const t = document.querySelector(el.getAttribute('data-scroll-to')); if (t) smoothTo(t); });
-    });
-    document.querySelectorAll('[data-wa]').forEach((el) => {
-      el.addEventListener('click', () => window.open(waBase + '?text=' + encodeURIComponent(el.getAttribute('data-wa')), '_blank'));
-    });
-    document.querySelectorAll('.bento').forEach((card) => {
-      card.addEventListener('mousemove', (e) => {
-        const r = card.getBoundingClientRect();
-        card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
-        card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
-      });
-    });
-
-    if (window.gsap && window.ScrollTrigger && !reduceMotion) {
-      gsap.registerPlugin(ScrollTrigger);
-
-      function startHeroFloat() {
-        gsap.to('.float-chip', { y: -16, duration: 2.4, ease: 'sine.inOut', repeat: -1, yoyo: true, stagger: { each: 0.5, from: 'random' } });
+      // Page loader demo (show sebentar pas awal)
+      const pageLoader = document.getElementById('page-loader');
+      if (pageLoader) {
+        pageLoader.style.opacity = '1';
+        pageLoader.style.pointerEvents = 'auto';
+        setTimeout(() => {
+          pageLoader.style.opacity = '0';
+          pageLoader.style.pointerEvents = 'none';
+        }, 900);
       }
 
-      // Nav + intro hero (split-text: kata naik dari overflow tersembunyi)
-      gsap.from('nav > div', { opacity: 0, y: -16, duration: 0.7, ease: 'power3.out' });
-      gsap.set('#hero .max-w-4xl > *:not(h1)', { opacity: 0, y: 42 });
-      gsap.set('#hero .word', { yPercent: 120 });
-      gsap.set('#hero .reveal', { opacity: 0, y: 56, scale: 0.97 });
-      gsap.set('.float-chip', { opacity: 0, scale: 0.6 });
+      // ---------- Error resi + tombol fungsional ----------
+      const resiError = document.getElementById('resi-error');
+      const resiErrorText = document.getElementById('resi-error-text');
+      const waBase = 'https://wa.me/6285167394246';
 
-      const intro = gsap.timeline({ delay: 0.7 });
-      intro
-        .to('#hero .word', { yPercent: 0, duration: 1, stagger: 0.08, ease: 'power4.out' })
-        .to('#hero .max-w-4xl > *:not(h1)', { opacity: 1, y: 0, duration: 0.8, stagger: 0.12, ease: 'power3.out' }, '-=0.6')
-        .to('#hero .reveal', { opacity: 1, y: 0, scale: 1, duration: 1, ease: 'power3.out' }, '-=0.6')
-        .add(countUpStat, '-=0.7')
-        .to('.float-chip', { opacity: 1, scale: 1, duration: 0.6, stagger: 0.12, ease: 'back.out(2)' }, '-=0.5')
-        .add(startHeroFloat, '-=0.1');
+      function showResiError(msg) {
+        if (resiErrorText) resiErrorText.textContent = msg;
+        resiError?.classList.remove('hidden');
+        if (window.gsap)
+          gsap.fromTo(
+            '#input-resi',
+            { x: -8 },
+            { x: 0, duration: 0.5, ease: 'elastic.out(1, 0.4)' },
+          );
+        if (window.lucide) lucide.createIcons();
+      }
 
-      gsap.from('a[aria-label="WhatsApp JNE Martapura"]', { scale: 0, opacity: 0, duration: 0.5, delay: 1.6, ease: 'back.out(2.2)' });
+      inputResi?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          btnTrack?.click();
+        }
+      });
+      inputResi?.addEventListener('input', () => resiError?.classList.add('hidden'));
 
-      // 3D tilt kartu hero mengikuti mouse (logistik/growth feel)
-      const heroEl = document.getElementById('hero');
-      const heroCard = document.querySelector('#hero .hero-card');
-      if (heroEl && heroCard && !isTouch) {
-        heroEl.addEventListener('mousemove', (e) => {
-          const r = heroCard.getBoundingClientRect();
-          const px = (e.clientX - (r.left + r.width / 2)) / r.width;
-          const py = (e.clientY - (r.top + r.height / 2)) / r.height;
-          gsap.to(heroCard, { rotationY: px * 9, rotationX: -py * 9, transformPerspective: 1000, duration: 0.6, ease: 'power2.out' });
+      // Kartu utilitas — Cek Ongkir / Peta Agen / FAQ / Call Center
+      document.getElementById('card-ongkir')?.addEventListener('click', () => {
+        window.open(
+          waBase +
+            '?text=' +
+            encodeURIComponent(
+              'Halo JNE Martapura, saya mau cek ongkir.\nKota asal: \nKota tujuan: \nBerat (kg): ',
+            ),
+          '_blank',
+        );
+      });
+      document.getElementById('card-agen')?.addEventListener('click', () => {
+        window.open('https://www.google.com/maps/search/?api=1&query=JNE+terdekat', '_blank');
+      });
+      document.getElementById('card-faq')?.addEventListener('click', () => {
+        document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
+      });
+      document.getElementById('card-callcenter')?.addEventListener('click', () => {
+        window.location.href = 'tel:02129278888';
+      });
+      document
+        .querySelectorAll('#card-ongkir, #card-agen, #card-faq, #card-callcenter')
+        .forEach((c) => {
+          c.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              c.click();
+            }
+          });
         });
-        heroEl.addEventListener('mouseleave', () => gsap.to(heroCard, { rotationX: 0, rotationY: 0, duration: 0.8, ease: 'power3.out' }));
+
+      // Kartu layanan — klik buka WhatsApp dengan layanan terpilih
+      document.querySelectorAll('[data-service]').forEach((card) => {
+        card.addEventListener('click', () => {
+          const svc = card.getAttribute('data-service');
+          window.open(
+            waBase +
+              '?text=' +
+              encodeURIComponent(
+                'Halo JNE Martapura, saya ingin kirim paket menggunakan layanan ' +
+                  svc +
+                  '. Mohon info tarif & estimasinya.',
+              ),
+            '_blank',
+          );
+        });
+      });
+
+      // ---------- GSAP ANIMATION + INTERAKSI ----------
+      function countUpStat() {
+        const el = document.getElementById('stat-accuracy');
+        if (!el || !window.gsap) return;
+        const obj = { val: 0 };
+        gsap.to(obj, {
+          val: 99.9,
+          duration: 1.6,
+          ease: 'power2.out',
+          onUpdate: () => {
+            el.textContent = obj.val.toFixed(1) + '%';
+          },
+        });
       }
 
-      // Bento: muncul + hover scale & glow
-      gsap.from('#kenapa .text-center > *', { opacity: 0, y: 26, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#kenapa', start: 'top 75%' } });
-      gsap.from('#kenapa .bento', { opacity: 0, y: 40, scale: 0.96, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#kenapa .grid', start: 'top 82%' } });
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const isTouch = window.matchMedia('(hover: none)').matches;
+
+      // ----- Lenis smooth scroll -----
+      let lenis = null;
+      if (window.Lenis && !reduceMotion) {
+        lenis = new Lenis({
+          duration: 1.1,
+          smoothWheel: true,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        });
+        if (window.gsap && window.ScrollTrigger) {
+          lenis.on('scroll', ScrollTrigger.update);
+          gsap.ticker.add((time) => lenis.raf(time * 1000));
+          gsap.ticker.lagSmoothing(0);
+        } else {
+          const raf = (t) => {
+            lenis.raf(t);
+            requestAnimationFrame(raf);
+          };
+          requestAnimationFrame(raf);
+        }
+      }
+      function smoothTo(target, offset = -80) {
+        if (lenis) lenis.scrollTo(target, { offset });
+        else if (target && target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      // Smooth anchor links
+      document.querySelectorAll('a[href^="#"]').forEach((a) => {
+        a.addEventListener('click', (e) => {
+          const href = a.getAttribute('href');
+          if (!href || href === '#') return;
+          const target = document.querySelector(href);
+          if (!target) return;
+          e.preventDefault();
+          smoothTo(target);
+          if (typeof closeMenu === 'function') closeMenu();
+        });
+      });
+
+      // Bento: aksi klik + glow mengikuti kursor
+      document.querySelectorAll('[data-scroll-to]').forEach((el) => {
+        el.addEventListener('click', () => {
+          const t = document.querySelector(el.getAttribute('data-scroll-to'));
+          if (t) smoothTo(t);
+        });
+      });
+      document.querySelectorAll('[data-wa]').forEach((el) => {
+        el.addEventListener('click', () =>
+          window.open(waBase + '?text=' + encodeURIComponent(el.getAttribute('data-wa')), '_blank'),
+        );
+      });
       document.querySelectorAll('.bento').forEach((card) => {
-        card.addEventListener('mouseenter', () => gsap.to(card, { scale: 1.035, duration: 0.4, ease: 'power2.out', boxShadow: '0 26px 60px -14px rgba(204,0,0,0.30)' }));
-        card.addEventListener('mouseleave', () => gsap.to(card, { scale: 1, duration: 0.5, ease: 'power2.out', boxShadow: '0 8px 32px rgba(0,0,0,0.05)' }));
+        card.addEventListener('mousemove', (e) => {
+          const r = card.getBoundingClientRect();
+          card.style.setProperty('--mx', ((e.clientX - r.left) / r.width) * 100 + '%');
+          card.style.setProperty('--my', ((e.clientY - r.top) / r.height) * 100 + '%');
+        });
       });
 
-      // Tracking
-      gsap.from('#tracking h2, #tracking h2 + p', { opacity: 0, y: 30, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#tracking', start: 'top 75%' } });
-      gsap.from('#tracking .max-w-2xl', { opacity: 0, y: 28, duration: 0.7, ease: 'power3.out', scrollTrigger: { trigger: '#tracking', start: 'top 72%' } });
-      gsap.from('#tracking .grid > div', { opacity: 0, y: 24, duration: 0.55, stagger: 0.08, ease: 'power2.out', scrollTrigger: { trigger: '#tracking .grid', start: 'top 88%' } });
+      if (window.gsap && window.ScrollTrigger && !reduceMotion) {
+        gsap.registerPlugin(ScrollTrigger);
 
-      // Alur — garis menggambar sendiri saat scroll + item per tahap
-      gsap.from('#alur .text-center > *', { opacity: 0, y: 26, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#alur', start: 'top 75%' } });
-      gsap.fromTo('#alur .alur-fill', { scaleY: 0 }, { scaleY: 1, ease: 'none', scrollTrigger: { trigger: '#alur-track', start: 'top 65%', end: 'bottom 75%', scrub: 0.8 } });
-      gsap.utils.toArray('#alur .alur-item').forEach((item) => {
-        gsap.from(item, { opacity: 0, x: 26, y: 16, duration: 0.6, ease: 'power3.out', scrollTrigger: { trigger: item, start: 'top 82%' } });
-        gsap.from(item.querySelector('.alur-node'), { scale: 0, duration: 0.5, ease: 'back.out(2.6)', scrollTrigger: { trigger: item, start: 'top 82%' } });
-      });
+        function startHeroFloat() {
+          gsap.to('.float-chip', {
+            y: -16,
+            duration: 2.4,
+            ease: 'sine.inOut',
+            repeat: -1,
+            yoyo: true,
+            stagger: { each: 0.5, from: 'random' },
+          });
+        }
 
-      // Layanan
-      gsap.from('#layanan .text-center > *', { opacity: 0, y: 28, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#layanan', start: 'top 75%' } });
-      gsap.from('#layanan article', { opacity: 0, y: 60, duration: 0.8, stagger: 0.16, ease: 'power3.out', scrollTrigger: { trigger: '#layanan .grid', start: 'top 80%' } });
+        // Nav + intro hero (split-text: kata naik dari overflow tersembunyi)
+        gsap.from('nav > div', { opacity: 0, y: -16, duration: 0.7, ease: 'power3.out' });
+        gsap.set('#hero .max-w-4xl > *:not(h1)', { opacity: 0, y: 42 });
+        gsap.set('#hero .word', { yPercent: 120 });
+        gsap.set('#hero .reveal', { opacity: 0, y: 56, scale: 0.97 });
+        gsap.set('.float-chip', { opacity: 0, scale: 0.6 });
 
-      // Profil cabang
-      gsap.from('#profil h2, #profil h2 + p', { opacity: 0, y: 28, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#profil', start: 'top 72%' } });
-      gsap.from('#profil .space-y-7 > div', { opacity: 0, x: -28, duration: 0.65, stagger: 0.12, ease: 'power2.out', scrollTrigger: { trigger: '#profil .space-y-7', start: 'top 80%' } });
-      gsap.from('#profil .aspect-4\\/3', { opacity: 0, scale: 0.92, duration: 0.9, ease: 'power3.out', scrollTrigger: { trigger: '#profil .aspect-4\\/3', start: 'top 85%' } });
+        const intro = gsap.timeline({ delay: 0.7 });
+        intro
+          .to('#hero .word', { yPercent: 0, duration: 1, stagger: 0.08, ease: 'power4.out' })
+          .to(
+            '#hero .max-w-4xl > *:not(h1)',
+            { opacity: 1, y: 0, duration: 0.8, stagger: 0.12, ease: 'power3.out' },
+            '-=0.6',
+          )
+          .to(
+            '#hero .reveal',
+            { opacity: 1, y: 0, scale: 1, duration: 1, ease: 'power3.out' },
+            '-=0.6',
+          )
+          .add(countUpStat, '-=0.7')
+          .to(
+            '.float-chip',
+            { opacity: 1, scale: 1, duration: 0.6, stagger: 0.12, ease: 'back.out(2)' },
+            '-=0.5',
+          )
+          .add(startHeroFloat, '-=0.1');
 
-      // FAQ
-      gsap.from('#faq .text-center > *', { opacity: 0, y: 24, duration: 0.6, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#faq', start: 'top 80%' } });
-      gsap.from('#faq details', { opacity: 0, y: 24, duration: 0.55, stagger: 0.1, ease: 'power2.out', scrollTrigger: { trigger: '#faq .space-y-4', start: 'top 85%' } });
+        gsap.from('a[aria-label="WhatsApp JNE Martapura"]', {
+          scale: 0,
+          opacity: 0,
+          duration: 0.5,
+          delay: 1.6,
+          ease: 'back.out(2.2)',
+        });
 
-      // Footer
-      gsap.from('footer > div', { opacity: 0, y: 24, duration: 0.7, ease: 'power3.out', scrollTrigger: { trigger: 'footer', start: 'top 92%' } });
+        // 3D tilt kartu hero mengikuti mouse (logistik/growth feel)
+        const heroEl = document.getElementById('hero');
+        const heroCard = document.querySelector('#hero .hero-card');
+        if (heroEl && heroCard && !isTouch) {
+          heroEl.addEventListener('mousemove', (e) => {
+            const r = heroCard.getBoundingClientRect();
+            const px = (e.clientX - (r.left + r.width / 2)) / r.width;
+            const py = (e.clientY - (r.top + r.height / 2)) / r.height;
+            gsap.to(heroCard, {
+              rotationY: px * 9,
+              rotationX: -py * 9,
+              transformPerspective: 1000,
+              duration: 0.6,
+              ease: 'power2.out',
+            });
+          });
+          heroEl.addEventListener('mouseleave', () =>
+            gsap.to(heroCard, { rotationX: 0, rotationY: 0, duration: 0.8, ease: 'power3.out' }),
+          );
+        }
 
-      // Parallax blob (halus)
-      gsap.to('.blob-1', { yPercent: 38, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: 1 } });
-      gsap.to('.blob-2', { yPercent: -28, ease: 'none', scrollTrigger: { start: 0, end: 'max', scrub: 1 } });
+        // Bento: muncul + hover scale & glow
+        gsap.from('#kenapa .text-center > *', {
+          opacity: 0,
+          y: 26,
+          duration: 0.7,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '#kenapa', start: 'top 75%' },
+        });
+        gsap.from('#kenapa .bento', {
+          opacity: 0,
+          y: 40,
+          scale: 0.96,
+          duration: 0.7,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '#kenapa .grid', start: 'top 82%' },
+        });
+        document.querySelectorAll('.bento').forEach((card) => {
+          card.addEventListener('mouseenter', () =>
+            gsap.to(card, {
+              scale: 1.035,
+              duration: 0.4,
+              ease: 'power2.out',
+              boxShadow: '0 26px 60px -14px rgba(204,0,0,0.30)',
+            }),
+          );
+          card.addEventListener('mouseleave', () =>
+            gsap.to(card, {
+              scale: 1,
+              duration: 0.5,
+              ease: 'power2.out',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
+            }),
+          );
+        });
 
-      window.addEventListener('load', () => ScrollTrigger.refresh());
-    } else {
-      const st = document.getElementById('stat-accuracy');
-      if (st) st.textContent = '99.9%';
-      document.querySelectorAll('.float-chip').forEach((c) => { c.style.opacity = '1'; });
-      document.querySelectorAll('.alur-fill').forEach((f) => { f.style.transform = 'scaleY(1)'; });
-    }
-  </script>
-</body>
+        // Tracking
+        gsap.from('#tracking h2, #tracking h2 + p', {
+          opacity: 0,
+          y: 30,
+          duration: 0.7,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '#tracking', start: 'top 75%' },
+        });
+        gsap.from('#tracking .max-w-2xl', {
+          opacity: 0,
+          y: 28,
+          duration: 0.7,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '#tracking', start: 'top 72%' },
+        });
+        gsap.from('#tracking .grid > div', {
+          opacity: 0,
+          y: 24,
+          duration: 0.55,
+          stagger: 0.08,
+          ease: 'power2.out',
+          scrollTrigger: { trigger: '#tracking .grid', start: 'top 88%' },
+        });
+
+        // Alur — garis menggambar sendiri saat scroll + item per tahap
+        gsap.from('#alur .text-center > *', {
+          opacity: 0,
+          y: 26,
+          duration: 0.7,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '#alur', start: 'top 75%' },
+        });
+        gsap.fromTo(
+          '#alur .alur-fill',
+          { scaleY: 0 },
+          {
+            scaleY: 1,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: '#alur-track',
+              start: 'top 65%',
+              end: 'bottom 75%',
+              scrub: 0.8,
+            },
+          },
+        );
+        gsap.utils.toArray('#alur .alur-item').forEach((item) => {
+          gsap.from(item, {
+            opacity: 0,
+            x: 26,
+            y: 16,
+            duration: 0.6,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: item, start: 'top 82%' },
+          });
+          gsap.from(item.querySelector('.alur-node'), {
+            scale: 0,
+            duration: 0.5,
+            ease: 'back.out(2.6)',
+            scrollTrigger: { trigger: item, start: 'top 82%' },
+          });
+        });
+
+        // Layanan
+        gsap.from('#layanan .text-center > *', {
+          opacity: 0,
+          y: 28,
+          duration: 0.7,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '#layanan', start: 'top 75%' },
+        });
+        gsap.from('#layanan article', {
+          opacity: 0,
+          y: 60,
+          duration: 0.8,
+          stagger: 0.16,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '#layanan .grid', start: 'top 80%' },
+        });
+
+        // Profil cabang
+        gsap.from('#profil h2, #profil h2 + p', {
+          opacity: 0,
+          y: 28,
+          duration: 0.7,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '#profil', start: 'top 72%' },
+        });
+        gsap.from('#profil .space-y-7 > div', {
+          opacity: 0,
+          x: -28,
+          duration: 0.65,
+          stagger: 0.12,
+          ease: 'power2.out',
+          scrollTrigger: { trigger: '#profil .space-y-7', start: 'top 80%' },
+        });
+        gsap.from('#profil .aspect-4\\/3', {
+          opacity: 0,
+          scale: 0.92,
+          duration: 0.9,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '#profil .aspect-4\\/3', start: 'top 85%' },
+        });
+
+        // FAQ
+        gsap.from('#faq .text-center > *', {
+          opacity: 0,
+          y: 24,
+          duration: 0.6,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '#faq', start: 'top 80%' },
+        });
+        gsap.from('#faq details', {
+          opacity: 0,
+          y: 24,
+          duration: 0.55,
+          stagger: 0.1,
+          ease: 'power2.out',
+          scrollTrigger: { trigger: '#faq .space-y-4', start: 'top 85%' },
+        });
+
+        // Footer
+        gsap.from('footer > div', {
+          opacity: 0,
+          y: 24,
+          duration: 0.7,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: 'footer', start: 'top 92%' },
+        });
+
+        // Parallax blob (halus)
+        gsap.to('.blob-1', {
+          yPercent: 38,
+          ease: 'none',
+          scrollTrigger: { start: 0, end: 'max', scrub: 1 },
+        });
+        gsap.to('.blob-2', {
+          yPercent: -28,
+          ease: 'none',
+          scrollTrigger: { start: 0, end: 'max', scrub: 1 },
+        });
+
+        window.addEventListener('load', () => ScrollTrigger.refresh());
+      } else {
+        const st = document.getElementById('stat-accuracy');
+        if (st) st.textContent = '99.9%';
+        document.querySelectorAll('.float-chip').forEach((c) => {
+          c.style.opacity = '1';
+        });
+        document.querySelectorAll('.alur-fill').forEach((f) => {
+          f.style.transform = 'scaleY(1)';
+        });
+      }
+    </script>
+  </body>
 </html>
