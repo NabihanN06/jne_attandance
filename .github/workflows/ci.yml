@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobile:
+    name: Mobile · analyze + format
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: user_mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.8
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Dart format check
+        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Flutter analyze
+        run: flutter analyze
+
+  public-site:
+    name: Public Site · prettier check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Prettier check
+        run: >-
+          npx prettier@3.3.3 --check --single-quote --print-width 100
+          --end-of-line auto public_site/index.html public_site/404.html
