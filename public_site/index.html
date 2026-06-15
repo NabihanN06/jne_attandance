@@ -45,6 +45,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 
+  <!-- Lenis Smooth Scroll -->
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+
   <style>
     :root {
       --jne-red: #CC0000;
@@ -245,6 +248,39 @@
         opacity: 0.45;
       }
     }
+    /* ===== GSAP enhancement styles ===== */
+    .line-mask { display: block; overflow: hidden; padding-bottom: 0.08em; }
+    .word { display: inline-block; will-change: transform; }
+
+    .hero-card { will-change: transform; transform-style: preserve-3d; }
+    .float-chip {
+      position: absolute; z-index: 20; will-change: transform;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.55rem 0.85rem; border-radius: 1rem;
+      background: var(--glass-bg); backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.14);
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em;
+    }
+
+    /* Bento grid */
+    .bento {
+      position: relative; overflow: hidden; border-radius: 1.75rem;
+      background: var(--card-bg); backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+      will-change: transform;
+    }
+    .bento-glow {
+      position: absolute; inset: 0; opacity: 0; pointer-events: none;
+      background: radial-gradient(420px circle at var(--mx,50%) var(--my,50%), rgba(204,0,0,0.16), transparent 45%);
+      transition: opacity 0.4s ease;
+    }
+    .bento:hover .bento-glow { opacity: 1; }
+
+    /* Timeline alur */
+    .alur-fill { transform-origin: top center; transform: scaleY(0); }
+    .alur-node { box-shadow: 0 0 0 6px rgba(204,0,0,0.10); }
   </style>
 </head>
 <body class="selection:bg-red-500 selection:text-white">
@@ -280,6 +316,9 @@
         </a>
         <a href="#profil" class="text-[10px] font-black text-slate-500 hover:text-red-600 transition-colors uppercase tracking-[0.18em]">
           Cabang
+        </a>
+        <a href="#alur" class="text-[10px] font-black text-slate-500 hover:text-red-600 transition-colors uppercase tracking-[0.18em]">
+          Alur
         </a>
         
         <!-- Theme Toggle -->
@@ -334,6 +373,9 @@
       <a href="#profil" class="mobile-link text-base font-black uppercase tracking-tight text-slate-900 dark:text-white italic">
         Cabang
       </a>
+      <a href="#alur" class="mobile-link text-base font-black uppercase tracking-tight text-slate-900 dark:text-white italic">
+        Alur Kirim
+      </a>
       <hr class="border-slate-100 dark:border-slate-800 my-4">
       <a href="https://wa.me/6285167394246"
          class="w-full py-4 premium-gradient text-white rounded-4xl text-center font-black text-xs uppercase tracking-widest shadow-xl shadow-red-500/20">
@@ -359,8 +401,8 @@
           </div>
 
           <h1 class="text-4xl sm:text-5xl md:text-[5rem] lg:text-[6.5rem] font-black leading-[1.05] md:leading-[0.95] tracking-tight mb-6 md:mb-10 uppercase italic">
-            Kirim Paket<br>
-            <span class="text-gradient">Tanpa Khawatir.</span>
+            <span class="line-mask"><span class="word">Kirim</span> <span class="word">Paket</span></span>
+            <span class="line-mask"><span class="word text-gradient">Tanpa</span> <span class="word text-gradient">Khawatir.</span></span>
           </h1>
 
           <p class="text-sm sm:text-base md:text-xl text-slate-500 max-w-2xl mb-8 md:mb-12 leading-relaxed font-medium mx-auto">
@@ -393,7 +435,10 @@
         <!-- Visual Content (Kurir Image) -->
         <div class="max-w-2xl w-full relative reveal">
           <div class="absolute inset-0 bg-red-600/5 rounded-4xl rotate-3 scale-105 border border-red-500/10"></div>
-          <div class="glass-card rounded-[3rem] md:rounded-[4rem] p-8 md:p-12 flex flex-col items-center overflow-hidden">
+          <div class="float-chip -top-4 left-2 sm:-left-4 text-red-600"><i data-lucide="truck" class="w-4 h-4"></i> On The Way</div>
+          <div class="float-chip top-1/2 -right-2 sm:-right-5 text-emerald-600"><i data-lucide="badge-check" class="w-4 h-4"></i> Verified</div>
+          <div class="float-chip -bottom-3 left-6 text-slate-700 dark:text-slate-200"><i data-lucide="map-pin" class="w-4 h-4"></i> Martapura</div>
+          <div class="glass-card hero-card rounded-[3rem] md:rounded-[4rem] p-8 md:p-12 flex flex-col items-center overflow-hidden">
              <div class="w-full flex justify-between items-center mb-10">
                 <div class="p-4 rounded-2xl bg-red-50 text-red-600">
                   <i data-lucide="package-check" class="w-8 h-8"></i>
@@ -420,6 +465,75 @@
                   </p>
                 </div>
              </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BENTO: KENAPA KAMI -->
+    <section id="kenapa" class="py-16 md:py-28 relative z-10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <div class="text-center mb-10 md:mb-16">
+          <p class="text-red-600 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] mb-3">Kenapa JNE Martapura</p>
+          <h2 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter italic uppercase leading-tight">Cepat, Aman, Terjangkau.</h2>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 auto-rows-[150px] md:auto-rows-[168px] gap-4 md:gap-5">
+          <!-- Big -->
+          <div class="bento group col-span-2 row-span-2 p-7 md:p-9 flex flex-col justify-between">
+            <div class="bento-glow"></div>
+            <div class="relative z-10 flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl premium-gradient flex items-center justify-center shadow-xl shadow-red-500/20"><i data-lucide="globe-2" class="w-6 h-6 text-white"></i></div>
+              <p class="text-[10px] font-black text-red-600 uppercase tracking-[0.3em]">Jaringan Nasional</p>
+            </div>
+            <img src="assets/peta-jne-indonesia.svg" class="relative z-10 w-full max-h-24 md:max-h-36 object-contain opacity-80 my-2" alt="Jaringan JNE">
+            <div class="relative z-10">
+              <h3 class="text-2xl md:text-3xl font-black italic tracking-tighter leading-none mb-1">Ke Seluruh Indonesia.</h3>
+              <p class="text-xs md:text-sm text-(--text-dim) font-medium">Dari Martapura, paketmu terhubung ke ribuan titik JNE se-Nusantara.</p>
+            </div>
+          </div>
+
+          <!-- Lacak real-time (wide) -->
+          <div class="bento group col-span-2 p-6 md:p-7 flex flex-col justify-between cursor-pointer" data-scroll-to="#tracking">
+            <div class="bento-glow"></div>
+            <div class="relative z-10 w-11 h-11 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20"><i data-lucide="radar" class="w-5 h-5 text-white"></i></div>
+            <div class="relative z-10">
+              <h3 class="text-lg md:text-xl font-black italic tracking-tight uppercase">Lacak Real-time</h3>
+              <p class="text-[11px] md:text-xs text-(--text-dim) font-medium mt-0.5">Pantau posisi paket kapan saja lewat nomor resi. Klik untuk lacak →</p>
+            </div>
+          </div>
+
+          <!-- YES -->
+          <div class="bento group col-span-1 p-5 md:p-6 flex flex-col justify-between">
+            <div class="bento-glow"></div>
+            <div class="relative z-10 w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20"><i data-lucide="zap" class="w-5 h-5 text-white"></i></div>
+            <div class="relative z-10">
+              <p class="text-xl md:text-2xl font-black italic tracking-tighter leading-none">Esok<br>Sampai</p>
+              <p class="text-[9px] font-black text-(--text-dim) uppercase tracking-widest mt-1">Layanan YES</p>
+            </div>
+          </div>
+
+          <!-- JTR -->
+          <div class="bento group col-span-1 p-5 md:p-6 flex flex-col justify-between">
+            <div class="bento-glow"></div>
+            <div class="relative z-10 w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20"><i data-lucide="truck" class="w-5 h-5 text-white"></i></div>
+            <div class="relative z-10">
+              <p class="text-xl md:text-2xl font-black italic tracking-tighter leading-none">10kg+<br>Hemat</p>
+              <p class="text-[9px] font-black text-(--text-dim) uppercase tracking-widest mt-1">Kargo JTR</p>
+            </div>
+          </div>
+
+          <!-- Jam + WA (full width) -->
+          <div class="bento group col-span-2 md:col-span-4 p-6 md:p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer" data-wa="Halo JNE Martapura, saya mau tanya layanan pengiriman.">
+            <div class="bento-glow"></div>
+            <div class="relative z-10 flex items-center gap-4">
+              <div class="w-11 h-11 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20"><i data-lucide="clock" class="w-5 h-5 text-white"></i></div>
+              <div>
+                <h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">Buka 08.00 – 20.30 WITA</h3>
+                <p class="text-[11px] md:text-xs text-(--text-dim) font-medium">Senin – Sabtu · CS WhatsApp responsif untuk pickup &amp; info ongkir.</p>
+              </div>
+            </div>
+            <span class="relative z-10 px-5 py-2.5 premium-gradient text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-500/20 inline-flex items-center gap-2 shrink-0">Chat CS <i data-lucide="message-circle" class="w-4 h-4"></i></span>
           </div>
         </div>
       </div>
@@ -482,6 +596,66 @@
             <i data-lucide="phone" class="mx-auto mb-2 text-(--text-dim) group-hover:text-red-500 transition-colors w-5 h-5"></i>
             <p class="text-[9px] font-black text-(--text-main) uppercase tracking-widest">Call Center</p>
             <p class="mt-1 text-[10px] text-(--text-dim)">021-2927-8888 · Customer Care JNE Pusat.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ALUR PENGIRIMAN (garis menggambar sendiri saat scroll) -->
+    <section id="alur" class="py-20 md:py-32 relative">
+      <div class="max-w-3xl mx-auto px-5 sm:px-6">
+        <div class="text-center mb-12 md:mb-20">
+          <p class="text-red-600 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] mb-3">Alur Pengiriman</p>
+          <h2 class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter italic uppercase leading-tight">Perjalanan Paketmu.</h2>
+          <p class="text-sm md:text-base text-(--text-dim) max-w-xl mx-auto mt-4 leading-relaxed">Dari tanganmu sampai ke tujuan — lima tahap yang dilalui setiap kiriman JNE.</p>
+        </div>
+
+        <div id="alur-track" class="relative">
+          <!-- garis vertikal -->
+          <div class="absolute left-5 md:left-6 top-2 bottom-2 w-[3px] rounded-full overflow-hidden bg-slate-200/60 dark:bg-slate-700/50">
+            <div class="alur-fill absolute inset-0 bg-gradient-to-b from-red-500 to-red-700"></div>
+          </div>
+
+          <div class="space-y-8 md:space-y-12">
+            <div class="alur-item relative pl-16 md:pl-20">
+              <span class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-red-500"></span>
+              <div class="glass-card rounded-3xl p-5 md:p-6">
+                <div class="flex items-center gap-3 mb-2"><div class="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0"><i data-lucide="package-plus" class="w-4 h-4"></i></div><h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">1 · Paket Diterima</h3></div>
+                <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">Paket di-input di counter JNE Martapura, ditimbang, lalu mendapat nomor resi untuk pelacakan.</p>
+              </div>
+            </div>
+
+            <div class="alur-item relative pl-16 md:pl-20">
+              <span class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-red-500"></span>
+              <div class="glass-card rounded-3xl p-5 md:p-6">
+                <div class="flex items-center gap-3 mb-2"><div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0"><i data-lucide="boxes" class="w-4 h-4"></i></div><h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">2 · Disortir</h3></div>
+                <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">Di gudang sortir, paket dikelompokkan sesuai kota tujuan dan moda pengiriman.</p>
+              </div>
+            </div>
+
+            <div class="alur-item relative pl-16 md:pl-20">
+              <span class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-red-500"></span>
+              <div class="glass-card rounded-3xl p-5 md:p-6">
+                <div class="flex items-center gap-3 mb-2"><div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><i data-lucide="plane" class="w-4 h-4"></i></div><h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">3 · Dalam Perjalanan</h3></div>
+                <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">Paket bergerak via jalur darat, laut, atau udara menuju kota tujuan lewat jaringan nasional JNE.</p>
+              </div>
+            </div>
+
+            <div class="alur-item relative pl-16 md:pl-20">
+              <span class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-red-500"></span>
+              <div class="glass-card rounded-3xl p-5 md:p-6">
+                <div class="flex items-center gap-3 mb-2"><div class="w-9 h-9 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center shrink-0"><i data-lucide="bike" class="w-4 h-4"></i></div><h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">4 · Kurir Mengantar</h3></div>
+                <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">Kurir cabang tujuan membawa paket ke alamat penerima — status berubah jadi "Out for Delivery".</p>
+              </div>
+            </div>
+
+            <div class="alur-item relative pl-16 md:pl-20">
+              <span class="alur-node absolute left-5 md:left-6 top-1 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-emerald-500"></span>
+              <div class="glass-card rounded-3xl p-5 md:p-6">
+                <div class="flex items-center gap-3 mb-2"><div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0"><i data-lucide="check-check" class="w-4 h-4"></i></div><h3 class="text-base md:text-lg font-black italic tracking-tight uppercase">5 · Sampai Tujuan</h3></div>
+                <p class="text-xs md:text-sm text-(--text-dim) leading-relaxed">Paket diterima penerima &amp; ditandai "Delivered". Selesai — happiness terhubung. 🎉</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -956,7 +1130,7 @@
       });
     });
 
-    // ---------- GSAP ANIMATION ----------
+    // ---------- GSAP ANIMATION + INTERAKSI ----------
     function countUpStat() {
       const el = document.getElementById('stat-accuracy');
       if (!el || !window.gsap) return;
@@ -965,27 +1139,112 @@
     }
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isTouch = window.matchMedia('(hover: none)').matches;
+
+    // ----- Lenis smooth scroll -----
+    let lenis = null;
+    if (window.Lenis && !reduceMotion) {
+      lenis = new Lenis({ duration: 1.1, smoothWheel: true, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+      if (window.gsap && window.ScrollTrigger) {
+        lenis.on('scroll', ScrollTrigger.update);
+        gsap.ticker.add((time) => lenis.raf(time * 1000));
+        gsap.ticker.lagSmoothing(0);
+      } else {
+        const raf = (t) => { lenis.raf(t); requestAnimationFrame(raf); };
+        requestAnimationFrame(raf);
+      }
+    }
+    function smoothTo(target, offset = -80) {
+      if (lenis) lenis.scrollTo(target, { offset });
+      else if (target && target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Smooth anchor links
+    document.querySelectorAll('a[href^="#"]').forEach((a) => {
+      a.addEventListener('click', (e) => {
+        const href = a.getAttribute('href');
+        if (!href || href === '#') return;
+        const target = document.querySelector(href);
+        if (!target) return;
+        e.preventDefault();
+        smoothTo(target);
+        if (typeof closeMenu === 'function') closeMenu();
+      });
+    });
+
+    // Bento: aksi klik + glow mengikuti kursor
+    document.querySelectorAll('[data-scroll-to]').forEach((el) => {
+      el.addEventListener('click', () => { const t = document.querySelector(el.getAttribute('data-scroll-to')); if (t) smoothTo(t); });
+    });
+    document.querySelectorAll('[data-wa]').forEach((el) => {
+      el.addEventListener('click', () => window.open(waBase + '?text=' + encodeURIComponent(el.getAttribute('data-wa')), '_blank'));
+    });
+    document.querySelectorAll('.bento').forEach((card) => {
+      card.addEventListener('mousemove', (e) => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+        card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+      });
+    });
 
     if (window.gsap && window.ScrollTrigger && !reduceMotion) {
       gsap.registerPlugin(ScrollTrigger);
 
-      // Nav + intro hero
+      function startHeroFloat() {
+        gsap.to('.float-chip', { y: -16, duration: 2.4, ease: 'sine.inOut', repeat: -1, yoyo: true, stagger: { each: 0.5, from: 'random' } });
+      }
+
+      // Nav + intro hero (split-text: kata naik dari overflow tersembunyi)
       gsap.from('nav > div', { opacity: 0, y: -16, duration: 0.7, ease: 'power3.out' });
-      gsap.set('#hero .max-w-4xl > *', { opacity: 0, y: 42 });
+      gsap.set('#hero .max-w-4xl > *:not(h1)', { opacity: 0, y: 42 });
+      gsap.set('#hero .word', { yPercent: 120 });
       gsap.set('#hero .reveal', { opacity: 0, y: 56, scale: 0.97 });
+      gsap.set('.float-chip', { opacity: 0, scale: 0.6 });
 
-      const intro = gsap.timeline({ delay: 0.9 });
+      const intro = gsap.timeline({ delay: 0.7 });
       intro
-        .to('#hero .max-w-4xl > *', { opacity: 1, y: 0, duration: 0.85, stagger: 0.12, ease: 'power3.out' })
-        .to('#hero .reveal', { opacity: 1, y: 0, scale: 1, duration: 1, ease: 'power3.out' }, '-=0.5')
-        .add(countUpStat, '-=0.7');
+        .to('#hero .word', { yPercent: 0, duration: 1, stagger: 0.08, ease: 'power4.out' })
+        .to('#hero .max-w-4xl > *:not(h1)', { opacity: 1, y: 0, duration: 0.8, stagger: 0.12, ease: 'power3.out' }, '-=0.6')
+        .to('#hero .reveal', { opacity: 1, y: 0, scale: 1, duration: 1, ease: 'power3.out' }, '-=0.6')
+        .add(countUpStat, '-=0.7')
+        .to('.float-chip', { opacity: 1, scale: 1, duration: 0.6, stagger: 0.12, ease: 'back.out(2)' }, '-=0.5')
+        .add(startHeroFloat, '-=0.1');
 
-      gsap.from('a[aria-label="WhatsApp JNE Martapura"]', { scale: 0, opacity: 0, duration: 0.5, delay: 1.5, ease: 'back.out(2.2)' });
+      gsap.from('a[aria-label="WhatsApp JNE Martapura"]', { scale: 0, opacity: 0, duration: 0.5, delay: 1.6, ease: 'back.out(2.2)' });
+
+      // 3D tilt kartu hero mengikuti mouse (logistik/growth feel)
+      const heroEl = document.getElementById('hero');
+      const heroCard = document.querySelector('#hero .hero-card');
+      if (heroEl && heroCard && !isTouch) {
+        heroEl.addEventListener('mousemove', (e) => {
+          const r = heroCard.getBoundingClientRect();
+          const px = (e.clientX - (r.left + r.width / 2)) / r.width;
+          const py = (e.clientY - (r.top + r.height / 2)) / r.height;
+          gsap.to(heroCard, { rotationY: px * 9, rotationX: -py * 9, transformPerspective: 1000, duration: 0.6, ease: 'power2.out' });
+        });
+        heroEl.addEventListener('mouseleave', () => gsap.to(heroCard, { rotationX: 0, rotationY: 0, duration: 0.8, ease: 'power3.out' }));
+      }
+
+      // Bento: muncul + hover scale & glow
+      gsap.from('#kenapa .text-center > *', { opacity: 0, y: 26, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#kenapa', start: 'top 75%' } });
+      gsap.from('#kenapa .bento', { opacity: 0, y: 40, scale: 0.96, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#kenapa .grid', start: 'top 82%' } });
+      document.querySelectorAll('.bento').forEach((card) => {
+        card.addEventListener('mouseenter', () => gsap.to(card, { scale: 1.035, duration: 0.4, ease: 'power2.out', boxShadow: '0 26px 60px -14px rgba(204,0,0,0.30)' }));
+        card.addEventListener('mouseleave', () => gsap.to(card, { scale: 1, duration: 0.5, ease: 'power2.out', boxShadow: '0 8px 32px rgba(0,0,0,0.05)' }));
+      });
 
       // Tracking
       gsap.from('#tracking h2, #tracking h2 + p', { opacity: 0, y: 30, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#tracking', start: 'top 75%' } });
       gsap.from('#tracking .max-w-2xl', { opacity: 0, y: 28, duration: 0.7, ease: 'power3.out', scrollTrigger: { trigger: '#tracking', start: 'top 72%' } });
       gsap.from('#tracking .grid > div', { opacity: 0, y: 24, duration: 0.55, stagger: 0.08, ease: 'power2.out', scrollTrigger: { trigger: '#tracking .grid', start: 'top 88%' } });
+
+      // Alur — garis menggambar sendiri saat scroll + item per tahap
+      gsap.from('#alur .text-center > *', { opacity: 0, y: 26, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#alur', start: 'top 75%' } });
+      gsap.fromTo('#alur .alur-fill', { scaleY: 0 }, { scaleY: 1, ease: 'none', scrollTrigger: { trigger: '#alur-track', start: 'top 65%', end: 'bottom 75%', scrub: 0.8 } });
+      gsap.utils.toArray('#alur .alur-item').forEach((item) => {
+        gsap.from(item, { opacity: 0, x: 26, y: 16, duration: 0.6, ease: 'power3.out', scrollTrigger: { trigger: item, start: 'top 82%' } });
+        gsap.from(item.querySelector('.alur-node'), { scale: 0, duration: 0.5, ease: 'back.out(2.6)', scrollTrigger: { trigger: item, start: 'top 82%' } });
+      });
 
       // Layanan
       gsap.from('#layanan .text-center > *', { opacity: 0, y: 28, duration: 0.7, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '#layanan', start: 'top 75%' } });
@@ -1011,6 +1270,8 @@
     } else {
       const st = document.getElementById('stat-accuracy');
       if (st) st.textContent = '99.9%';
+      document.querySelectorAll('.float-chip').forEach((c) => { c.style.opacity = '1'; });
+      document.querySelectorAll('.alur-fill').forEach((f) => { f.style.transform = 'scaleY(1)'; });
     }
   </script>
 </body>
