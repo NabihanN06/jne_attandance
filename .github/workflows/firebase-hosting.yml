@@ -1,42 +1,35 @@
-name: Deploy to Firebase Hosting
+name: Deploy Public Site
+
+# CD untuk public_site (target hosting "public" → jne-martapura-kalsel).
+# Admin panel di-deploy dari repo-nya sendiri (admin adalah gitlink, kosong saat
+# checkout di sini). Job ini gracefully skip bila secret FIREBASE_TOKEN belum
+# di-set, jadi tidak spam gagal di setiap push.
 
 on:
   push:
-    branches:
-      - main
-      - master
-  pull_request:
-    branches:
-      - main
-      - master
+    branches: [main]
+    paths:
+      - 'public_site/**'
+      - '.github/workflows/firebase-hosting.yml'
+  workflow_dispatch:
 
 jobs:
   deploy:
+    name: Deploy public_site
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Cek ketersediaan FIREBASE_TOKEN
+        id: token
+        run: echo "present=${{ secrets.FIREBASE_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
 
-      - name: Install dependencies for admin
-        run: |
-          cd admin
-          npm ci
+      - name: Deploy ke Firebase Hosting (target public)
+        if: steps.token.outputs.present == 'true'
+        run: >-
+          npx firebase-tools deploy --only hosting:public
+          --project admin-absensi-jne-mtp --token "${{ secrets.FIREBASE_TOKEN }}"
 
-      - name: Build admin dashboard
-        run: |
-          cd admin
-          npm run build
-
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      - name: Deploy to Firebase Hosting
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-        run: |
-          firebase deploy --only hosting --project admin-absensi-jne-mtp --token "$FIREBASE_TOKEN"
+      - name: Token belum di-set
+        if: steps.token.outputs.present != 'true'
+        run: echo "::warning::FIREBASE_TOKEN belum di-set — auto-deploy dilewati. Tambahkan secret FIREBASE_TOKEN (firebase login:ci) untuk mengaktifkan CD public_site."
