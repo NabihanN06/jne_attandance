@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <title>Checklist Go-Live — Sistem Absensi JNE Martapura</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        color: #1e293b;
+        margin: 0;
+        padding: 0;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+      .wrap {
+        padding: 30px 34px;
+      }
+      /* Header */
+      .head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        border-bottom: 4px solid #e31e24;
+        padding-bottom: 14px;
+        margin-bottom: 20px;
+      }
+      .brand {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 4px;
+        color: #e31e24;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 25px;
+        font-weight: 900;
+        margin: 5px 0 0;
+        letter-spacing: -0.5px;
+      }
+      .sub {
+        color: #64748b;
+        font-size: 12px;
+        margin-top: 3px;
+      }
+      .logo-badge {
+        text-align: right;
+        font-size: 9px;
+        color: #94a3b8;
+        line-height: 1.6;
+      }
+      .logo-badge b {
+        color: #e31e24;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      /* Links box */
+      .links {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 22px;
+        font-size: 11px;
+      }
+      .links div {
+        margin: 3px 0;
+      }
+      .links b {
+        color: #0f172a;
+      }
+      .links span {
+        color: #2563eb;
+        word-break: break-all;
+      }
+      /* Section */
+      section {
+        margin-bottom: 20px;
+        page-break-inside: avoid;
+      }
+      .sh {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 10px;
+      }
+      .sh .num {
+        width: 24px;
+        height: 24px;
+        border-radius: 7px;
+        background: #e31e24;
+        color: #fff;
+        font-weight: 800;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .sh h2 {
+        font-size: 15px;
+        font-weight: 800;
+        margin: 0;
+      }
+      .sh .note {
+        font-size: 10px;
+        color: #94a3b8;
+        font-weight: 600;
+      }
+      .grouplabel {
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #64748b;
+        margin: 12px 0 5px;
+      }
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      li {
+        padding: 4px 0 4px 26px;
+        position: relative;
+      }
+      li .cb {
+        position: absolute;
+        left: 0;
+        top: 5px;
+        width: 14px;
+        height: 14px;
+        border: 1.6px solid #cbd5e1;
+        border-radius: 3px;
+        background: #fff;
+      }
+      li b {
+        color: #0f172a;
+      }
+      .ok {
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        border-radius: 8px;
+        padding: 9px 14px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #047857;
+        margin-top: 10px;
+      }
+      /* Table */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+        margin-top: 4px;
+      }
+      th {
+        background: #fef2f2;
+        text-align: left;
+        padding: 8px 10px;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #b91c1c;
+        border-bottom: 1px solid #fecaca;
+      }
+      td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: top;
+      }
+      td:first-child {
+        font-weight: 700;
+        color: #0f172a;
+        width: 38%;
+      }
+      .foot {
+        margin-top: 22px;
+        border-top: 1px solid #e2e8f0;
+        padding-top: 10px;
+        font-size: 10px;
+        color: #94a3b8;
+        text-align: center;
+      }
+      @page {
+        size: A4;
+        margin: 13mm;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="head">
+        <div>
+          <div class="brand">JNE Martapura</div>
+          <h1>Checklist Go-Live</h1>
+          <div class="sub">Sistem Absensi Karyawan — Wajah &amp; GPS · Panduan HR/Admin</div>
+        </div>
+        <div class="logo-badge">
+          <b>JNE</b><br />Connecting Happiness<br />Aplikasi v1.0.0 (build 7)
+        </div>
+      </div>
+
+      <div class="links">
+        <div><b>Panel Admin:</b> <span>https://admin-absensi-jne-mtp.web.app</span></div>
+        <div><b>Situs Publik:</b> <span>https://jne-martapura-kalsel.web.app</span></div>
+        <div>
+          <b>Unduh APK:</b>
+          <span
+            >https://storage.googleapis.com/admin-absensi-jne-mtp.firebasestorage.app/public/app-jne-absensi.apk</span
+          >
+        </div>
+      </div>
+
+      <section>
+        <div class="sh">
+          <div class="num">0</div>
+          <h2>Persiapan Admin</h2>
+          <span class="note">— sekali di awal</span>
+        </div>
+        <ul>
+          <li><span class="cb"></span> Login ke <b>Panel Admin</b> (akun admin/superadmin)</li>
+          <li>
+            <span class="cb"></span> <b>Pengaturan → Lokasi Kantor</b>: set titik GPS kantor +
+            radius geofence (mis. 100 m) — penentu absen dianggap "di kantor"
+          </li>
+          <li>
+            <span class="cb"></span> <b>Departemen/Unit</b>: pastikan semua unit (Kurir, Driver,
+            Inbound/Outbound, dll.) sudah dibuat
+          </li>
+          <li>
+            <span class="cb"></span> <b>Jam Kerja / Shift</b>: atur jam masuk–keluar per departemen
+            (termasuk shift malam bila ada)
+          </li>
+          <li><span class="cb"></span> <b>Kuota Cuti</b>: atur jatah cuti tahunan (bila dipakai)</li>
+          <li>
+            <span class="cb"></span> <b>Pengaturan Absensi</b>: cek toggle (wajib wajah, wajib GPS,
+            toleransi telat) sesuai kebijakan
+          </li>
+          <li>
+            <span class="cb"></span> Pastikan <b>APK terbaru</b> bisa diunduh dari tautan di atas
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <div class="sh">
+          <div class="num">1</div>
+          <h2>Uji Pilot (1–2 orang)</h2>
+          <span class="note">— WAJIB sebelum rollout</span>
+        </div>
+        <p style="font-size: 11px; color: #64748b; margin: 0 0 8px">
+          Tujuan: memastikan wajah + GPS + kamera + notifikasi jalan di HP Android asli, di lokasi
+          kantor sungguhan.
+        </p>
+
+        <div class="grouplabel">Onboarding karyawan uji</div>
+        <ul>
+          <li>
+            <span class="cb"></span> Buat <b>1 akun karyawan</b> di Karyawan → Tambah (data asli)
+          </li>
+          <li>
+            <span class="cb"></span> Detail Karyawan → bagikan kredensial via tombol
+            <b>Kirim via WhatsApp</b> (atau Salin)
+          </li>
+          <li>
+            <span class="cb"></span> Karyawan <b>install APK</b> (izinkan "sumber tak dikenal" bila
+            diminta)
+          </li>
+          <li>
+            <span class="cb"></span> <b>Login</b> dengan password sementara → <b>ganti password</b>
+          </li>
+          <li>
+            <span class="cb"></span> Izinkan permission HP: <b>Kamera, Lokasi, Notifikasi</b>
+          </li>
+          <li><span class="cb"></span> <b>Daftar wajah (Face ID)</b> di menu profil aplikasi</li>
+        </ul>
+
+        <div class="grouplabel">Uji alur absensi (di lokasi kantor)</div>
+        <ul>
+          <li>
+            <span class="cb"></span> <b>Absen Masuk</b>: wajah berhasil + GPS "di kantor" → sukses
+          </li>
+          <li><span class="cb"></span> <b>Absen Keluar</b>: berhasil</li>
+          <li>
+            <span class="cb"></span> (Opsional) Mode offline: matikan internet → absen → nyalakan →
+            data tersinkron otomatis
+          </li>
+          <li><span class="cb"></span> Pengingat absen muncul (notifikasi sebelum jam masuk/keluar)</li>
+        </ul>
+
+        <div class="grouplabel">Verifikasi di Panel Admin</div>
+        <ul>
+          <li><span class="cb"></span> Data absensi <b>muncul</b> di Dashboard &amp; Absensi</li>
+          <li>
+            <span class="cb"></span> <b>Foto wajah</b> absen masuk/keluar tampil di Detail Karyawan
+          </li>
+          <li><span class="cb"></span> Statistik &amp; Laporan menghitung kehadiran dengan benar</li>
+          <li><span class="cb"></span> Karyawan bisa lihat <b>Recap Bulanan</b> di aplikasi</li>
+        </ul>
+
+        <div class="grouplabel">Uji cuti &amp; lembur</div>
+        <ul>
+          <li>
+            <span class="cb"></span> Ajukan <b>cuti</b> → muncul di <b>Kotak Masuk</b> → Setujui →
+            karyawan dapat notifikasi
+          </li>
+          <li>
+            <span class="cb"></span> Ajukan <b>lembur</b> → muncul di Kotak Masuk → Setujui/Tolak →
+            notifikasi diterima
+          </li>
+          <li><span class="cb"></span> Uji <b>tolak</b> dengan alasan → karyawan terima alasannya</li>
+        </ul>
+
+        <div class="ok">✅ Bila semua di atas mulus → AMAN untuk rollout ke semua karyawan.</div>
+      </section>
+
+      <section>
+        <div class="sh">
+          <div class="num">2</div>
+          <h2>Rollout ke Semua Karyawan</h2>
+        </div>
+        <ul>
+          <li>
+            <span class="cb"></span> Buat <b>semua akun karyawan</b> (manual di admin atau seed data)
+          </li>
+          <li>
+            <span class="cb"></span> Bagikan kredensial ke tiap karyawan (tombol WhatsApp per orang)
+          </li>
+          <li>
+            <span class="cb"></span> Umumkan cara pakai (install → login → daftar wajah → absen)
+          </li>
+          <li><span class="cb"></span> Pantau progres pendaftaran wajah semua karyawan</li>
+          <li>
+            <span class="cb"></span> Hari pertama live: pantau Dashboard realtime, siap bantu yang
+            kesulitan
+          </li>
+          <li><span class="cb"></span> Tetapkan PIC HR untuk tangani kendala hari pertama</li>
+        </ul>
+      </section>
+
+      <section>
+        <div class="sh">
+          <div class="num">3</div>
+          <h2>Operasional Harian (HR)</h2>
+        </div>
+        <ul>
+          <li><span class="cb"></span> Pantau <b>Dashboard</b> kehadiran tiap pagi</li>
+          <li>
+            <span class="cb"></span> Proses <b>Kotak Masuk</b> (cuti &amp; lembur) tiap hari — jangan
+            menumpuk
+          </li>
+          <li>
+            <span class="cb"></span> Cek inbox <b>Kendala Login</b> &amp; <b>Permintaan Edit Data</b>
+          </li>
+          <li><span class="cb"></span> Balas <b>Chat</b> support karyawan bila ada</li>
+          <li>
+            <span class="cb"></span> Akhir bulan: <b>Laporan → Cetak PDF / Excel / Ringkasan Unit</b>
+            untuk manajemen
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <div class="sh">
+          <div class="num" style="background: #f59e0b">!</div>
+          <h2>Troubleshooting Umum</h2>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Masalah</th>
+              <th>Solusi cepat</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Wajah tidak terbaca</td>
+              <td>Daftar ulang wajah; pastikan pencahayaan cukup &amp; wajah jelas</td>
+            </tr>
+            <tr>
+              <td>GPS dianggap "jauh dari kantor"</td>
+              <td>
+                Cek radius geofence di Pengaturan → Lokasi Kantor; aktifkan GPS HP (akurasi tinggi)
+              </td>
+            </tr>
+            <tr>
+              <td>Tidak bisa login</td>
+              <td>Cek akun di admin; reset/bagikan ulang password sementara</td>
+            </tr>
+            <tr>
+              <td>APK tidak ter-install</td>
+              <td>Izinkan "Install dari sumber tak dikenal" di setting HP</td>
+            </tr>
+            <tr>
+              <td>Notifikasi tidak masuk</td>
+              <td>Izinkan Notifikasi untuk aplikasi; pastikan tidak dibatasi mode hemat baterai</td>
+            </tr>
+            <tr>
+              <td>Pengajuan tidak muncul di admin</td>
+              <td>Pastikan karyawan submit dari aplikasi; refresh halaman Kotak Masuk</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <div class="sh">
+          <div class="num" style="background: #94a3b8">~</div>
+          <h2>Opsional (tidak menghambat pemakaian)</h2>
+        </div>
+        <ul>
+          <li>
+            <span class="cb"></span> <b>Email onboarding otomatis (SMTP)</b> — saat ini via
+            WhatsApp/manual (cukup); aktifkan bila ingin email otomatis (perlu App Password Gmail)
+          </li>
+          <li>
+            <span class="cb"></span> <b>Auto-deploy (CI/CD)</b> — saat ini deploy manual; tambah
+            secret <b>FIREBASE_TOKEN</b> di GitHub bila ingin publish otomatis tiap perubahan
+          </li>
+        </ul>
+      </section>
+
+      <div class="foot">
+        Sistem sudah live &amp; terverifikasi dari sisi kode/deploy. Checklist ini memastikan
+        kesiapan operasional &amp; dunia-nyata sebelum dipakai seluruh tim. &mdash; JNE Martapura ·
+        Connecting Happiness
+      </div>
+    </div>
+  </body>
+</html>
