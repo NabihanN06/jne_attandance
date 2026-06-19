@@ -35,7 +35,7 @@ All commands assume you `cd` into the relevant directory first (the working dir 
 - `npm run serve` — build + run Firebase emulators (functions only)
 - `npm run deploy` — `firebase deploy --only functions`
 - `npm run logs` — tail function logs
-- Node engine is pinned to **20**.
+- Node engine is pinned to **22**.
 
 ### Mobile (`user_mobile/`)
 - `flutter pub get` — install packages
