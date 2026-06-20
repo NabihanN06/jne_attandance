@@ -99,7 +99,7 @@ class _HistoryPageState extends State<HistoryPage> {
         children: [
           // ── FILTER SECTOR ──
           Container(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
             decoration: const BoxDecoration(
               color: zenNavy,
               borderRadius: BorderRadius.only(
@@ -153,7 +153,7 @@ class _HistoryPageState extends State<HistoryPage> {
                       : records.isEmpty
                       ? _buildEmptyState()
                       : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
                           physics: const BouncingScrollPhysics(),
                           itemCount: records.length,
                           itemBuilder: (context, index) {
@@ -178,7 +178,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Widget _buildSyncBanner(BuildContext context, AppProvider provider) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.amber.withValues(alpha: 0.06),
@@ -334,11 +334,14 @@ class _HistoryPageState extends State<HistoryPage> {
             const SizedBox(height: 4),
             Text(
               label.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
               style: GoogleFonts.outfit(
-                color: Colors.white30,
-                fontSize: 8,
+                color: Colors.white38,
+                fontSize: 9,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 1.5,
+                letterSpacing: 1.2,
               ),
             ),
           ],
@@ -416,46 +419,52 @@ class _HistoryPageState extends State<HistoryPage> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    DateFormat(
-                      'EEEE, d MMM yyyy',
-                      context.read<AppProvider>().language,
-                    ).format(date),
-                    style: GoogleFonts.outfit(
-                      color: pal.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.2,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      DateFormat(
+                        'EEEE, d MMM yyyy',
+                        context.read<AppProvider>().language,
+                      ).format(date),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.outfit(
+                        color: pal.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: zenIndigo,
-                          shape: BoxShape.circle,
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: zenIndigo,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'JNE Martapura',
-                        style: GoogleFonts.plusJakartaSans(
-                          color: zenSlate,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
+                        const SizedBox(width: 8),
+                        Text(
+                          'JNE Martapura',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: zenSlate,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 12),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,

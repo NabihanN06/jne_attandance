@@ -317,6 +317,8 @@ class _AttendancePageState extends State<AttendancePage>
   }
 
   Widget _buildOverlay(GeofenceService geo, AppProvider app) {
+    final topInset = MediaQuery.of(context).padding.top;
+    final bottomInset = MediaQuery.of(context).padding.bottom;
     final remoteAllowed = app.canBypassGeofence;
     final geoOk = geo.isInRange || remoteAllowed;
     // Merah saat: baru gagal scan, GPS palsu, atau di luar area (setelah GPS dapat).
@@ -336,7 +338,7 @@ class _AttendancePageState extends State<AttendancePage>
           left: 0,
           right: 0,
           child: Container(
-            padding: const EdgeInsets.fromLTRB(24, 60, 24, 32),
+            padding: EdgeInsets.fromLTRB(24, topInset + 14, 24, 32),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -400,7 +402,7 @@ class _AttendancePageState extends State<AttendancePage>
 
         // ── LIVE MINI MAP (glance where you are vs office) ──
         Positioned(
-          top: 190,
+          top: topInset + 150,
           right: 16,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -435,7 +437,7 @@ class _AttendancePageState extends State<AttendancePage>
           left: 0,
           right: 0,
           child: Container(
-            padding: const EdgeInsets.fromLTRB(32, 40, 32, 60),
+            padding: EdgeInsets.fromLTRB(32, 40, 32, bottomInset + 28),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.bottomCenter,
@@ -534,6 +536,7 @@ class _AttendancePageState extends State<AttendancePage>
   }
 
   Widget _buildStatusInfo(GeofenceService geo, AppProvider app) {
+    final topInset = MediaQuery.of(context).padding.top;
     final isRemoteAllowed = app.canBypassGeofence;
     final isAllowed = geo.isInRange || isRemoteAllowed;
 
@@ -554,7 +557,7 @@ class _AttendancePageState extends State<AttendancePage>
     }
 
     return Positioned(
-      top: 140,
+      top: topInset + 96,
       left: 0,
       right: 0,
       child: Center(

@@ -30,7 +30,8 @@ class _SettingsPageState extends State<SettingsPage> {
   static const Color zenSlate = Color(0xFF94A3B8);
 
   // Versi aplikasi dari pubspec.yaml — di-bump manual saat release.
-  static const String _appVersion = '1.0.0+1';
+  // Hanya fallback; nilai utama dari provider.appVersionLabel (package_info).
+  static const String _appVersion = '1.0.0+8';
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
 
@@ -625,13 +626,15 @@ class _SettingsPageState extends State<SettingsPage> {
               _langOption(
                 ctx,
                 'id',
-                '🇮🇩  Bahasa Indonesia',
+                'Bahasa Indonesia',
+                'ID',
                 provider.language == 'id',
               ),
               _langOption(
                 ctx,
                 'en',
-                '🇬🇧  English',
+                'English',
+                'EN',
                 provider.language == 'en',
               ),
             ],
@@ -647,13 +650,19 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Widget _langOption(BuildContext ctx, String code, String label, bool active) {
+  Widget _langOption(
+    BuildContext ctx,
+    String code,
+    String label,
+    String badge,
+    bool active,
+  ) {
     return InkWell(
       onTap: () => Navigator.pop(ctx, code),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: active ? jneBlue.withValues(alpha: 0.08) : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
@@ -664,6 +673,27 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         child: Row(
           children: [
+            Container(
+              width: 40,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: active
+                    ? jneBlue.withValues(alpha: 0.15)
+                    : _subColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                badge,
+                style: GoogleFonts.outfit(
+                  color: active ? jneBlue : _subColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Text(
                 label,
