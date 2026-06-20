@@ -216,9 +216,9 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
 
           Container(
             color: const Color(0xFF0F172A),
-            padding: const EdgeInsets.only(
+            padding: EdgeInsets.only(
               top: 30,
-              bottom: 50,
+              bottom: MediaQuery.of(context).padding.bottom + 28,
               left: 24,
               right: 24,
             ),
