@@ -123,7 +123,7 @@ class _StatisticPageState extends State<StatisticPage> {
     final stats = provider.getStatsForMonth(_bulan, _tahun);
 
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       physics: const NeverScrollableScrollPhysics(),
       children: [
         // Month Selector
@@ -398,22 +398,28 @@ class _StatisticPageState extends State<StatisticPage> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            AnimatedContainer(
+            // Lebar bar = persentase nyata via widthFactor (presisi apa pun
+            // padding layar; sebelumnya pakai MediaQuery.width - angka-ajaib).
+            AnimatedFractionallySizedBox(
               duration: const Duration(milliseconds: 800),
-              height: 6,
-              width: (MediaQuery.of(context).size.width - 112) * ratio,
-              decoration: BoxDecoration(
-                color: hasData ? color : Colors.white12,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: hasData
-                    ? [
-                        BoxShadow(
-                          color: color.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ]
-                    : null,
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.centerLeft,
+              widthFactor: ratio,
+              child: Container(
+                height: 6,
+                decoration: BoxDecoration(
+                  color: hasData ? color : Colors.white12,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: hasData
+                      ? [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
               ),
             ),
           ],
