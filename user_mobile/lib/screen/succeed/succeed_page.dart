@@ -221,12 +221,16 @@ class _SucceedPageState extends State<SucceedPage>
             fontWeight: FontWeight.w700,
           ),
         ),
-        Text(
-          v,
-          style: GoogleFonts.outfit(
-            color: vc ?? _textPrimary,
-            fontSize: 13,
-            fontWeight: FontWeight.w900,
+        Flexible(
+          child: Text(
+            v,
+            textAlign: TextAlign.right,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.outfit(
+              color: vc ?? _textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
       ],

@@ -14,6 +14,9 @@ class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<AppProvider>().isDarkMode;
+    // Teks ikut tema — sebelumnya navy gelap di-hardcode → tak terbaca di dark mode.
+    final titleColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0B1120) : Colors.white,
       body: SafeArea(
@@ -41,7 +44,7 @@ class WelcomePage extends StatelessWidget {
                 child: Text(
                   'Registrasi Wajah',
                   style: GoogleFonts.outfit(
-                    color: const Color(0xFF1E293B),
+                    color: titleColor,
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
                   ),
@@ -54,7 +57,7 @@ class WelcomePage extends StatelessWidget {
                   'Daftarkan wajah Anda untuk mengaktifkan fitur absensi biometrik yang aman dan cepat.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.outfit(
-                    color: const Color(0xFF64748B),
+                    color: subColor,
                     fontSize: 15,
                     height: 1.6,
                     fontWeight: FontWeight.w500,
@@ -62,9 +65,13 @@ class WelcomePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 48),
-              _buildStepItem('1', 'Pastikan cahaya ruangan terang'),
-              _buildStepItem('2', 'Lepaskan kacamata atau masker'),
-              _buildStepItem('3', 'Posisikan wajah di dalam bingkai'),
+              _buildStepItem('1', 'Pastikan cahaya ruangan terang', titleColor),
+              _buildStepItem('2', 'Lepaskan kacamata atau masker', titleColor),
+              _buildStepItem(
+                '3',
+                'Posisikan wajah di dalam bingkai',
+                titleColor,
+              ),
               const Spacer(),
               FadeInUp(
                 delay: const Duration(milliseconds: 400),
@@ -114,7 +121,7 @@ class WelcomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildStepItem(String num, String text) {
+  Widget _buildStepItem(String num, String text, Color textColor) {
     return FadeInLeft(
       child: Padding(
         padding: const EdgeInsets.only(bottom: 20),
@@ -142,7 +149,7 @@ class WelcomePage extends StatelessWidget {
               child: Text(
                 text,
                 style: GoogleFonts.outfit(
-                  color: const Color(0xFF1E293B),
+                  color: textColor,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),

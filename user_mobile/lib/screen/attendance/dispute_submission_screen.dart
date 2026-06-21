@@ -128,6 +128,14 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
   Widget build(BuildContext context) {
     final date = DateTime.tryParse(widget.record.date) ?? DateTime.now();
     final isDark = context.watch<AppProvider>().isDarkMode;
+    // Theme-aware: sebelumnya kartu/input hardcode putih & tombol navy
+    // (tak terlihat di background navy gelap).
+    final cardColor = isDark ? const Color(0xFF15203A) : Colors.white;
+    final textColor = isDark ? Colors.white : zenNavy;
+    final btnColor = isDark ? zenIndigo : zenNavy;
+    final borderColor = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : zenNavy.withValues(alpha: 0.05);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0B1120) : zenOffWhite,
@@ -159,7 +167,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cardColor,
                   borderRadius: BorderRadius.circular(32),
                   boxShadow: [
                     BoxShadow(
@@ -194,7 +202,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                               context.read<AppProvider>().language,
                             ).format(date),
                             style: GoogleFonts.outfit(
-                              color: zenNavy,
+                              color: textColor,
                               fontSize: 14,
                               fontWeight: FontWeight.w900,
                             ),
@@ -236,7 +244,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                 controller: _reasonController,
                 maxLines: 5,
                 style: GoogleFonts.outfit(
-                  color: zenNavy,
+                  color: textColor,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -247,18 +255,14 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                     fontSize: 14,
                   ),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: cardColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(
-                      color: zenNavy.withValues(alpha: 0.05),
-                    ),
+                    borderSide: BorderSide(color: borderColor),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(
-                      color: zenNavy.withValues(alpha: 0.05),
-                    ),
+                    borderSide: BorderSide(color: borderColor),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
@@ -289,9 +293,9 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                   height: 180,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: cardColor,
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: zenNavy.withValues(alpha: 0.05)),
+                    border: Border.all(color: borderColor),
                   ),
                   child: _imageFile != null
                       ? ClipRRect(
@@ -329,7 +333,7 @@ class _DisputeSubmissionScreenState extends State<DisputeSubmissionScreen> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _handleSubmit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: zenNavy,
+                    backgroundColor: btnColor,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
