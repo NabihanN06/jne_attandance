@@ -31,7 +31,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // Versi aplikasi dari pubspec.yaml — di-bump manual saat release.
   // Hanya fallback; nilai utama dari provider.appVersionLabel (package_info).
-  static const String _appVersion = '1.0.0+10';
+  static const String _appVersion = '1.0.0+11';
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
 

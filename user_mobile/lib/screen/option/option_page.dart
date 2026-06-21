@@ -141,12 +141,19 @@ class OptionPage extends StatelessWidget {
     Color color,
     VoidCallback onTap,
   ) {
+    // Theme-aware: kartu dulu hardcode putih → blok putih nyolok di dark mode.
+    final isDark = Provider.of<AppProvider>(context, listen: false).isDarkMode;
+    final cardColor = isDark ? const Color(0xFF15203A) : Colors.white;
+    final titleColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final descColor = isDark
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF64748B);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -174,7 +181,7 @@ class OptionPage extends StatelessWidget {
                   Text(
                     title,
                     style: GoogleFonts.outfit(
-                      color: const Color(0xFF1E293B),
+                      color: titleColor,
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                     ),
@@ -183,7 +190,7 @@ class OptionPage extends StatelessWidget {
                   Text(
                     desc,
                     style: GoogleFonts.outfit(
-                      color: const Color(0xFF64748B),
+                      color: descColor,
                       fontSize: 12,
                       height: 1.4,
                       fontWeight: FontWeight.w500,
@@ -192,7 +199,10 @@ class OptionPage extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFFCBD5E1)),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
+            ),
           ],
         ),
       ),
