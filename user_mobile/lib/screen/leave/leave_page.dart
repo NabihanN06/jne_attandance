@@ -215,72 +215,80 @@ class _LeavePageState extends State<LeavePage> {
             title: context.tr('sec_leave_type').toUpperCase(),
             icon: Icons.category_rounded,
             pal: pal,
-            child: GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
-              childAspectRatio: 3.0,
-              children: _leaveTypes.map((t) {
-                final selected = _type == t.value;
-                return GestureDetector(
-                  onTap: () => setState(() => _type = t.value),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? t.color.withValues(alpha: pal.isDark ? 0.22 : 0.12)
-                          : pal.cardAlt,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: selected ? t.color : pal.border,
-                        width: selected ? 1.6 : 1.2,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 34,
-                          height: 34,
-                          alignment: Alignment.center,
+            child: LayoutBuilder(
+              builder: (context, c) {
+                // Lebar item = setengah, tinggi mengikuti konten (anti-overflow
+                // di semua ukuran layar — beda dgn childAspectRatio yg kaku).
+                final itemW = (c.maxWidth - 10) / 2;
+                return Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: _leaveTypes.map((t) {
+                    final selected = _type == t.value;
+                    return SizedBox(
+                      width: itemW,
+                      child: GestureDetector(
+                        onTap: () => setState(() => _type = t.value),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
-                            color: t.color.withValues(
-                              alpha: selected ? 0.22 : 0.12,
-                            ),
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: Icon(t.icon, color: t.color, size: 18),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _leaveLabel(t.value),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.plusJakartaSans(
-                              color: selected ? t.color : pal.textPrimary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              height: 1.15,
+                            color: selected
+                                ? t.color.withValues(
+                                    alpha: pal.isDark ? 0.22 : 0.12,
+                                  )
+                                : pal.cardAlt,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: selected ? t.color : pal.border,
+                              width: selected ? 1.6 : 1.2,
                             ),
                           ),
-                        ),
-                        if (selected)
-                          Icon(
-                            Icons.check_circle_rounded,
-                            color: t.color,
-                            size: 16,
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 34,
+                                height: 34,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: t.color.withValues(
+                                    alpha: selected ? 0.22 : 0.12,
+                                  ),
+                                  borderRadius: BorderRadius.circular(11),
+                                ),
+                                child: Icon(t.icon, color: t.color, size: 18),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _leaveLabel(t.value),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    color: selected ? t.color : pal.textPrimary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.15,
+                                  ),
+                                ),
+                              ),
+                              if (selected)
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  color: t.color,
+                                  size: 16,
+                                ),
+                            ],
                           ),
-                      ],
-                    ),
-                  ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 );
-              }).toList(),
+              },
             ),
           ),
           const SizedBox(height: 20),
