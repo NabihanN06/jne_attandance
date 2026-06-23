@@ -29,31 +29,31 @@ class _LeavePageState extends State<LeavePage> {
     (
       value: 'annual',
       label: 'Cuti Tahunan',
-      icon: Icons.beach_access_rounded,
+      icon: Icons.event_available_rounded,
       color: Color(0xFF0EA5E9),
     ),
     (
       value: 'sick',
       label: 'Sakit',
-      icon: Icons.medical_services_rounded,
+      icon: Icons.healing_rounded,
       color: Color(0xFFEF4444),
     ),
     (
       value: 'permission',
       label: 'Izin Mendadak',
-      icon: Icons.flash_on_rounded,
+      icon: Icons.bolt_rounded,
       color: Color(0xFFF59E0B),
     ),
     (
       value: 'personal',
       label: 'Keperluan Pribadi',
-      icon: Icons.person_rounded,
+      icon: Icons.account_circle_rounded,
       color: Color(0xFF8B5CF6),
     ),
     (
       value: 'urgent',
       label: 'Keperluan Keluarga',
-      icon: Icons.family_restroom_rounded,
+      icon: Icons.diversity_3_rounded,
       color: Color(0xFFEC4899),
     ),
   ];
@@ -215,9 +215,13 @@ class _LeavePageState extends State<LeavePage> {
             title: context.tr('sec_leave_type').toUpperCase(),
             icon: Icons.category_rounded,
             pal: pal,
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 10,
+            child: GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 3.0,
               children: _leaveTypes.map((t) {
                 final selected = _type == t.value;
                 return GestureDetector(
@@ -225,34 +229,53 @@ class _LeavePageState extends State<LeavePage> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
+                      horizontal: 12,
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: selected ? t.color : pal.cardAlt,
-                      borderRadius: BorderRadius.circular(14),
+                      color: selected
+                          ? t.color.withValues(alpha: pal.isDark ? 0.22 : 0.12)
+                          : pal.cardAlt,
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: selected ? t.color : pal.border,
-                        width: 1.2,
+                        width: selected ? 1.6 : 1.2,
                       ),
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          t.icon,
-                          color: selected ? Colors.white : t.color,
-                          size: 16,
+                        Container(
+                          width: 34,
+                          height: 34,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: t.color.withValues(
+                              alpha: selected ? 0.22 : 0.12,
+                            ),
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: Icon(t.icon, color: t.color, size: 18),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _leaveLabel(t.value),
-                          style: GoogleFonts.plusJakartaSans(
-                            color: selected ? Colors.white : pal.textSub,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _leaveLabel(t.value),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.plusJakartaSans(
+                              color: selected ? t.color : pal.textPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              height: 1.15,
+                            ),
                           ),
                         ),
+                        if (selected)
+                          Icon(
+                            Icons.check_circle_rounded,
+                            color: t.color,
+                            size: 16,
+                          ),
                       ],
                     ),
                   ),
