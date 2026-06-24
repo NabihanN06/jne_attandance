@@ -1681,12 +1681,30 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
     try {
       if (_currentUser != null) {
-        await Future.delayed(const Duration(seconds: 2));
+        // Upload foto wajah enrollment ke Storage + simpan URL-nya supaya admin
+        // bisa lihat/verifikasi di panel (sebelumnya cuma set flag, foto hilang).
+        String? faceUrl;
+        try {
+          final ref = FirebaseStorage.instance.ref().child(
+            'face_enrollment/${_currentUser!.uid}.jpg',
+          );
+          await ref.putFile(
+            File(localPath),
+            SettableMetadata(contentType: 'image/jpeg'),
+          );
+          faceUrl = await ref.getDownloadURL();
+        } catch (e) {
+          debugPrint('Face photo upload failed: $e');
+        }
         await _db.collection('users').doc(_currentUser!.uid).update({
           'faceRegistered': true,
+          'facePhotoUrl': ?faceUrl,
           'updatedAt': FieldValue.serverTimestamp(),
         });
-        _currentUser = _currentUser!.copyWith(faceRegistered: true);
+        _currentUser = _currentUser!.copyWith(
+          faceRegistered: true,
+          facePhotoUrl: faceUrl ?? _currentUser!.facePhotoUrl,
+        );
       }
     } catch (e) {
       debugPrint("Error registering face: $e");
