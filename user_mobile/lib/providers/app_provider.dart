@@ -1685,8 +1685,10 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         // bisa lihat/verifikasi di panel (sebelumnya cuma set flag, foto hilang).
         String? faceUrl;
         try {
+          // Path WAJIB `face_photos/{uid}/...` agar lolos storage.rules
+          // (allow write: isOwner(userId)). Bukan `face_enrollment/...`.
           final ref = FirebaseStorage.instance.ref().child(
-            'face_enrollment/${_currentUser!.uid}.jpg',
+            'face_photos/${_currentUser!.uid}/enrollment.jpg',
           );
           await ref.putFile(
             File(localPath),
