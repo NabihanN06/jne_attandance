@@ -157,7 +157,7 @@ class AttendanceRecord {
       checkIn = AttendanceCheck.fromMap(data['checkIn']);
     } else if (data['checkInTime'] != null) {
       checkIn = AttendanceCheck(
-        time: (data['checkInTime'] as Timestamp).toDate(),
+        time: parseFirestoreTime(data['checkInTime']),
         latitude: data['checkInLatitude']?.toDouble(),
         longitude: data['checkInLongitude']?.toDouble(),
         distance: data['checkInDistance']?.toInt(),
@@ -171,7 +171,7 @@ class AttendanceRecord {
       checkOut = AttendanceCheck.fromMap(data['checkOut']);
     } else if (data['checkOutTime'] != null) {
       checkOut = AttendanceCheck(
-        time: (data['checkOutTime'] as Timestamp).toDate(),
+        time: parseFirestoreTime(data['checkOutTime']),
         latitude: data['checkOutLatitude']?.toDouble(),
         longitude: data['checkOutLongitude']?.toDouble(),
         distance: data['checkOutDistance']?.toInt(),
@@ -251,6 +251,18 @@ class AttendanceRecord {
   }
 }
 
+/// Parse field waktu Firestore secara defensif: bisa Timestamp (ditulis
+/// mobile/admin via serverTimestamp/Date), String ISO (admin updateAttendance
+/// flat field & toJson lokal), atau DateTime. Mencegah crash cast paksa yang
+/// bikin SELURUH daftar riwayat gagal tampil kalau satu doc beda format.
+DateTime? parseFirestoreTime(dynamic v) {
+  if (v == null) return null;
+  if (v is Timestamp) return v.toDate();
+  if (v is String) return DateTime.tryParse(v);
+  if (v is DateTime) return v;
+  return null;
+}
+
 class AttendanceCheck {
   final DateTime? time;
   final double? latitude;
@@ -269,17 +281,8 @@ class AttendanceCheck {
   });
 
   factory AttendanceCheck.fromMap(Map<String, dynamic> data) {
-    DateTime? parsedTime;
-    if (data['time'] != null) {
-      if (data['time'] is Timestamp) {
-        parsedTime = (data['time'] as Timestamp).toDate();
-      } else if (data['time'] is String) {
-        parsedTime = DateTime.tryParse(data['time']);
-      }
-    }
-
     return AttendanceCheck(
-      time: parsedTime,
+      time: parseFirestoreTime(data['time']),
       latitude: data['latitude']?.toDouble(),
       longitude: data['longitude']?.toDouble(),
       photoUrl: data['photoUrl'],
