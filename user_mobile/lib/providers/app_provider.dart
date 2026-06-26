@@ -1031,6 +1031,22 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     );
   }
 
+  /// Keterlambatan (menit) = selisih waktu check-in dengan jam masuk shift
+  /// karyawan (`officeStartTime`, sudah per-jamKerjaId). 0 kalau tidak telat.
+  /// Disimpan ke doc supaya laporan/dashboard/rekap akurat tanpa hitung-ulang
+  /// pakai aturan departemen generik.
+  int _calcLateMinutes(DateTime checkInTime) {
+    final start = DateTime(
+      checkInTime.year,
+      checkInTime.month,
+      checkInTime.day,
+      officeStartTime.hour,
+      officeStartTime.minute,
+    );
+    final diff = checkInTime.difference(start).inMinutes;
+    return diff > 0 ? diff : 0;
+  }
+
   Future<void> addAttendanceCheckIn(
     String status, {
     String? localImagePath,
@@ -1059,6 +1075,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           'date': dateStr,
           'attendanceDate': dateStr,
           'status': _mapMobileStatusToAdmin(status),
+          'lateMinutes': _calcLateMinutes(serverNow),
           'checkIn': {
             'time': FieldValue.serverTimestamp(),
             'latitude': lat,
@@ -1140,6 +1157,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           'date': dateStr,
           'attendanceDate': dateStr,
           'status': _mapMobileStatusToAdmin(status),
+          'lateMinutes': _calcLateMinutes(DateTime.now()),
           'checkIn': {
             'time': DateTime.now().toIso8601String(),
             'latitude': lat,
@@ -1309,9 +1327,15 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         checkOutMap['time'] = now;
         flatMap['checkOutTime'] = now;
 
+        // Total jam kerja (menit) = check-out (sekarang) − check-in. Disimpan
+        // supaya dashboard/laporan/rekap akurat tanpa hitung-ulang.
+        final ci = record.checkIn?.time;
+        final workMin = ci != null ? DateTime.now().difference(ci).inMinutes : 0;
+
         final firestoreData = {
           'checkOut': checkOutMap,
           ...flatMap,
+          if (workMin > 0) 'totalWorkMinutes': workMin,
           'updatedAt': now,
         };
 
