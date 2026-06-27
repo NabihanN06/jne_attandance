@@ -33,6 +33,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final balance = provider.leaveBalance;
     final now = DateTime.now();
     final stats = provider.getStatsForMonth(now.month, now.year);
+    final contractDuration = _contractDuration(context, user);
 
     return Scaffold(
       backgroundColor: pal.auroraBase,
@@ -105,6 +106,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     label: context.tr('employee_id'),
                     value: user.employeeId.isEmpty ? '-' : user.employeeId,
                   ),
+                  const AppRowDivider(),
+                  AppInfoRow(
+                    icon: Icons.work_outline_rounded,
+                    label: context.tr('emp_status'),
+                    value: _contractLabel(context, user),
+                  ),
+                  if (contractDuration != null) ...[
+                    const AppRowDivider(),
+                    AppInfoRow(
+                      icon: Icons.event_busy_outlined,
+                      label: context.tr('emp_duration'),
+                      value: contractDuration,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -290,6 +305,40 @@ class _ProfilePageState extends State<ProfilePage> {
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
                 ),
+              ),
+            ),
+          ],
+          if (user.contractType == 'contract' ||
+              user.contractType == 'intern') ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.violet.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(100),
+                border: Border.all(
+                  color: AppColors.violet.withValues(alpha: 0.45),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.schedule_rounded,
+                    color: AppColors.violet,
+                    size: 13,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    _contractChipText(context, user),
+                    style: GoogleFonts.plusJakartaSans(
+                      color: Colors.white,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -887,5 +936,70 @@ class _ProfilePageState extends State<ProfilePage> {
         ],
       ),
     );
+  }
+
+  // ── Status kepegawaian ──
+  String _contractLabel(BuildContext context, UserModel user) {
+    switch (user.contractType) {
+      case 'intern':
+        return context.tr('emp_intern');
+      case 'contract':
+        return context.tr('emp_contract');
+      default:
+        return context.tr('emp_permanent');
+    }
+  }
+
+  String _contractChipText(BuildContext context, UserModel user) {
+    final label = _contractLabel(context, user).toUpperCase();
+    if (user.contractMonths != null) {
+      return '$label · ${user.contractMonths} ${context.tr('emp_months').toUpperCase()}';
+    }
+    return label;
+  }
+
+  // "6 bulan · berakhir 15 Des 2026 (120 hari lagi)" — null untuk karyawan tetap.
+  String? _contractDuration(BuildContext context, UserModel user) {
+    final isContract =
+        user.contractType == 'contract' || user.contractType == 'intern';
+    if (!isContract || user.contractMonths == null) return null;
+    final months = user.contractMonths!;
+    final buf = StringBuffer('$months ${context.tr('emp_months')}');
+    final joinStr = user.joinDate;
+    if (joinStr != null && joinStr.isNotEmpty) {
+      final start = DateTime.tryParse(joinStr);
+      if (start != null) {
+        final end = DateTime(start.year, start.month + months, start.day);
+        buf.write(' · ${context.tr('emp_ends')} ${_formatDateId(end)}');
+        final today = DateTime.now();
+        final daysLeft = end
+            .difference(DateTime(today.year, today.month, today.day))
+            .inDays;
+        if (daysLeft < 0) {
+          buf.write(' (${context.tr('emp_expired')})');
+        } else {
+          buf.write(' ($daysLeft ${context.tr('emp_days_left')})');
+        }
+      }
+    }
+    return buf.toString();
+  }
+
+  String _formatDateId(DateTime d) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
+    return '${d.day} ${months[d.month - 1]} ${d.year}';
   }
 }

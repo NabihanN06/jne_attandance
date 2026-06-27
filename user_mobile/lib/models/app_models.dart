@@ -20,6 +20,12 @@ class UserModel {
   final bool isOnline;
   final bool passwordChanged;
   final String? facePhotoUrl;
+  // Status kepegawaian: 'permanent' | 'contract' | 'intern'.
+  final String contractType;
+  // Durasi kontrak/magang dalam bulan (null untuk karyawan tetap).
+  final int? contractMonths;
+  // Tanggal bergabung (ISO 'YYYY-MM-DD') — basis hitung tanggal berakhir.
+  final String? joinDate;
 
   const UserModel({
     required this.uid,
@@ -37,6 +43,9 @@ class UserModel {
     this.isOnline = false,
     this.passwordChanged = false,
     this.facePhotoUrl,
+    this.contractType = 'permanent',
+    this.contractMonths,
+    this.joinDate,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -57,6 +66,9 @@ class UserModel {
       isOnline: data['isOnline'] ?? false,
       passwordChanged: data['passwordChanged'] ?? false,
       facePhotoUrl: data['facePhotoUrl'],
+      contractType: data['contractType'] ?? 'permanent',
+      contractMonths: (data['contractMonths'] as num?)?.toInt(),
+      joinDate: data['joinDate'] as String?,
     );
   }
 
@@ -75,6 +87,9 @@ class UserModel {
       'allowRemoteAttendance': allowRemoteAttendance,
       'jamKerjaId': jamKerjaId,
       'facePhotoUrl': facePhotoUrl,
+      'contractType': contractType,
+      'contractMonths': contractMonths,
+      'joinDate': joinDate,
       'updatedAt': FieldValue.serverTimestamp(),
     };
   }
@@ -95,6 +110,9 @@ class UserModel {
     bool? isOnline,
     bool? passwordChanged,
     String? facePhotoUrl,
+    String? contractType,
+    int? contractMonths,
+    String? joinDate,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -113,6 +131,9 @@ class UserModel {
       isOnline: isOnline ?? this.isOnline,
       passwordChanged: passwordChanged ?? this.passwordChanged,
       facePhotoUrl: facePhotoUrl ?? this.facePhotoUrl,
+      contractType: contractType ?? this.contractType,
+      contractMonths: contractMonths ?? this.contractMonths,
+      joinDate: joinDate ?? this.joinDate,
     );
   }
 }
