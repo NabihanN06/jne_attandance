@@ -296,6 +296,7 @@ class _LeavePageState extends State<LeavePage> {
             title: context.tr('sec_leave_duration').toUpperCase(),
             icon: Icons.calendar_month_rounded,
             pal: pal,
+            imageAsset: 'assets/images/iconapk/leaveduration.png',
             child: Column(
               children: [
                 _dateField(
@@ -531,6 +532,7 @@ class _LeavePageState extends State<LeavePage> {
     required IconData icon,
     required Widget child,
     required AppPalette pal,
+    String? imageAsset,
   }) {
     return AppCard(
       radius: 24,
@@ -540,7 +542,9 @@ class _LeavePageState extends State<LeavePage> {
         children: [
           Row(
             children: [
-              Icon(icon, color: _accent, size: 20),
+              imageAsset != null
+                  ? Image.asset(imageAsset, width: 22, height: 22)
+                  : Icon(icon, color: _accent, size: 20),
               const SizedBox(width: 12),
               Text(
                 title,

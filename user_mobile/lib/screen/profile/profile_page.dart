@@ -139,6 +139,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     title: context.tr('request_center'),
                     subtitle: context.tr('request_center_sub'),
                     onTap: () => Navigator.pushNamed(context, '/my_requests'),
+                    imageAsset: 'assets/images/iconapk/iconpengajuan.png',
                   ),
                   const AppRowDivider(),
                   AppActionRow(
@@ -147,6 +148,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     title: context.tr('menu_chat'),
                     subtitle: context.tr('chat_hr_sub'),
                     onTap: () => Navigator.pushNamed(context, '/chat'),
+                    imageAsset: 'assets/images/iconapk/chatHR.png',
                   ),
                   const AppRowDivider(),
                   AppActionRow(
@@ -158,6 +160,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       context,
                       MaterialPageRoute(builder: (_) => const FaqScreen()),
                     ),
+                    imageAsset: 'assets/images/iconapk/helpandFAQ.png',
                   ),
                 ],
               ),
@@ -177,6 +180,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     subtitle: context.tr('id_card_sub'),
                     onTap: () =>
                         Navigator.pushNamed(context, '/profile/id_card'),
+                    imageAsset: 'assets/images/iconapk/idcard.png',
                   ),
                   const AppRowDivider(),
                   AppActionRow(
@@ -188,6 +192,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       context,
                       MaterialPageRoute(builder: (_) => const EnrollPage()),
                     ),
+                    imageAsset: 'assets/images/iconapk/enrollface.png',
                   ),
                 ],
               ),
@@ -205,6 +210,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 subtitle: context.tr('change_password_sub'),
                 onTap: () =>
                     _showChangePasswordDialog(context, provider, pal.isDark),
+                imageAsset: 'assets/images/iconapk/password.png',
               ),
             ),
             const SizedBox(height: 28),

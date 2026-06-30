@@ -29,13 +29,12 @@ class AppBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pal = context.palette;
     return IconButton(
       onPressed: onTap ?? () => Navigator.maybePop(context),
-      icon: Icon(
-        Icons.arrow_back_ios_new_rounded,
-        color: pal.textPrimary,
-        size: 20,
+      icon: Image.asset(
+        'assets/images/iconapk/back.png',
+        width: 22,
+        height: 22,
       ),
     );
   }
@@ -115,6 +114,9 @@ class AppActionRow extends StatelessWidget {
   final String? subtitle;
   final VoidCallback onTap;
   final Widget? trailing;
+  // Kalau diisi, pakai gambar PNG (assets/images/iconapk/...) sebagai ikon
+  // pengganti `icon` Material.
+  final String? imageAsset;
   const AppActionRow({
     super.key,
     required this.icon,
@@ -123,6 +125,7 @@ class AppActionRow extends StatelessWidget {
     this.subtitle,
     required this.onTap,
     this.trailing,
+    this.imageAsset,
   });
 
   @override
@@ -144,7 +147,9 @@ class AppActionRow extends StatelessWidget {
                 color: iconColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: iconColor, size: 19),
+              child: imageAsset != null
+                  ? Image.asset(imageAsset!, width: 20, height: 20)
+                  : Icon(icon, color: iconColor, size: 19),
             ),
             const SizedBox(width: 16),
             Expanded(

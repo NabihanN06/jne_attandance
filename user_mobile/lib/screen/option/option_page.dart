@@ -70,6 +70,7 @@ class OptionPage extends StatelessWidget {
               Icons.assignment_turned_in_rounded,
               Colors.orange,
               () => Navigator.pushNamed(context, '/leave'),
+              imageAsset: 'assets/images/iconapk/leaverequest.png',
             ),
             const SizedBox(height: 16),
             _buildFeatureCard(
@@ -79,6 +80,7 @@ class OptionPage extends StatelessWidget {
               Icons.more_time_rounded,
               jneBlue,
               () => Navigator.pushNamed(context, '/overtime'),
+              imageAsset: 'assets/images/iconapk/iconpengajuan.png',
             ),
             const SizedBox(height: 16),
             _buildFeatureCard(
@@ -97,6 +99,7 @@ class OptionPage extends StatelessWidget {
               Icons.chat_bubble_rounded,
               const Color(0xFF10B981),
               () => Navigator.pushNamed(context, '/chat'),
+              imageAsset: 'assets/images/iconapk/chatHR.png',
             ),
 
             const SizedBox(height: 32),
@@ -114,6 +117,7 @@ class OptionPage extends StatelessWidget {
               Icons.settings_outlined,
               Colors.blueGrey,
               () => Navigator.pushNamed(context, '/settings'),
+              imageAsset: 'assets/images/iconapk/setelan.png',
             ),
           ],
         ),
@@ -139,8 +143,9 @@ class OptionPage extends StatelessWidget {
     String desc,
     IconData icon,
     Color color,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    String? imageAsset,
+  }) {
     // Theme-aware: kartu dulu hardcode putih → blok putih nyolok di dark mode.
     final isDark = Provider.of<AppProvider>(context, listen: false).isDarkMode;
     final cardColor = isDark ? const Color(0xFF15203A) : Colors.white;
@@ -171,7 +176,9 @@ class OptionPage extends StatelessWidget {
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(icon, color: color, size: 28),
+              child: imageAsset != null
+                  ? Image.asset(imageAsset, width: 28, height: 28)
+                  : Icon(icon, color: color, size: 28),
             ),
             const SizedBox(width: 20),
             Expanded(
@@ -237,10 +244,10 @@ class OptionPage extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.emergency_share_rounded,
-                color: Colors.white,
-                size: 32,
+              child: Image.asset(
+                'assets/images/iconapk/sosicon.png',
+                width: 32,
+                height: 32,
               ),
             ),
             const SizedBox(width: 20),

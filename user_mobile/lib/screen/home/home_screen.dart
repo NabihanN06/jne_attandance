@@ -384,10 +384,10 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                Icon(
-                  Icons.notifications_none_rounded,
-                  color: pal.textPrimary,
-                  size: 24,
+                Image.asset(
+                  'assets/images/iconapk/mesagge.png',
+                  width: 24,
+                  height: 24,
                 ),
                 if (unread > 0)
                   Positioned(
@@ -609,7 +609,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final label = clockedIn
         ? context.tr('do_check_out')
         : context.tr('do_check_in');
-    final icon = clockedIn ? Icons.logout_rounded : Icons.login_rounded;
     return GestureDetector(
       onTap: p.isProcessing ? null : () => _handleAttendance(p, geo),
       child: Container(
@@ -629,7 +628,13 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: AppColors.brandRed, size: 19),
+              Image.asset(
+                clockedIn
+                    ? 'assets/images/iconapk/out.png'
+                    : 'assets/images/iconapk/in.png',
+                width: 22,
+                height: 22,
+              ),
               const SizedBox(width: 10),
               Text(
                 label,
@@ -857,6 +862,7 @@ class _HomeScreenState extends State<HomeScreen> {
           AppColors.green,
           pal,
           () => _go('/chat'),
+          imageAsset: 'assets/images/iconapk/chatHR.png',
         ),
         const SizedBox(width: 12),
         _menuTile(
@@ -865,6 +871,7 @@ class _HomeScreenState extends State<HomeScreen> {
           AppColors.blue,
           pal,
           () => _go('/my_requests'),
+          imageAsset: 'assets/images/iconapk/iconpengajuan.png',
         ),
         const SizedBox(width: 12),
         _menuTile(
@@ -873,6 +880,7 @@ class _HomeScreenState extends State<HomeScreen> {
           AppColors.jneOrange,
           pal,
           () => _go('/lokasi'),
+          imageAsset: 'assets/images/iconapk/lokasi.png',
         ),
         const SizedBox(width: 12),
         _menuTile(
@@ -881,6 +889,7 @@ class _HomeScreenState extends State<HomeScreen> {
           AppColors.brandRed,
           pal,
           () => _showSOSConfirm(p, geo),
+          imageAsset: 'assets/images/iconapk/sosicon.png',
         ),
       ],
     );
@@ -891,8 +900,9 @@ class _HomeScreenState extends State<HomeScreen> {
     String label,
     Color color,
     AppPalette pal,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    String? imageAsset,
+  }) {
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -908,7 +918,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: color.withValues(alpha: pal.isDark ? 0.18 : 0.12),
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: imageAsset != null
+                  ? Center(child: Image.asset(imageAsset, width: 28, height: 28))
+                  : Icon(icon, color: color, size: 24),
             ),
             const SizedBox(height: 8),
             Text(
@@ -978,6 +990,7 @@ class _HomeScreenState extends State<HomeScreen> {
             pal,
             0,
             () {},
+            imageAsset: 'assets/images/iconapk/halamanutama.png',
           ),
           _navItem(
             Icons.history_rounded,
@@ -1014,8 +1027,9 @@ class _HomeScreenState extends State<HomeScreen> {
     bool active,
     AppPalette pal,
     int badge,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    String? imageAsset,
+  }) {
     final inactive = pal.textFaint;
     final color = active ? Colors.white : inactive;
     return GestureDetector(
@@ -1042,7 +1056,9 @@ class _HomeScreenState extends State<HomeScreen> {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                Icon(icon, color: color, size: 22),
+                imageAsset != null
+                    ? Image.asset(imageAsset, width: 22, height: 22)
+                    : Icon(icon, color: color, size: 22),
                 if (badge > 0)
                   Positioned(
                     top: -4,
