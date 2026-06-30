@@ -438,9 +438,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final checkInStr = checkIn != null
         ? DateFormat('HH:mm').format(checkIn)
         : '--:--';
+    // Kalau ada lembur disetujui & belum absen pulang, tampilkan jam pulang
+    // efektif (jam shift + durasi lembur) sebagai pengganti '--:--'.
+    final otCheckout = p.overtimeCheckoutTime;
     final checkOutStr = checkOut != null
         ? DateFormat('HH:mm').format(checkOut)
-        : '--:--';
+        : (otCheckout != null ? DateFormat('HH:mm').format(otCheckout) : '--:--');
     final clockedIn = p.hasClockedInToday;
     final inRange = geo.isInRange;
 
@@ -1090,6 +1093,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _handleAttendance(AppProvider p, GeofenceService geo) {
     if (_isNavigating) return;
+    // Kalau mau absen PULANG tapi ada lembur disetujui & jam lembur belum
+    // selesai → tahan dulu. Jam pulang efektif = jam shift + durasi lembur.
+    if (p.hasClockedInToday) {
+      final otEnd = p.overtimeCheckoutTime;
+      if (otEnd != null && DateTime.now().isBefore(otEnd)) {
+        _toast(
+          'Belum bisa absen pulang. Jam lembur sampai ${DateFormat('HH:mm').format(otEnd)}.',
+          AppColors.brandRed,
+        );
+        return;
+      }
+    }
     if (geo.isInRange || p.canBypassGeofence) {
       setState(() => _isNavigating = true);
       Navigator.pushNamed(

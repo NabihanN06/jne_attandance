@@ -11,6 +11,7 @@ import '../../providers/app_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
 import '../../utils/app_strings.dart';
+import '../auth/change_password_screen.dart';
 import '../help/faq_screen.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -805,142 +806,11 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _showChangePasswordDialog(AppProvider provider) async {
-    final ctrl = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-    bool obscure = true;
-    bool processing = false;
-
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSB) => AlertDialog(
-          backgroundColor: _cardColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            context.tr('change_password2'),
-            style: GoogleFonts.outfit(
-              color: _textColor,
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          content: Form(
-            key: formKey,
-            child: TextFormField(
-              controller: ctrl,
-              obscureText: obscure,
-              autofocus: true,
-              style: GoogleFonts.outfit(color: _textColor, fontSize: 14),
-              validator: (v) {
-                if (v == null || v.length < 6) return context.tr('min_6_chars');
-                return null;
-              },
-              decoration: InputDecoration(
-                hintText: context.tr('new_password_hint2'),
-                hintStyle: GoogleFonts.outfit(color: _subColor, fontSize: 13),
-                prefixIcon: Icon(
-                  Icons.lock_outline_rounded,
-                  color: _subColor,
-                  size: 18,
-                ),
-                suffixIcon: IconButton(
-                  onPressed: () => setSB(() => obscure = !obscure),
-                  icon: Icon(
-                    obscure
-                        ? Icons.visibility_off_rounded
-                        : Icons.visibility_rounded,
-                    color: _subColor,
-                    size: 18,
-                  ),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: _subColor.withValues(alpha: 0.3),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: processing ? null : () => Navigator.pop(ctx),
-              child: Text(
-                context.tr('cancel'),
-                style: GoogleFonts.outfit(
-                  color: _subColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: processing
-                  ? null
-                  : () async {
-                      if (!formKey.currentState!.validate()) return;
-                      setSB(() => processing = true);
-                      final messenger = ScaffoldMessenger.of(context);
-                      final okMsg = context.tr('password_changed2');
-                      try {
-                        await provider.changePassword(ctrl.text);
-                        if (!ctx.mounted) return;
-                        Navigator.pop(ctx);
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              okMsg,
-                              style: GoogleFonts.outfit(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            backgroundColor: zenEmerald,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      } catch (e) {
-                        setSB(() => processing = false);
-                        if (!ctx.mounted) return;
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              e.toString().replaceFirst('Exception: ', ''),
-                              style: GoogleFonts.outfit(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            backgroundColor: zenRose,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: jneBlue,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              child: processing
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Text(
-                      context.tr('save'),
-                      style: GoogleFonts.outfit(fontWeight: FontWeight.w900),
-                    ),
-            ),
-          ],
-        ),
-      ),
+    // Alur Ganti Kata Sandi 2 langkah: verifikasi sandi sekarang dulu, baru
+    // boleh set sandi baru (lihat ChangePasswordScreen).
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
     );
   }
 

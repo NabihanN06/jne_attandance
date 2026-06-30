@@ -11,7 +11,9 @@ import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
 import '../../utils/app_strings.dart';
 import '../auth/login_page.dart';
+import '../auth/change_password_screen.dart';
 import '../enroll/enroll_page.dart';
+import 'photo_crop_screen.dart';
 import '../help/faq_screen.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -691,9 +693,19 @@ class _ProfilePageState extends State<ProfilePage> {
         imageQuality: 80,
       );
       if (picked == null) return;
+      if (!mounted) return;
+
+      // Buka cropper bulat (atur posisi & zoom) sebelum upload.
+      final cropped = await Navigator.push<File?>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PhotoCropScreen(image: File(picked.path)),
+        ),
+      );
+      if (cropped == null) return;
 
       setState(() => _uploading = true);
-      await provider.updateProfilePhoto(File(picked.path));
+      await provider.updateProfilePhoto(cropped);
       if (!mounted) return;
       showAppSnack(
         context,
@@ -822,119 +834,11 @@ class _ProfilePageState extends State<ProfilePage> {
     AppProvider provider,
     bool isDark,
   ) {
-    final controller = TextEditingController();
-    final card = isDark ? const Color(0xFF15203A) : Colors.white;
-    final txt = isDark ? Colors.white : const Color(0xFF0F172A);
-    final sub = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: card,
-        surfaceTintColor: card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(
-          context.tr('change_password'),
-          style: GoogleFonts.plusJakartaSans(
-            fontWeight: FontWeight.w800,
-            fontSize: 18,
-            color: txt,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.tr('cp_desc'),
-              style: GoogleFonts.plusJakartaSans(
-                color: sub,
-                fontSize: 13.5,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: controller,
-              obscureText: true,
-              style: GoogleFonts.plusJakartaSans(
-                fontWeight: FontWeight.w700,
-                color: txt,
-              ),
-              decoration: InputDecoration(
-                hintText: context.tr('new_password_hint'),
-                hintStyle: GoogleFonts.plusJakartaSans(
-                  color: sub.withValues(alpha: 0.6),
-                  fontSize: 13.5,
-                ),
-                prefixIcon: Icon(
-                  Icons.lock_outline_rounded,
-                  size: 19,
-                  color: sub,
-                ),
-                filled: true,
-                fillColor: sub.withValues(alpha: 0.08),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.all(18),
-              ),
-            ),
-          ],
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              context.tr('cancel'),
-              style: GoogleFonts.plusJakartaSans(
-                color: sub,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              final navigator = Navigator.of(ctx);
-              final minMsg = context.tr('cp_min');
-              final okMsg = context.tr('password_changed');
-              if (controller.text.length < 6) {
-                messenger.showSnackBar(appSnack(minMsg, AppColors.brandRed));
-                return;
-              }
-              try {
-                await provider.changePassword(controller.text);
-                navigator.pop();
-                messenger.showSnackBar(appSnack(okMsg, AppColors.green));
-              } catch (e) {
-                messenger.showSnackBar(
-                  appSnack(
-                    e.toString().replaceAll('Exception: ', ''),
-                    AppColors.brandRed,
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.blue,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-            child: Text(
-              context.tr('save'),
-              style: GoogleFonts.plusJakartaSans(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
-      ),
+    // Alur Ganti Kata Sandi 2 langkah: verifikasi sandi sekarang dulu, baru
+    // boleh set sandi baru (lihat ChangePasswordScreen).
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
     );
   }
 

@@ -284,6 +284,32 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   List<OvertimeRequest> _overtimeRequests = [];
   List<OvertimeRequest> get myOvertimeRequests => _overtimeRequests;
 
+  /// Pengajuan lembur yang SUDAH disetujui untuk hari ini (kalau ada).
+  OvertimeRequest? get todaysApprovedOvertime {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    for (final o in _overtimeRequests) {
+      if (o.date == today && o.status == 'approved') return o;
+    }
+    return null;
+  }
+
+  /// Jam pulang EFEKTIF saat ada lembur disetujui hari ini = jam pulang shift
+  /// (officeEndTime) + durasi lembur. Absen pulang baru boleh setelah waktu ini
+  /// — sebelum itu tombol absen keluar ditahan. null = tidak ada lembur.
+  DateTime? get overtimeCheckoutTime {
+    final ot = todaysApprovedOvertime;
+    if (ot == null) return null;
+    final now = DateTime.now();
+    final base = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      officeEndTime.hour,
+      officeEndTime.minute,
+    );
+    return base.add(Duration(hours: ot.overtimeHours));
+  }
+
   List<DisputeRequest> _disputeRequests = [];
   List<DisputeRequest> get myDisputeRequests => _disputeRequests;
 
@@ -891,6 +917,35 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     } finally {
       _isProcessing = false;
       notifyListeners();
+    }
+  }
+
+  /// Verifikasi kata sandi SEKARANG (reauthenticate) sebelum boleh mengganti.
+  /// Dipakai oleh flow "Ganti Kata Sandi" 2 langkah: user harus membuktikan
+  /// tahu sandi lamanya dulu, sekaligus memenuhi syarat "recent login" Firebase
+  /// supaya updatePassword tidak ditolak.
+  Future<void> reauthenticate(String currentPassword) async {
+    final user = _auth.currentUser;
+    final email = user?.email;
+    if (user == null || email == null) {
+      throw Exception('Sesi tidak valid. Silakan login ulang.');
+    }
+    try {
+      final cred = EmailAuthProvider.credential(
+        email: email,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(cred);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' ||
+          e.code == 'invalid-credential' ||
+          e.code == 'invalid-login-credentials') {
+        throw Exception('Kata sandi sekarang salah.');
+      }
+      if (e.code == 'too-many-requests') {
+        throw Exception('Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.');
+      }
+      throw Exception('Verifikasi gagal: ${e.message ?? e.code}');
     }
   }
 

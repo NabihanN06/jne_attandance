@@ -152,21 +152,25 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
     final cyanAccent = theme.colorScheme.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(
-          'SCAN WAJAH',
+          'Daftar Wajah',
           style: GoogleFonts.inter(
-            letterSpacing: 2,
+            color: const Color(0xFF0F172A),
+            letterSpacing: 0.2,
             fontWeight: FontWeight.w900,
-            fontSize: 14,
+            fontSize: 16,
           ),
         ),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        foregroundColor: const Color(0xFF0F172A),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
         automaticallyImplyLeading: true,
       ),
-      extendBodyBehindAppBar: true,
       body: Column(
         children: [
           Expanded(
@@ -215,7 +219,10 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
           ),
 
           Container(
-            color: const Color(0xFF0F172A),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+            ),
             padding: EdgeInsets.only(
               top: 30,
               bottom: MediaQuery.of(context).padding.bottom + 28,
@@ -259,12 +266,12 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                               decoration: BoxDecoration(
                                 color: _isCapturing
                                     ? cyanAccent.withValues(alpha: 0.2)
-                                    : Colors.white.withValues(alpha: 0.1),
+                                    : cyanAccent.withValues(alpha: 0.08),
                                 shape: BoxShape.circle,
                                 border: Border.all(
                                   color: _isCameraReady
                                       ? cyanAccent
-                                      : Colors.white12,
+                                      : const Color(0xFFCBD5E1),
                                   width: 3,
                                 ),
                                 boxShadow: _isCameraReady
@@ -290,8 +297,8 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                                   : Icon(
                                       Icons.face_retouching_natural_rounded,
                                       color: _isCameraReady
-                                          ? Colors.white
-                                          : Colors.white24,
+                                          ? cyanAccent
+                                          : const Color(0xFFCBD5E1),
                                       size: 32,
                                     ),
                             ),
@@ -303,20 +310,20 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'VERIFIKASI BIOMETRIK',
+                  'KETUK UNTUK AMBIL FOTO',
                   style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: const Color(0xFF0F172A),
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: 2,
+                    letterSpacing: 1.5,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Posisikan wajah Anda tepat di tengah bingkai oval',
+                  'Posisikan wajah tepat di tengah bingkai, pastikan terang & jelas',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
-                    color: Colors.white60,
+                    color: const Color(0xFF64748B),
                     fontSize: 11,
                     letterSpacing: -0.2,
                   ),
@@ -330,15 +337,15 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
   }
 
   Widget _buildLoading(Color accent) => Container(
-    color: const Color(0xFF0F172A),
+    color: const Color(0xFFF8FAFC),
     child: const PackageLoading(
-      message: 'Mempersiapkan Modul Biometrik...',
-      isLight: true,
+      message: 'Mempersiapkan kamera...',
+      isLight: false,
     ),
   );
 
   Widget _buildError() => Container(
-    color: const Color(0xFF0F172A),
+    color: const Color(0xFFF8FAFC),
     padding: const EdgeInsets.all(40),
     child: Center(
       child: Column(
@@ -346,7 +353,7 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
         children: [
           const Icon(
             Icons.videocam_off_rounded,
-            color: Colors.white24,
+            color: Color(0xFFCBD5E1),
             size: 64,
           ),
           const SizedBox(height: 24),
@@ -354,7 +361,7 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
             _errorMessage ?? 'Kamera Bermasalah',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
-              color: Colors.white60,
+              color: const Color(0xFF64748B),
               fontSize: 13,
               height: 1.6,
             ),
@@ -388,22 +395,22 @@ class _OvalPainter extends CustomPainter {
     final center = Offset(w / 2, h * 0.45);
     final rect = Rect.fromCenter(center: center, width: ovalW, height: ovalH);
 
-    // Dark overlay
+    // Light/white overlay — bikin frame terang & bersih (bukan gelap)
     canvas.drawPath(
       Path()
         ..addRect(Rect.fromLTWH(0, 0, w, h))
         ..addOval(rect)
         ..fillType = PathFillType.evenOdd,
-      Paint()..color = const Color(0xFF0F172A).withValues(alpha: 0.8),
+      Paint()..color = const Color(0xFFF8FAFC).withValues(alpha: 0.92),
     );
 
     // Oval Border
     canvas.drawOval(
       rect,
       Paint()
-        ..color = color.withValues(alpha: 0.3)
+        ..color = color.withValues(alpha: 0.55)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0,
+        ..strokeWidth = 2.5,
     );
 
     // Focus Indicators
