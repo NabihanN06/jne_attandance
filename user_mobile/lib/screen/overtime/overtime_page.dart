@@ -20,7 +20,6 @@ class _OvertimePageState extends State<OvertimePage> {
   static const int _monthlyHourCap = 40;
 
   DateTime _selectedDate = DateTime.now();
-  int _selectedHours = 1;
   final _reasonCtrl = TextEditingController();
   bool _isLoading = false;
 
@@ -71,27 +70,13 @@ class _OvertimePageState extends State<OvertimePage> {
       return;
     }
 
-    final projected = _approvedHoursThisMonth(provider) + _selectedHours;
-    if (projected > _monthlyHourCap) {
-      final sisa = (_monthlyHourCap - _approvedHoursThisMonth(provider)).clamp(
-        0,
-        _monthlyHourCap,
-      );
-      showAppSnack(
-        context,
-        '${context.tr('exceed_limit')} $_monthlyHourCap ${context.tr('per_month')}. ${context.tr('remaining_word')}: $sisa ${context.tr('hours_word')}.',
-        color: AppColors.brandRed,
-      );
-      return;
-    }
-
     final submittedMsg = context.tr('overtime_submitted');
     final failPre = context.tr('fail_prefix');
     setState(() => _isLoading = true);
     try {
       await provider.submitOvertime(
         date: _selectedDate,
-        durationMinutes: _selectedHours * 60,
+        durationMinutes: 0, // jam lembur DITENTUKAN admin saat menyetujui
         reason: _reasonCtrl.text.trim(),
       );
       if (!mounted) return;
@@ -139,8 +124,7 @@ class _OvertimePageState extends State<OvertimePage> {
             SectionLabel(context.tr('ot_date')),
             _buildDateSelector(pal),
             const SizedBox(height: 22),
-            SectionLabel(context.tr('ot_duration')),
-            _buildHourSelector(pal),
+            _buildAdminHoursNote(pal),
             const SizedBox(height: 22),
             SectionLabel(context.tr('ot_reason')),
             _buildReasonField(pal),
@@ -296,36 +280,29 @@ class _OvertimePageState extends State<OvertimePage> {
     );
   }
 
-  Widget _buildHourSelector(AppPalette pal) {
-    return Row(
-      children: List.generate(5, (index) {
-        int hour = index + 1;
-        bool isSelected = _selectedHours == hour;
-        return Expanded(
-          child: GestureDetector(
-            onTap: () => setState(() => _selectedHours = hour),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 160),
-              margin: EdgeInsets.only(right: index == 4 ? 0 : 8),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: isSelected ? _accent : pal.cardAlt,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: isSelected ? _accent : pal.border),
-              ),
-              child: Center(
-                child: Text(
-                  '$hour',
-                  style: GoogleFonts.plusJakartaSans(
-                    color: isSelected ? Colors.white : pal.textSub,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+  Widget _buildAdminHoursNote(AppPalette pal) {
+    return AppCard(
+      radius: 16,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline_rounded, color: _accent, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Jumlah jam lembur ditentukan oleh admin/atasan saat menyetujui. '
+              'Kamu cukup mengajukan tanggal & alasan.',
+              style: GoogleFonts.plusJakartaSans(
+                color: pal.textSub,
+                fontSize: 12.5,
+                height: 1.5,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
-        );
-      }),
+        ],
+      ),
     );
   }
 
