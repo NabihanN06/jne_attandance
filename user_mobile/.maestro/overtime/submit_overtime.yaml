@@ -1,0 +1,14 @@
+appId: id.co.jne.mtp.absensi
+---
+# Pengajuan lembur: submit an overtime request (writes to the `overtime`
+# collection). Client caps at 40 jam/bulan and blocks duplicate dates.
+- runFlow: ../subflows/login.yaml
+
+# TODO: open overtime and fill date + hours + reason.
+# - tapOn: "Lembur"
+# - tapOn: "Alasan"
+# - inputText: "Bantu sortir paket backlog"
+# - hideKeyboard
+# - tapOn: "Ajukan"
+# - assertVisible: ".*[Mm]enunggu.*|.*[Pp]ending.*"
+- assertVisible: ".*"

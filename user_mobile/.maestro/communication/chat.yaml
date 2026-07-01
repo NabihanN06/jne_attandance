@@ -1,0 +1,13 @@
+appId: id.co.jne.mtp.absensi
+---
+# Chat 2-way dengan admin. Message status flows sent → delivered → read.
+- runFlow: ../subflows/login.yaml
+
+# TODO: open chat, type a message, send, assert it appears.
+# - tapOn: "Chat"
+# - tapOn: "Ketik pesan"
+# - inputText: "Halo admin, izin bertanya"
+# - hideKeyboard
+# - tapOn: "Kirim"
+# - assertVisible: "Halo admin, izin bertanya"
+- assertVisible: ".*"

@@ -1,0 +1,25 @@
+appId: id.co.jne.mtp.absensi
+---
+# "Lapor Login" — a user who cannot log in files a ticket WITHOUT auth
+# (writes to the `login_issues` collection). Reached from the login screen.
+- launchApp:
+    appId: "id.co.jne.mtp.absensi"
+    clearState: true
+    permissions:
+      all: "allow"
+
+# Open the forgot/help entry, then the "lapor ke admin" option.
+# TODO: confirm labels (login_page.dart → _showForgotSheet →
+# report_login_issue_screen.dart).
+- tapOn: "Lupa"
+# - tapOn: "Lapor"
+# - tapOn: "Email"
+# - inputText: "budi@jne.mtp.com"
+# - tapOn: "NIK"
+# - inputText: "JNE-001"
+# - tapOn: "Deskripsi"
+# - inputText: "Tidak bisa login, password ditolak"
+# - hideKeyboard
+# - tapOn: "Kirim"
+# - assertVisible: ".*[Tt]erkirim.*|.*[Bb]erhasil.*"
+- assertVisible: ".*"

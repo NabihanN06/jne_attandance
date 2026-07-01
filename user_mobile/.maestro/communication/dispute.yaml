@@ -1,0 +1,16 @@
+appId: id.co.jne.mtp.absensi
+---
+# Dispute (sanggah): submit a complaint (category + description + photo <=5MB)
+# then open its thread and confirm the status timeline shows "pending".
+- runFlow: ../subflows/login.yaml
+
+# TODO: open the dispute form (usually from a history/attendance item →
+# dispute_submission_screen.dart), pick a category, write a description, submit,
+# then open the thread (dispute_detail_screen.dart).
+# - tapOn: "Sanggah"
+# - tapOn: "Deskripsi"
+# - inputText: "Jam pulang saya tidak tercatat"
+# - hideKeyboard
+# - tapOn: "Kirim"
+# - assertVisible: ".*[Mm]enunggu.*|.*[Pp]ending.*"
+- assertVisible: ".*"

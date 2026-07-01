@@ -1,0 +1,19 @@
+appId: id.co.jne.mtp.absensi
+---
+# Happy-path login → Home. Requires a seeded account (env EMAIL/PASSWORD).
+- runFlow: ../subflows/login.yaml
+
+# TODO: assert a stable Home-only element (greeting / check-in button).
+- assertVisible: "Absen Masuk"
+
+# --- Wrong-password variant (uncomment as a separate check) ---
+# - launchApp:
+#     appId: "id.co.jne.mtp.absensi"
+#     clearState: true
+# - tapOn: "Email"
+# - inputText: "${EMAIL}"
+# - tapOn: "Password"
+# - inputText: "definitely-wrong"
+# - hideKeyboard
+# - tapOn: "Masuk"
+# - assertVisible: ".*gagal.*|.*salah.*"   # error snackbar; NOT on Home

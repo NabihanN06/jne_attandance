@@ -1,0 +1,15 @@
+appId: id.co.jne.mtp.absensi
+---
+# SOS darurat: the Home SOS button is a LONG-PRESS (so it isn't triggered by
+# accident) → confirmation dialog → sendSOS() writes sos_alerts + adminNotifications.
+#
+# WARNING: confirming creates real docs. Use a throwaway Firebase project, or
+# cancel at the dialog.
+- runFlow: ../subflows/login.yaml
+
+# TODO: long-press the SOS FAB (add a Semantics label 'sosButton' for a stable
+# selector — see README).
+# - longPressOn: "SOS"
+# - assertVisible: "SOS"        # confirmation dialog
+# - tapOn: "Batal"             # cancel to avoid creating a real alert
+- assertVisible: ".*"

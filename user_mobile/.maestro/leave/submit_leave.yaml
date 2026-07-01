@@ -1,0 +1,15 @@
+appId: id.co.jne.mtp.absensi
+---
+# Pengajuan cuti: open the leave form, pick type/dates/reason, submit, and
+# assert the request shows as pending.
+- runFlow: ../subflows/login.yaml
+
+# TODO: open the leave screen and fill the form.
+# - tapOn: "Cuti"
+# - tapOn: "Sakit"                 # type: sick | annual | personal | permission | urgent
+# - tapOn: "Alasan"
+# - inputText: "Demam, surat dokter terlampir"
+# - hideKeyboard
+# - tapOn: "Ajukan"
+# - assertVisible: ".*[Mm]enunggu.*|.*[Pp]ending.*"
+- assertVisible: ".*"

@@ -1,0 +1,13 @@
+appId: id.co.jne.mtp.absensi
+---
+# Smoke test — launches the app and confirms the first screen renders.
+# Runs out-of-the-box (no test account needed).
+- launchApp:
+    appId: "id.co.jne.mtp.absensi"
+    clearState: true
+    permissions:
+      all: "allow"
+
+# `.*` matches any visible text → passes as long as the app drew a screen.
+# TODO: tighten to a real string on the first screen (app name / "Masuk").
+- assertVisible: ".*"

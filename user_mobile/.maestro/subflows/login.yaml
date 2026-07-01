@@ -1,0 +1,23 @@
+appId: id.co.jne.mtp.absensi
+---
+# Reusable subflow: fresh launch → grant all permissions → log in.
+# Credentials come from env (EMAIL / PASSWORD) — see .maestro/config.yaml.
+- launchApp:
+    appId: "id.co.jne.mtp.absensi"
+    clearState: true
+    permissions:
+      all: "allow"
+
+# TODO: adjust selectors to the real hints/labels in login_page.dart.
+# Maestro matches Flutter widgets by visible text / accessibility label. For
+# stable selectors, wrap fields with Semantics(identifier: 'emailField', ...)
+# and switch to `id: "emailField"` (see README → "Stable selectors").
+- tapOn: "Email"
+- inputText: "${EMAIL}"
+- tapOn: "Password"
+- inputText: "${PASSWORD}"
+- hideKeyboard
+- tapOn: "Masuk"
+
+# Wait until Home renders. TODO: replace with a Home-only element.
+- assertVisible: "Absen Masuk"

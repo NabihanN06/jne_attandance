@@ -1,0 +1,27 @@
+# Maestro test-suite configuration — JNE Absensi mobile app.
+#
+#   Run all:        maestro test .maestro
+#   Run one flow:   maestro test .maestro/auth/login.yaml
+#   Override creds:  maestro test .maestro -e EMAIL=budi@jne.mtp.com -e PASSWORD='Rahasia123!'
+#
+# NEVER commit real production credentials — use a seeded TEST account.
+# Subflows in `subflows/` are invoked via `runFlow` and are intentionally
+# excluded from the suite globs below so they don't run standalone.
+
+flows:
+  - "01_app_smoke.yaml"
+  - "auth/*.yaml"
+  - "onboarding/*.yaml"
+  - "attendance/*.yaml"
+  - "leave/*.yaml"
+  - "overtime/*.yaml"
+  - "communication/*.yaml"
+  - "sos/*.yaml"
+  - "profile/*.yaml"
+  - "navigation/*.yaml"
+
+env:
+  EMAIL: "test.karyawan@jne.mtp.com"
+  PASSWORD: "Password123!"
+  FIRST_LOGIN_EMAIL: "baru.karyawan@jne.mtp.com"
+  FIRST_LOGIN_PASSWORD: "Temp1234!"

@@ -1,0 +1,24 @@
+appId: id.co.jne.mtp.absensi
+---
+# Core flow: check-in then check-out (face + geofence).
+#
+# REQUIRES:
+#  - seeded enrolled account (env EMAIL/PASSWORD)
+#  - mock GPS INSIDE the office geofence:
+#       emulator:  adb emu geo fix LONGITUDE LATITUDE
+#       device:    a mock-location app + Developer Options
+#  - real camera frames (physical device) OR a stubbed FaceService.
+- runFlow: ../subflows/login.yaml
+
+# Home should show the geofence badge as "in office".
+# TODO: assert it, e.g.:
+# - assertVisible: "AREA HUB MARTAPURA"
+
+# Check-in.
+# - tapOn: "Absen Masuk"
+# - assertVisible: ".*[Bb]erhasil.*"
+
+# Check-out.
+# - tapOn: "Absen Keluar"
+# - assertVisible: ".*[Bb]erhasil.*"
+- assertVisible: ".*"

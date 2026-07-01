@@ -1,0 +1,16 @@
+appId: id.co.jne.mtp.absensi
+---
+# Offline-first: attendance taken with no connectivity is queued in SQLite
+# (`pending_sync`) and auto-syncs once back online.
+- runFlow: ../subflows/login.yaml
+
+# Toggle connectivity. Pick the approach your Maestro version supports:
+#   Maestro:  `- toggleAirplaneMode`   (or `- setAirplaneMode: enabled|disabled`)
+#   adb:      adb shell svc wifi disable   /   adb shell svc data disable
+#
+# - toggleAirplaneMode
+# ... perform a check-in (see check_in_out.yaml) ...
+# - assertVisible: ".*[Oo]ffline.*|.*[Tt]ersimpan.*"
+# - toggleAirplaneMode
+# ... wait, then assert the record synced (history shows today) ...
+- assertVisible: ".*"

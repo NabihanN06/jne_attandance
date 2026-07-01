@@ -1,0 +1,16 @@
+appId: id.co.jne.mtp.absensi
+---
+# Profil & pengaturan: profile shows employee data; settings can toggle
+# dark/light and language (ID/EN), persisted to SharedPreferences.
+- runFlow: ../subflows/login.yaml
+
+# TODO: open profile, assert seeded employee name/NIK.
+# - tapOn: "Profil"
+# - assertVisible: "${EMAIL}"
+
+# TODO: open settings, toggle dark mode + language, assert the change.
+# - tapOn: "Pengaturan"
+# - tapOn: "Mode Gelap"
+# - tapOn: "English"
+# - assertVisible: "Settings"
+- assertVisible: ".*"

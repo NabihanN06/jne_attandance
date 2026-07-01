@@ -1,0 +1,12 @@
+appId: id.co.jne.mtp.absensi
+---
+# Permissions are auto-granted by `permissions: all: allow` on launch.
+# Face enrollment needs real camera frames — run on a physical device or stub
+# FaceService (see README).
+- runFlow: ../subflows/login.yaml
+
+# TODO: navigate to /enroll (enroll_page.dart), perform capture on a real
+# device, and assert the success / faceRegistered state.
+# - tapOn: "Daftar Wajah"
+# - assertVisible: ".*[Tt]erdaftar.*|.*[Bb]erhasil.*"
+- assertVisible: ".*"

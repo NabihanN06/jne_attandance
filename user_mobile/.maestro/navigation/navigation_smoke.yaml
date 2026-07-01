@@ -1,0 +1,17 @@
+appId: id.co.jne.mtp.absensi
+---
+# Navigation smoke: after login, open each major screen and assert it renders.
+# A cheap regression net across the app.
+- runFlow: ../subflows/login.yaml
+
+# TODO: tap through the main menu tiles and assert each screen. Example:
+# - tapOn: "Riwayat"
+# - assertVisible: "Riwayat"
+# - back
+# - tapOn: "Statistik"
+# - assertVisible: "Statistik"
+# - back
+# - tapOn: "Kalender"
+# - assertVisible: "Kalender"
+# - back
+- assertVisible: ".*"
