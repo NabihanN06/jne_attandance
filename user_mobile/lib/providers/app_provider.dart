@@ -538,6 +538,19 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
+  /// Hapus notifikasi personal (userNotifications). Broadcast (milik bersama)
+  /// tidak dihapus dari server — hanya hilang dari daftar lokal.
+  Future<void> deleteNotification(String notifId) async {
+    _personalNotifs.removeWhere((n) => n.id == notifId);
+    _broadcastNotifs.removeWhere((n) => n.id == notifId);
+    notifyListeners();
+    try {
+      await _db.collection('userNotifications').doc(notifId).delete();
+    } catch (e) {
+      debugPrint('deleteNotification error: $e');
+    }
+  }
+
   Future<void> markAllNotificationsRead() async {
     try {
       final batch = _db.batch();

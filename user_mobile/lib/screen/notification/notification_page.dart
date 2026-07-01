@@ -459,10 +459,25 @@ class _NotificationPageState extends State<NotificationPage> {
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate((ctx, i) {
               final notif = items[i];
-              return FadeInUp(
+              return Dismissible(
                 key: ValueKey(notif.id),
-                duration: Duration(milliseconds: 200 + (i * 50)),
-                child: _buildNotifCard(notif, provider),
+                direction: DismissDirection.endToStart,
+                onDismissed: (_) => provider.deleteNotification(notif.id),
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(right: 26),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE31E24),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Icon(Icons.delete_outline_rounded,
+                      color: Colors.white),
+                ),
+                child: FadeInUp(
+                  duration: Duration(milliseconds: 200 + (i * 50)),
+                  child: _buildNotifCard(notif, provider),
+                ),
               );
             }, childCount: items.length),
           ),

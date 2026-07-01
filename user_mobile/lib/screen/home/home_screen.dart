@@ -704,6 +704,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Icons.beach_access_rounded,
           AppColors.blue,
           pal,
+          imageAsset: 'assets/images/iconapk/leaverequest.png',
         ),
       ],
     );
@@ -714,8 +715,9 @@ class _HomeScreenState extends State<HomeScreen> {
     String label,
     IconData icon,
     Color color,
-    AppPalette pal,
-  ) {
+    AppPalette pal, {
+    String? imageAsset,
+  }) {
     return Expanded(
       child: GlassCard(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 6),
@@ -728,7 +730,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 shape: BoxShape.circle,
                 color: color.withValues(alpha: 0.16),
               ),
-              child: Icon(icon, color: color, size: 16),
+              child: imageAsset != null
+                  ? Image.asset(imageAsset, width: 18, height: 18)
+                  : Icon(icon, color: color, size: 16),
             ),
             const SizedBox(height: 10),
             Text(
@@ -1007,6 +1011,7 @@ class _HomeScreenState extends State<HomeScreen> {
             pal,
             0,
             () => _go('/leave'),
+            imageAsset: 'assets/images/iconapk/leaverequest.png',
           ),
           _navItem(
             Icons.person_rounded,
