@@ -996,8 +996,10 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       );
       await ref.putFile(imageFile, SettableMetadata(contentType: 'image/jpeg'));
       final url = await ref.getDownloadURL();
-      // Cache-buster supaya CachedNetworkImage memuat foto terbaru, bukan versi lama.
-      final freshUrl = '$url?v=${DateTime.now().millisecondsSinceEpoch}';
+      // Cache-buster pakai & (BUKAN ?) karena getDownloadURL() sudah mengandung
+      // query '?alt=media&token=...'. Kalau pakai ?v= URL jadi dobel '?' → rusak
+      // → foto gagal dimuat (avatar kosong). Ini bug "foto ngestuck".
+      final freshUrl = '$url&v=${DateTime.now().millisecondsSinceEpoch}';
 
       await _db.collection('users').doc(uid).update({
         'photoUrl': freshUrl,

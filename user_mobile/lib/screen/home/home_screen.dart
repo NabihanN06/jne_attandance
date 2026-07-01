@@ -886,15 +886,6 @@ class _HomeScreenState extends State<HomeScreen> {
           () => _go('/lokasi'),
           imageAsset: 'assets/images/iconapk/lokasi.png',
         ),
-        const SizedBox(width: 12),
-        _menuTile(
-          Icons.sos_rounded,
-          context.tr('menu_sos'),
-          AppColors.brandRed,
-          pal,
-          () => _showSOSConfirm(p, geo),
-          imageAsset: 'assets/images/iconapk/sosicon.png',
-        ),
       ],
     );
   }
