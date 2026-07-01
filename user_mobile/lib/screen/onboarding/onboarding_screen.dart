@@ -25,21 +25,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: 'Geofencing Pintar',
       description:
           'Absensi terverifikasi otomatis saat Anda berada di dalam radius kantor JNE Martapura.',
-      icon: Icons.my_location_rounded,
+      image: 'assets/images/gambarHp/icon2.png',
       color: const Color(0xFF22D3EE),
     ),
     OnboardingData(
       title: 'Verifikasi Wajah',
       description:
           'Keamanan ekstra dengan pemindaian wajah untuk memastikan kehadiran benar-benar Anda.',
-      icon: Icons.face_retouching_natural_rounded,
+      image: 'assets/images/gambarHp/icon3.png',
       color: indigo,
     ),
     OnboardingData(
       title: 'Peta & Laporan Real-time',
       description:
           'Lihat lokasi Anda di peta dan pantau riwayat absensi, cuti, serta lembur dalam genggaman.',
-      icon: Icons.insights_rounded,
+      image: 'assets/images/gambarHp/icon4.png',
       color: jneOrange,
     ),
   ];
@@ -198,17 +198,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           FadeInDown(
             duration: const Duration(milliseconds: 500),
-            child: Container(
-              width: 128,
-              height: 128,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: data.color.withValues(alpha: 0.12),
+            child: Image.asset(
+              data.image,
+              height: 240,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 128,
+                height: 128,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: data.color.withValues(alpha: 0.12),
+                ),
+                child: Icon(
+                  Icons.image_not_supported_rounded,
+                  color: data.color,
+                  size: 50,
+                ),
               ),
-              child: Icon(data.icon, color: data.color, size: 50),
             ),
           ),
-          const SizedBox(height: 56),
+          const SizedBox(height: 44),
           FadeInUp(
             duration: const Duration(milliseconds: 500),
             child: Text(
@@ -245,13 +254,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 class OnboardingData {
   final String title;
   final String description;
-  final IconData icon;
+  final String image;
   final Color color;
 
   OnboardingData({
     required this.title,
     required this.description,
-    required this.icon,
+    required this.image,
     required this.color,
   });
 }
