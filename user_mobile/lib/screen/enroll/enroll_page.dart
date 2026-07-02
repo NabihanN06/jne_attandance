@@ -180,7 +180,22 @@ class _EnrollPageState extends State<EnrollPage> with TickerProviderStateMixin {
                   alignment: Alignment.center,
                   children: [
                     if (_isCameraReady && _cameraController != null)
-                      SizedBox.expand(child: CameraPreview(_cameraController!))
+                      // Cover tanpa stretch: jaga aspect ratio kamera (previewSize
+                      // landscape → tukar w/h utk potret) lalu FittedBox.cover.
+                      SizedBox.expand(
+                        child: FittedBox(
+                          fit: BoxFit.cover,
+                          child: SizedBox(
+                            width:
+                                _cameraController!.value.previewSize?.height ??
+                                constraints.maxWidth,
+                            height:
+                                _cameraController!.value.previewSize?.width ??
+                                constraints.maxHeight,
+                            child: CameraPreview(_cameraController!),
+                          ),
+                        ),
+                      )
                     else if (_errorMessage != null)
                       _buildError()
                     else

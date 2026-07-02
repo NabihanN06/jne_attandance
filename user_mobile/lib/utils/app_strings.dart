@@ -415,7 +415,7 @@ class AppStrings {
       'photo_selected': 'Foto terpilih',
       'type_message': 'Ketik pesan...',
       // dispute submission
-      'report_anomaly': 'Laporkan Anomali',
+      'report_anomaly': 'Sanggah Absensi',
       'dispute_reason_required': 'Mohon berikan alasan komplain',
       'dispute_title_prefix': 'Komplain absensi',
       'dispute_sent': 'Komplain terkirim. Lanjut ke percakapan dengan admin.',
@@ -816,7 +816,7 @@ class AppStrings {
       'photo_selected': 'Photo selected',
       'type_message': 'Type a message...',
       // dispute submission
-      'report_anomaly': 'Report Anomaly',
+      'report_anomaly': 'Attendance Appeal',
       'dispute_reason_required': 'Please provide a reason for the dispute',
       'dispute_title_prefix': 'Attendance complaint',
       'dispute_sent':
