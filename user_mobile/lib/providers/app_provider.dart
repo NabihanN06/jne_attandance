@@ -595,6 +595,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   // Timers
   Timer? _heartbeatTimer;
   Timer? _syncRetryTimer;
+  Timer? _dayRolloverTimer;
+  int _watchedDay = DateTime.now().day;
 
   AppProvider(ConnectivityService connectivityService) {
     _loadPreferences();
@@ -794,6 +796,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     _leaveBalanceSub?.cancel();
     _presenceSub?.cancel();
     _syncRetryTimer?.cancel();
+    _dayRolloverTimer?.cancel();
   }
 
   // ── Heartbeat & Presence ──
@@ -815,13 +818,37 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         );
       }
     });
+    _startDayRolloverWatcher();
   }
 
   void _stopHeartbeat() {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _dayRolloverTimer?.cancel();
+    _dayRolloverTimer = null;
     HeartbeatService.stopHeartbeat();
     PresenceService.stop();
+  }
+
+  // Deteksi pergantian hari (lewat tengah malam). Getter "today" (status
+  // absensi, todaysApprovedOvertime, dll) pakai DateTime.now(), jadi cukup
+  // notifyListeners agar UI re-evaluasi hari baru: status jadi "belum absen",
+  // tanggal ikut ganti — walau karyawan lupa checkout kemarin.
+  void _startDayRolloverWatcher() {
+    _dayRolloverTimer?.cancel();
+    _watchedDay = DateTime.now().day;
+    _dayRolloverTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      final today = DateTime.now().day;
+      if (today != _watchedDay) {
+        _watchedDay = today;
+        AttendanceReminderScheduler.sync(
+          enabled: _notificationsEnabled,
+          checkIn: officeStartTime,
+          checkOut: officeEndTime,
+        );
+        notifyListeners();
+      }
+    });
   }
 
   void _stopPresence() {
