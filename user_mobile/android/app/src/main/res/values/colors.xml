@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Warna aksen notifikasi (merah brand JNE) -->
+    <color name="notification_color">#E31E24</color>
+</resources>

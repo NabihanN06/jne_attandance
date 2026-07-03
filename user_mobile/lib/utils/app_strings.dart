@@ -412,6 +412,10 @@ class AppStrings {
       'delete_message_q': 'Hapus Pesan?',
       'delete_message_desc': 'Pesan ini akan dihapus untuk semua orang.',
       'delete_word': 'Hapus',
+      'delete_notif': 'Hapus notifikasi',
+      'delete_all_notif': 'Hapus semua notifikasi',
+      'delete_all_notif_confirm':
+          'Semua notifikasi akan dihapus dari daftar. Lanjutkan?',
       'photo_selected': 'Foto terpilih',
       'type_message': 'Ketik pesan...',
       // dispute submission
@@ -813,6 +817,10 @@ class AppStrings {
       'delete_message_q': 'Delete Message?',
       'delete_message_desc': 'This message will be deleted for everyone.',
       'delete_word': 'Delete',
+      'delete_notif': 'Delete notification',
+      'delete_all_notif': 'Delete all notifications',
+      'delete_all_notif_confirm':
+          'All notifications will be removed from the list. Continue?',
       'photo_selected': 'Photo selected',
       'type_message': 'Type a message...',
       // dispute submission

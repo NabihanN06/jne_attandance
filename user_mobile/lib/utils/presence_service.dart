@@ -76,9 +76,12 @@ class PresenceService {
     }
   }
 
-  /// Dianggap offline jika heartbeat terakhir lebih lama dari ini
-  /// (heartbeat tiap 30 dtk → 75 dtk = ~2.5x, hindari flicker).
-  static const Duration staleAfter = Duration(seconds: 75);
+  /// Dianggap offline jika heartbeat terakhir lebih lama dari ini.
+  /// Sinyal utama = flag isOnline (ditulis false eksplisit saat tab/app
+  /// ditutup); staleness hanya fallback untuk tab yang crash. Jendela dibuat
+  /// longgar (5 mnt) karena jam HP karyawan sering meleset 1-3 menit dari
+  /// server — dengan 75 dtk, admin yang online pun terbaca "Offline" terus.
+  static const Duration staleAfter = Duration(minutes: 5);
 
   /// Listen to a specific user's presence status (online + lastSeen masih segar).
   static Stream<bool> subscribeToUser(String userId) {

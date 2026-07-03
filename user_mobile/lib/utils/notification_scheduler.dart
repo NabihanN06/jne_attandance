@@ -38,7 +38,8 @@ class AttendanceReminderScheduler {
       channelDescription: _channelDesc,
       importance: Importance.max,
       priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
+      icon: '@drawable/ic_stat_notify',
+      color: Color(0xFFE31E24),
     ),
     iOS: DarwinNotificationDetails(),
   );

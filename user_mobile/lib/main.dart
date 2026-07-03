@@ -63,9 +63,11 @@ Future<void> _setupFCM() async {
     // Token will be saved after login via AppProvider._saveFCMToken()
   });
 
-  // Initialize local notifications
+  // Initialize local notifications. Icon status bar WAJIB monokrom
+  // (putih + transparan) — ic_stat_notify = siluet logo JNE, bukan
+  // ic_launcher default Flutter.
   const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
+      AndroidInitializationSettings('@drawable/ic_stat_notify');
 
   const DarwinInitializationSettings initializationSettingsDarwin =
       DarwinInitializationSettings();
@@ -97,7 +99,8 @@ Future<void> _setupFCM() async {
                 'This channel is used for important notifications.',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
+            icon: '@drawable/ic_stat_notify',
+            color: Color(0xFFE31E24),
           ),
           iOS: const DarwinNotificationDetails(),
         ),

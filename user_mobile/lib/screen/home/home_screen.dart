@@ -443,7 +443,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final otCheckout = p.overtimeCheckoutTime;
     final checkOutStr = checkOut != null
         ? DateFormat('HH:mm').format(checkOut)
-        : (otCheckout != null ? DateFormat('HH:mm').format(otCheckout) : '--:--');
+        : (otCheckout != null
+              ? DateFormat('HH:mm').format(otCheckout)
+              : '--:--');
     final clockedIn = p.hasClockedInToday;
     final inRange = geo.isInRange;
 
@@ -879,6 +881,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(width: 12),
         _menuTile(
+          Icons.timer_rounded,
+          context.tr('overtime_word'),
+          AppColors.violet,
+          pal,
+          () => _go('/overtime'),
+        ),
+        const SizedBox(width: 12),
+        _menuTile(
           Icons.map_rounded,
           context.tr('menu_location'),
           AppColors.jneOrange,
@@ -914,7 +924,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(18),
               ),
               child: imageAsset != null
-                  ? Center(child: Image.asset(imageAsset, width: 28, height: 28))
+                  ? Center(
+                      child: Image.asset(imageAsset, width: 28, height: 28),
+                    )
                   : Icon(icon, color: color, size: 24),
             ),
             const SizedBox(height: 8),
@@ -970,25 +982,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ─────────────────────────────────────────── Floating glass bottom nav
+  // Semua item pakai ikon gambar (iconapk) + NAMA di bawah ikon, supaya
+  // karyawan langsung paham tiap tombol tanpa menebak-nebak.
   Widget _floatingNav(AppPalette pal, int unread) {
     return GlassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
       radius: 24,
       blur: 22,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _navItem(
-            Icons.home_rounded,
+            'assets/images/iconapk/halamanutama.png',
             context.tr('nav_home'),
             true,
             pal,
             0,
             () {},
-            imageAsset: 'assets/images/iconapk/halamanutama.png',
           ),
           _navItem(
-            Icons.history_rounded,
+            'assets/images/iconapk/leaveduration.png',
             context.tr('nav_history'),
             false,
             pal,
@@ -996,16 +1008,15 @@ class _HomeScreenState extends State<HomeScreen> {
             () => _go('/history'),
           ),
           _navItem(
-            Icons.beach_access_rounded,
+            'assets/images/iconapk/leaverequest.png',
             context.tr('nav_leave'),
             false,
             pal,
             0,
             () => _go('/leave'),
-            imageAsset: 'assets/images/iconapk/leaverequest.png',
           ),
           _navItem(
-            Icons.person_rounded,
+            'assets/images/iconapk/idcard.png',
             context.tr('nav_profile'),
             false,
             pal,
@@ -1018,83 +1029,78 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _navItem(
-    IconData icon,
+    String imageAsset,
     String label,
     bool active,
     AppPalette pal,
     int badge,
-    VoidCallback onTap, {
-    String? imageAsset,
-  }) {
-    final inactive = pal.textFaint;
-    final color = active ? Colors.white : inactive;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(
-          horizontal: active ? 16 : 14,
-          vertical: 8,
-        ),
-        decoration: active
-            ? BoxDecoration(
-                color: AppColors.brandRed,
-                borderRadius: BorderRadius.circular(16),
-              )
-            : null,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                imageAsset != null
-                    ? Image.asset(imageAsset, width: 22, height: 22)
-                    : Icon(icon, color: color, size: 22),
-                if (badge > 0)
-                  Positioned(
-                    top: -4,
-                    right: -6,
-                    child: Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: BoxDecoration(
-                        color: AppColors.brandRed,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: pal.bg, width: 1.5),
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 15,
-                        minHeight: 15,
-                      ),
-                      child: Text(
-                        badge > 9 ? '9+' : '$badge',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.plusJakartaSans(
-                          color: Colors.white,
-                          fontSize: 7.5,
-                          fontWeight: FontWeight.w800,
+    VoidCallback onTap,
+  ) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap();
+        },
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          decoration: active
+              ? BoxDecoration(
+                  color: AppColors.brandRed,
+                  borderRadius: BorderRadius.circular(18),
+                )
+              : null,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Image.asset(imageAsset, width: 24, height: 24),
+                  if (badge > 0)
+                    Positioned(
+                      top: -4,
+                      right: -8,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: AppColors.brandRed,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: pal.bg, width: 1.5),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 15,
+                          minHeight: 15,
+                        ),
+                        child: Text(
+                          badge > 9 ? '9+' : '$badge',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white,
+                            fontSize: 7.5,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            if (active) ...[
-              const SizedBox(width: 8),
+                ],
+              ),
+              const SizedBox(height: 4),
               Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
+                  color: active ? Colors.white : pal.textSub,
+                  fontSize: 10,
+                  fontWeight: active ? FontWeight.w800 : FontWeight.w600,
                 ),
               ),
             ],
-          ],
+          ),
         ),
       ),
     );

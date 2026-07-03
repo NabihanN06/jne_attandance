@@ -115,6 +115,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   static const _kNotifEnabledKey = 'pref_notif_enabled';
   static const _kReminderEnabledKey = 'pref_reminder_enabled';
   static const _kLanguageKey = 'pref_language';
+  // Broadcast milik bersama tak bisa dihapus dari server oleh karyawan —
+  // simpan ID yang di-"hapus" secara lokal supaya tidak muncul lagi.
+  static const _kHiddenBroadcastsKey = 'pref_hidden_broadcast_ids';
 
   bool _isDarkMode = false;
   bool get isDarkMode => _isDarkMode;
@@ -175,6 +178,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       _notificationsEnabled = prefs.getBool(_kNotifEnabledKey) ?? true;
       _reminderEnabled = prefs.getBool(_kReminderEnabledKey) ?? true;
       _language = prefs.getString(_kLanguageKey) ?? 'id';
+      _hiddenBroadcastIds
+        ..clear()
+        ..addAll(prefs.getStringList(_kHiddenBroadcastsKey) ?? const []);
       notifyListeners();
       // Jadwalkan pengingat absensi sesuai preferensi. Jam masih default di
       // sini; akan disinkronkan ulang otomatis saat setting kantor termuat.
@@ -362,6 +368,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   final List<AdminNotification> _personalNotifs = [];
   final List<AdminNotification> _broadcastNotifs = [];
 
+  // ID broadcast yang dihapus user dari daftar notifikasi (lokal saja).
+  final Set<String> _hiddenBroadcastIds = <String>{};
+
   List<AdminNotification> get notifications {
     final merged = [..._personalNotifs, ..._broadcastNotifs];
     merged.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -538,16 +547,62 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  /// Hapus notifikasi personal (userNotifications). Broadcast (milik bersama)
-  /// tidak dihapus dari server — hanya hilang dari daftar lokal.
+  /// Hapus notifikasi personal (userNotifications) dari server. Broadcast
+  /// (milik bersama) tidak bisa dihapus dari server — ID-nya disimpan ke
+  /// SharedPreferences supaya tidak muncul lagi saat snapshot berikutnya.
   Future<void> deleteNotification(String notifId) async {
+    final isBroadcast = _broadcastNotifs.any((n) => n.id == notifId);
     _personalNotifs.removeWhere((n) => n.id == notifId);
     _broadcastNotifs.removeWhere((n) => n.id == notifId);
     notifyListeners();
+    if (isBroadcast) {
+      _hiddenBroadcastIds.add(notifId);
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList(
+          _kHiddenBroadcastsKey,
+          _hiddenBroadcastIds.toList(),
+        );
+      } catch (e) {
+        debugPrint('persist hidden broadcast error: $e');
+      }
+      return;
+    }
     try {
       await _db.collection('userNotifications').doc(notifId).delete();
     } catch (e) {
       debugPrint('deleteNotification error: $e');
+    }
+  }
+
+  /// Hapus SEMUA notifikasi dari daftar (personal dihapus dari server,
+  /// broadcast disembunyikan lokal).
+  Future<void> clearAllNotifications() async {
+    final personalIds = _personalNotifs.map((n) => n.id).toList();
+    final broadcastIds = _broadcastNotifs.map((n) => n.id).toList();
+    _personalNotifs.clear();
+    _broadcastNotifs.clear();
+    notifyListeners();
+
+    _hiddenBroadcastIds.addAll(broadcastIds);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        _kHiddenBroadcastsKey,
+        _hiddenBroadcastIds.toList(),
+      );
+    } catch (e) {
+      debugPrint('persist hidden broadcast error: $e');
+    }
+
+    try {
+      final batch = _db.batch();
+      for (final id in personalIds) {
+        batch.delete(_db.collection('userNotifications').doc(id));
+      }
+      await batch.commit();
+    } catch (e) {
+      debugPrint('clearAllNotifications error: $e');
     }
   }
 
@@ -775,7 +830,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
     if (isBroadcast) {
       _broadcastNotifs.clear();
-      _broadcastNotifs.addAll(newNotifs);
+      _broadcastNotifs.addAll(
+        newNotifs.where((n) => !_hiddenBroadcastIds.contains(n.id)),
+      );
     } else {
       _personalNotifs.clear();
       _personalNotifs.addAll(newNotifs);
@@ -983,7 +1040,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         throw Exception('Kata sandi sekarang salah.');
       }
       if (e.code == 'too-many-requests') {
-        throw Exception('Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.');
+        throw Exception(
+          'Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.',
+        );
       }
       throw Exception('Verifikasi gagal: ${e.message ?? e.code}');
     }
@@ -1427,7 +1486,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         // Total jam kerja (menit) = check-out (sekarang) − check-in. Disimpan
         // supaya dashboard/laporan/rekap akurat tanpa hitung-ulang.
         final ci = record.checkIn?.time;
-        final workMin = ci != null ? DateTime.now().difference(ci).inMinutes : 0;
+        final workMin = ci != null
+            ? DateTime.now().difference(ci).inMinutes
+            : 0;
 
         final firestoreData = {
           'checkOut': checkOutMap,

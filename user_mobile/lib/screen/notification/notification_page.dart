@@ -123,6 +123,15 @@ class _NotificationPageState extends State<NotificationPage> {
                     );
                   },
                 ),
+              if (allNotifications.isNotEmpty)
+                IconButton(
+                  tooltip: context.tr('delete_all_notif'),
+                  icon: const Icon(
+                    Icons.delete_sweep_rounded,
+                    color: Colors.white,
+                  ),
+                  onPressed: () => _confirmDeleteAll(provider),
+                ),
             ],
           ),
 
@@ -471,8 +480,10 @@ class _NotificationPageState extends State<NotificationPage> {
                     color: const Color(0xFFE31E24),
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: const Icon(Icons.delete_outline_rounded,
-                      color: Colors.white),
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: Colors.white,
+                  ),
                 ),
                 child: FadeInUp(
                   duration: Duration(milliseconds: 200 + (i * 50)),
@@ -662,6 +673,52 @@ class _NotificationPageState extends State<NotificationPage> {
     );
   }
 
+  Future<void> _confirmDeleteAll(AppProvider provider) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          context.tr('delete_all_notif'),
+          style: GoogleFonts.outfit(
+            fontWeight: FontWeight.w900,
+            color: zenNavy,
+          ),
+        ),
+        content: Text(
+          context.tr('delete_all_notif_confirm'),
+          style: GoogleFonts.outfit(color: zenSlate, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              context.tr('cancel'),
+              style: GoogleFonts.outfit(
+                fontWeight: FontWeight.w700,
+                color: zenSlate,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              context.tr('delete_word'),
+              style: GoogleFonts.outfit(
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFFE31E24),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await provider.clearAllNotifications();
+    }
+  }
+
   Future<void> _showNotifActions(
     AdminNotification notif,
     AppProvider provider,
@@ -705,6 +762,23 @@ class _NotificationPageState extends State<NotificationPage> {
                     await provider.markNotificationAsRead(notif.id);
                   },
                 ),
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: Color(0xFFE31E24),
+                ),
+                title: Text(
+                  context.tr('delete_notif'),
+                  style: GoogleFonts.outfit(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFE31E24),
+                  ),
+                ),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await provider.deleteNotification(notif.id);
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.close_rounded, color: zenSlate),
                 title: Text(
