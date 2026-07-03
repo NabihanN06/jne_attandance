@@ -1181,11 +1181,26 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   }
 
   // ── Attendance Logic ──
-  bool get hasClockedInToday {
-    return _attendanceRecords.any(
-      (r) => r.checkIn != null && r.checkOut == null,
-    );
+  /// Record absensi yang masih "terbuka" (sudah masuk, belum keluar) dan
+  /// masih wajar untuk di-checkout. Dibatasi 18 jam sejak check-in:
+  /// - Shift malam yang pulang lewat tengah malam tetap bisa absen keluar
+  ///   (record kemarin masih < 18 jam).
+  /// - Record kemarin yang LUPA di-checkout (> 18 jam) tidak lagi menyandera
+  ///   tombol — hari baru kembali "Absen Masuk", dan jam pulang hari ini
+  ///   tidak menimpa record kemarin (dulu bug: totalWorkMinutes membengkak).
+  AttendanceRecord? get openAttendanceRecord {
+    final now = DateTime.now();
+    for (final r in _attendanceRecords) {
+      if (r.checkIn == null || r.checkOut != null) continue;
+      final ci = r.checkIn!.time;
+      if (ci == null || now.difference(ci) < const Duration(hours: 18)) {
+        return r;
+      }
+    }
+    return null;
   }
+
+  bool get hasClockedInToday => openAttendanceRecord != null;
 
   /// Sudah absen masuk DAN keluar hari ini → siklus absensi harian selesai,
   /// tidak boleh absen lagi sampai ganti hari (tombol di Home dinonaktifkan).
@@ -1449,12 +1464,12 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
 
     try {
-      final record = _attendanceRecords.firstWhere(
-        (r) => r.checkIn != null && r.checkOut == null,
-        orElse: () => throw Exception(
+      final record = openAttendanceRecord;
+      if (record == null) {
+        throw Exception(
           'Absensi masuk hari ini tidak ditemukan atau sudah absen keluar.',
-        ),
-      );
+        );
+      }
 
       final checkOutData = {
         'time': DateTime.now().toIso8601String(),
@@ -1846,7 +1861,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     try {
       final snap = await _db
           .collection('users')
-          .where('role', whereIn: ['admin', 'moderator'])
+          .where('role', whereIn: ['admin', 'superadmin', 'moderator'])
           .limit(1)
           .get();
       if (snap.docs.isNotEmpty) {
