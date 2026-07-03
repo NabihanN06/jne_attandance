@@ -1187,6 +1187,15 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     );
   }
 
+  /// Sudah absen masuk DAN keluar hari ini → siklus absensi harian selesai,
+  /// tidak boleh absen lagi sampai ganti hari (tombol di Home dinonaktifkan).
+  bool get hasCompletedToday {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    return _attendanceRecords.any(
+      (r) => r.date == today && r.checkIn != null && r.checkOut != null,
+    );
+  }
+
   /// Keterlambatan (menit) = selisih waktu check-in dengan jam masuk shift
   /// karyawan (`officeStartTime`, sudah per-jamKerjaId). 0 kalau tidak telat.
   /// Disimpan ke doc supaya laporan/dashboard/rekap akurat tanpa hitung-ulang
@@ -1490,14 +1499,82 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
             ? DateTime.now().difference(ci).inMinutes
             : 0;
 
+        // ── Lembur (blueprint SPL) — dihitung OTOMATIS saat absen pulang ──
+        // Hari Minggu/libur nasional: SEMUA jam kerja dihitung lembur, minus
+        // 60 mnt istirahat kalau kerja > 6 jam — tanpa perlu SPL.
+        // Hari kerja biasa: lembur hanya SAH kalau ada SPL (pengajuan lembur)
+        // berstatus APPROVED untuk tanggal itu; durasi = checkout aktual −
+        // jam pulang shift, dibatasi jam yang disetujui admin & maks 240 mnt
+        // (4 jam). Pulang telat TANPA SPL = tercatat, tapi lembur 0.
+        final checkoutNow = DateTime.now();
+        final recDate = DateTime.tryParse(record.date) ?? checkoutNow;
+        final isHolidayDate =
+            recDate.weekday == DateTime.sunday ||
+            IndonesianHolidays.isHoliday(recDate);
+        OvertimeRequest? spl;
+        for (final o in _overtimeRequests) {
+          if (o.date == record.date && o.status != 'rejected') {
+            spl = o;
+            break;
+          }
+        }
+        final splStatus = spl == null
+            ? 'NONE'
+            : (spl.status == 'approved' ? 'APPROVED' : 'PENDING');
+        int overtimeMin = 0;
+        if (isHolidayDate) {
+          overtimeMin = workMin > 360 ? workMin - 60 : workMin;
+          if (overtimeMin < 0) overtimeMin = 0;
+        } else if (spl != null && spl.status == 'approved') {
+          final shiftEnd = DateTime(
+            recDate.year,
+            recDate.month,
+            recDate.day,
+            officeEndTime.hour,
+            officeEndTime.minute,
+          );
+          final extra = checkoutNow.difference(shiftEnd).inMinutes;
+          // Batas = jam SPL yang disetujui admin (kalau diisi), mentok 240.
+          int cap = 240;
+          if (spl.overtimeHours > 0 && spl.overtimeHours * 60 < cap) {
+            cap = spl.overtimeHours * 60;
+          }
+          overtimeMin = extra > 0 ? (extra > cap ? cap : extra) : 0;
+        }
+        final shiftEndStr =
+            '${officeEndTime.hour.toString().padLeft(2, '0')}:${officeEndTime.minute.toString().padLeft(2, '0')}';
+
         final firestoreData = {
           'checkOut': checkOutMap,
           ...flatMap,
           if (workMin > 0) 'totalWorkMinutes': workMin,
+          'isHoliday': isHolidayDate,
+          'splStatus': splStatus,
+          'overtimeMinutes': overtimeMin,
+          'shiftEnd': shiftEndStr,
+          // Status 'overtime' hanya menimpa 'present' — 'late' dipertahankan
+          // supaya catatan telat tidak hilang walau dapat lembur.
+          if (overtimeMin > 0 && record.status == 'present')
+            'status': 'overtime',
           'updatedAt': now,
         };
 
         await _db.collection('attendance').doc(record.id).update(firestoreData);
+
+        // Sinkronkan realisasi menit lembur ke doc SPL yang disetujui, supaya
+        // halaman Lembur (admin & mobile) menampilkan jam AKTUAL, bukan estimasi.
+        if (spl != null && spl.status == 'approved') {
+          try {
+            await _db.collection('overtime').doc(spl.id).update({
+              'overtimeMinutes': overtimeMin,
+              'overtimeHours': (overtimeMin / 60).ceil(),
+              'actualMinutes': overtimeMin,
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+          } catch (e) {
+            debugPrint('Sync SPL actual minutes failed: $e');
+          }
+        }
         if (localImagePath != null) {
           await _uploadAttendancePhoto(
             record.id,
@@ -1674,6 +1751,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     required DateTime endDate,
     required int totalDays,
     required String reason,
+    File? attachment,
   }) async {
     if (_currentUser == null) return;
     _isProcessing = true;
@@ -1681,6 +1759,19 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
 
     try {
+      // Lampiran (surat dokter utk tipe sakit) di-upload ke Storage dulu,
+      // lalu disimpan sebagai download URL — jangan pernah path lokal.
+      String? attachmentUrl;
+      if (attachment != null) {
+        final ref = FirebaseStorage.instance.ref().child(
+          'leave_attachments/leave_${_currentUser!.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
+        await ref.putFile(
+          attachment,
+          SettableMetadata(contentType: 'image/jpeg'),
+        );
+        attachmentUrl = await ref.getDownloadURL();
+      }
       await FortressUtils.wrapWithRetry(
         () async {
           await _db.collection('leaves').add({
@@ -1694,6 +1785,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
             'endDate': Timestamp.fromDate(endDate),
             'totalDays': totalDays,
             'reason': reason,
+            'attachmentUrl': ?attachmentUrl,
             'createdAt': FieldValue.serverTimestamp(),
           });
         },

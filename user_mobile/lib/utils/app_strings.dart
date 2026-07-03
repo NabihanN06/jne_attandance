@@ -412,6 +412,12 @@ class AppStrings {
       'delete_message_q': 'Hapus Pesan?',
       'delete_message_desc': 'Pesan ini akan dihapus untuk semua orang.',
       'delete_word': 'Hapus',
+      'attendance_done_today': 'Absensi Hari Ini Selesai',
+      'sick_letter_title': 'Surat Dokter',
+      'sick_letter_hint':
+          'Ketuk untuk memfoto surat dokter\n(wajib untuk izin sakit)',
+      'sick_letter_required':
+          'Foto surat dokter wajib dilampirkan untuk izin sakit.',
       'delete_notif': 'Hapus notifikasi',
       'delete_all_notif': 'Hapus semua notifikasi',
       'delete_all_notif_confirm':
@@ -817,6 +823,12 @@ class AppStrings {
       'delete_message_q': 'Delete Message?',
       'delete_message_desc': 'This message will be deleted for everyone.',
       'delete_word': 'Delete',
+      'attendance_done_today': 'Attendance Completed Today',
+      'sick_letter_title': "Doctor's Note",
+      'sick_letter_hint':
+          "Tap to photograph the doctor's note\n(required for sick leave)",
+      'sick_letter_required':
+          "A photo of the doctor's note is required for sick leave.",
       'delete_notif': 'Delete notification',
       'delete_all_notif': 'Delete all notifications',
       'delete_all_notif_confirm':

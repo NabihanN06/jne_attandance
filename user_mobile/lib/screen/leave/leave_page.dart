@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../providers/app_provider.dart';
 import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
@@ -22,6 +24,8 @@ class _LeavePageState extends State<LeavePage> {
   final _reasonCtrl = TextEditingController();
   bool _loading = false;
   String _type = 'annual';
+  // Foto surat dokter — WAJIB untuk tipe 'sick' (aturan operasional JNE).
+  File? _attachment;
 
   // Tipe izin — value harus match dengan label di admin panel.
   static const List<({String value, String label, IconData icon, Color color})>
@@ -120,6 +124,15 @@ class _LeavePageState extends State<LeavePage> {
     return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
   }
 
+  Future<void> _pickAttachment() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      imageQuality: 55,
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _attachment = File(picked.path));
+  }
+
   // Label tipe izin terlokalisasi (value tetap dipakai untuk submit ke backend).
   String _leaveLabel(String value) {
     switch (value) {
@@ -156,6 +169,14 @@ class _LeavePageState extends State<LeavePage> {
       );
       return;
     }
+    if (_type == 'sick' && _attachment == null) {
+      showAppSnack(
+        context,
+        context.tr('sick_letter_required'),
+        color: AppColors.brandRed,
+      );
+      return;
+    }
     setState(() => _loading = true);
     try {
       await provider.submitLeave(
@@ -164,6 +185,7 @@ class _LeavePageState extends State<LeavePage> {
         endDate: _toDate!,
         totalDays: _workDays,
         reason: _reasonCtrl.text.trim(),
+        attachment: _attachment,
       );
       if (!mounted) return;
       showAppSnack(
@@ -374,6 +396,57 @@ class _LeavePageState extends State<LeavePage> {
               ),
             ),
           ),
+          // Surat dokter — hanya muncul & wajib untuk tipe Sakit.
+          if (_type == 'sick') ...[
+            const SizedBox(height: 20),
+            _buildSectionCard(
+              title: context.tr('sick_letter_title').toUpperCase(),
+              icon: Icons.medical_information_rounded,
+              pal: pal,
+              child: GestureDetector(
+                onTap: _pickAttachment,
+                child: Container(
+                  height: 150,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: pal.cardAlt,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _attachment == null
+                          ? AppColors.brandRed.withValues(alpha: 0.4)
+                          : AppColors.green,
+                      width: 1.4,
+                    ),
+                  ),
+                  child: _attachment != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.file(_attachment!, fit: BoxFit.cover),
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.add_a_photo_rounded,
+                              color: AppColors.brandRed,
+                              size: 32,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              context.tr('sick_letter_hint'),
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.plusJakartaSans(
+                                color: pal.textSub,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 32),
           GestureDetector(
             onTap: _loading ? null : _submit,

@@ -291,8 +291,11 @@ class _OvertimePageState extends State<OvertimePage> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Jumlah jam lembur ditentukan oleh admin/atasan saat menyetujui. '
-              'Kamu cukup mengajukan tanggal & alasan.',
+              'Ini pengajuan SPL (Surat Perintah Lembur). Ajukan SEBELUM absen '
+              'pulang. Setelah disetujui atasan, durasi lembur dihitung OTOMATIS '
+              'dari jam absen pulang kamu (maksimal 4 jam/hari). Pulang telat '
+              'tanpa SPL tidak dihitung lembur. Khusus hari Minggu/libur, semua '
+              'jam kerja otomatis dihitung lembur tanpa perlu SPL.',
               style: GoogleFonts.plusJakartaSans(
                 color: pal.textSub,
                 fontSize: 12.5,

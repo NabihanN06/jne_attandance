@@ -103,6 +103,11 @@ class OptionPage extends StatelessWidget {
             ),
 
             const SizedBox(height: 32),
+            _buildSectionTitle('Darurat'),
+            const SizedBox(height: 16),
+            _buildSOSCard(context),
+
+            const SizedBox(height: 32),
             _buildSectionTitle('Aplikasi'),
             const SizedBox(height: 16),
             _buildFeatureCard(

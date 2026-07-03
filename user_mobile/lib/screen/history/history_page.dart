@@ -554,12 +554,10 @@ class _HistoryPageState extends State<HistoryPage> {
                         ),
                       );
                     } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => DisputeSubmissionScreen(record: r),
-                        ),
-                      );
+                      // Absensi normal: tap = lihat DETAIL (bukan langsung
+                      // form komplain — itu membingungkan). Tombol Sanggah
+                      // tetap tersedia di dalam detail kalau memang perlu.
+                      _showRecordDetail(r, pal);
                     }
                   },
                   child: Container(
@@ -751,6 +749,145 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
         ),
       ],
+    );
+  }
+
+  // ── Detail absensi (bottom sheet) ──
+  // Dibuka saat baris riwayat di-tap: tampilkan rincian hari itu. Sanggah
+  // hanya jadi aksi sekunder di dalam sheet, bukan aksi utama baris.
+  void _showRecordDetail(AttendanceRecord r, AppPalette pal) {
+    final date = DateTime.tryParse(r.date) ?? DateTime.now();
+    final lang = context.read<AppProvider>().language;
+    String fmt(DateTime? t) =>
+        t != null ? DateFormat('HH:mm').format(t) : '--:--';
+    String dur(int? m) => m == null || m <= 0
+        ? '-'
+        : '${m ~/ 60}${context.tr('t_hour')} ${m % 60}${context.tr('t_min')}';
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: pal.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 14, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 18),
+                  decoration: BoxDecoration(
+                    color: zenSlate.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text(
+                DateFormat('EEEE, d MMMM yyyy', lang).format(date),
+                style: GoogleFonts.outfit(
+                  color: pal.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _detailRow(context.tr('check_in'), fmt(r.checkIn?.time), pal),
+              _detailRow(context.tr('check_out'), fmt(r.checkOut?.time), pal),
+              _detailRow(
+                context.tr('recap_workhours'),
+                dur(r.totalWorkMinutes),
+                pal,
+              ),
+              if ((r.lateMinutes ?? 0) > 0)
+                _detailRow(
+                  context.tr('status_late'),
+                  dur(r.lateMinutes),
+                  pal,
+                  valueColor: zenRose,
+                ),
+              _detailRow(
+                context.tr('recap_overtime'),
+                dur(r.overtimeMinutes),
+                pal,
+                valueColor: (r.overtimeMinutes ?? 0) > 0 ? zenEmerald : null,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => DisputeSubmissionScreen(record: r),
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.report_problem_rounded,
+                    size: 18,
+                    color: Color(0xFFE31E24),
+                  ),
+                  label: Text(
+                    context.tr('report_anomaly'),
+                    style: GoogleFonts.plusJakartaSans(
+                      color: const Color(0xFFE31E24),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFE31E24)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(
+    String label,
+    String value,
+    AppPalette pal, {
+    Color? valueColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              color: pal.textSub,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.outfit(
+              color: valueColor ?? pal.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -608,6 +608,39 @@ class _HomeScreenState extends State<HomeScreen> {
   );
 
   Widget _attendanceCta(AppProvider p, GeofenceService geo, bool clockedIn) {
+    // Masuk + keluar sudah beres hari ini → tombol nonaktif (bukan balik
+    // ke "Absen Masuk" lagi — itu membingungkan dan memang diblok server).
+    if (p.hasCompletedToday) {
+      return Container(
+        height: 54,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+        ),
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.check_circle_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                context.tr('attendance_done_today'),
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     final label = clockedIn
         ? context.tr('do_check_out')
         : context.tr('do_check_in');
@@ -1111,17 +1144,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _handleAttendance(AppProvider p, GeofenceService geo) {
     if (_isNavigating) return;
-    // Kalau mau absen PULANG tapi ada lembur disetujui & jam lembur belum
-    // selesai → tahan dulu. Jam pulang efektif = jam shift + durasi lembur.
-    if (p.hasClockedInToday) {
-      final otEnd = p.overtimeCheckoutTime;
-      if (otEnd != null && DateTime.now().isBefore(otEnd)) {
-        _toast(
-          'Belum bisa absen pulang. Jam lembur sampai ${DateFormat('HH:mm').format(otEnd)}.',
-          AppColors.brandRed,
-        );
-        return;
-      }
+    // Sudah masuk + keluar hari ini → siklus absensi selesai, tidak bisa
+    // absen lagi sampai ganti hari. (Lembur TIDAK menahan absen pulang —
+    // durasi lembur dihitung otomatis dari jam checkout aktual.)
+    if (p.hasCompletedToday) {
+      _toast(context.tr('attendance_done_today'), AppColors.green);
+      return;
     }
     if (geo.isInRange || p.canBypassGeofence) {
       setState(() => _isNavigating = true);
@@ -1151,135 +1179,6 @@ class _HomeScreenState extends State<HomeScreen> {
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
-    );
-  }
-
-  void _showSOSConfirm(AppProvider p, GeofenceService geo) {
-    final pal = context.palette;
-    bool dialogLoading = false;
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: pal.card,
-          surfaceTintColor: pal.card,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(26),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.brandRed.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.warning_amber_rounded,
-                  color: AppColors.brandRed,
-                  size: 38,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                context.tr('sos_title'),
-                style: GoogleFonts.plusJakartaSans(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 19,
-                  color: pal.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                context.tr('sos_desc'),
-                textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
-                  color: pal.textSub,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: dialogLoading
-                          ? null
-                          : () => Navigator.pop(ctx),
-                      child: Text(
-                        context.tr('cancel'),
-                        style: GoogleFonts.plusJakartaSans(
-                          color: pal.textSub,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: dialogLoading
-                          ? null
-                          : () async {
-                              final navigator = Navigator.of(ctx);
-                              final sentMsg = context.tr('sos_sent');
-                              setDialogState(() => dialogLoading = true);
-                              try {
-                                if (geo.currentPosition != null) {
-                                  await p.sendSOS(
-                                    geo.currentPosition!.latitude,
-                                    geo.currentPosition!.longitude,
-                                    '${p.hubName} Area',
-                                  );
-                                }
-                                navigator.pop();
-                                _toast(sentMsg, AppColors.brandRed);
-                              } catch (e) {
-                                navigator.pop();
-                                _toast(
-                                  'Gagal mengirim SOS: $e',
-                                  AppColors.brandRed,
-                                );
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.brandRed,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: dialogLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : Text(
-                              context.tr('send'),
-                              style: GoogleFonts.plusJakartaSans(
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
