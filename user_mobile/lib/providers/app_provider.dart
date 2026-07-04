@@ -724,11 +724,14 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     // Ambil jam shift user agar pengingat absensi pakai jam masuk/keluar asli.
     _loadUserShiftTimes();
 
+    // 70 dokumen ≈ 2+ bulan penuh. Sejak cron alfa & auto-row cuti, SETIAP
+    // hari kerja punya dokumen — limit 30 lama memotong data bulan berjalan
+    // dan bikin statistik Home/Statistik tidak akurat.
     _attendanceSub = _db
         .collection('attendance')
         .where('userId', isEqualTo: _currentUser!.uid)
         .orderBy('attendanceDate', descending: true)
-        .limit(30)
+        .limit(70)
         .snapshots()
         .listen((snap) {
           _attendanceRecords = snap.docs
@@ -1157,12 +1160,14 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     notifyListeners();
 
     try {
-      // Fetch limited records to avoid composite index requirement
+      // Fetch limited records to avoid composite index requirement.
+      // 200 ≈ 6 bulan penuh (tiap hari kerja kini punya dokumen berkat
+      // cron alfa + auto-row cuti) — riwayat bulan lama tetap utuh.
       final snap = await _db
           .collection('attendance')
           .where('userId', isEqualTo: _currentUser!.uid)
           .orderBy('attendanceDate', descending: true)
-          .limit(100)
+          .limit(200)
           .get();
 
       _monthlyRecords = snap.docs
