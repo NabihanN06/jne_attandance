@@ -22,3 +22,10 @@ firebase-debug.log
 firebase-debug.*.log
 firestore-debug.log
 ui-debug.log
+
+# File terkait AI/asisten — simpan lokal saja, jangan ke GitHub
+CLAUDE.md
+.mcpignore
+.claude/
+testsprite_tests/
+.mcp.json
