@@ -318,6 +318,10 @@ class AppStrings {
       'punctuality_label': 'Ketepatan Waktu',
       'location_compliance': 'Kepatuhan Lokasi',
       'hour_effectiveness': 'Efektivitas Jam',
+      'weekly_word': 'Mingguan',
+      'monthly_word': 'Bulanan',
+      'alpha_word': 'Alfa',
+      'no_stats_period': 'Belum ada data absensi pada periode ini.',
       // my requests
       'overtime_word': 'Lembur',
       'complaint_word': 'Komplain',
@@ -405,6 +409,9 @@ class AppStrings {
       'admin_hr': 'Admin HR',
       'online_word': 'Online',
       'offline_word': 'Offline',
+      'typing_now': 'sedang mengetik…',
+      'last_seen_prefix': 'Terakhir dilihat',
+      'message_deleted': 'Pesan telah dihapus',
       'start_conversation': 'Mulai Percakapan',
       'start_conversation_sub':
           'Sampaikan pertanyaan, kendala absensi, atau pengajuan langsung ke admin HUB.',
@@ -728,6 +735,10 @@ class AppStrings {
       'punctuality_label': 'Punctuality',
       'location_compliance': 'Location Compliance',
       'hour_effectiveness': 'Hour Effectiveness',
+      'weekly_word': 'Weekly',
+      'monthly_word': 'Monthly',
+      'alpha_word': 'Absent',
+      'no_stats_period': 'No attendance data for this period yet.',
       // my requests
       'overtime_word': 'Overtime',
       'complaint_word': 'Complaint',
@@ -816,6 +827,9 @@ class AppStrings {
       'admin_hr': 'HR Admin',
       'online_word': 'Online',
       'offline_word': 'Offline',
+      'typing_now': 'typing…',
+      'last_seen_prefix': 'Last seen',
+      'message_deleted': 'Message deleted',
       'start_conversation': 'Start a Conversation',
       'start_conversation_sub':
           'Send questions, attendance issues, or requests directly to the HUB admin.',

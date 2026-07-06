@@ -58,9 +58,14 @@ class _HistoryPageState extends State<HistoryPage> {
     final isLoading = provider.isLoadingHistory;
     final isDark = provider.isDarkMode;
 
-    final presentCount = records.where((r) => r.status == 'present').length;
+    // HADIR = semua record dengan check-in (present + late) — konsisten dengan
+    // layar Statistik. Sebelumnya hanya menghitung status 'present' sehingga
+    // hari yang telat "hilang" dari angka HADIR.
+    final presentCount = records.where((r) => r.checkIn != null).length;
     final leaveCount = records.where((r) => r.status == 'leave').length;
-    final lateCount = records.where((r) => r.status == 'late').length;
+    final lateCount = records
+        .where((r) => r.status == 'late' || (r.lateMinutes ?? 0) > 0)
+        .length;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0B1120) : zenOffWhite,
@@ -378,9 +383,12 @@ class _HistoryPageState extends State<HistoryPage> {
     final pal = context.palette;
     final date = DateTime.tryParse(r.date) ?? DateTime.now();
 
-    bool isLate = r.status == 'late';
-    bool isAbsent = r.status == 'absent';
     bool isLeave = r.status == 'leave';
+    bool isAbsent = r.status == 'absent' || (r.checkIn == null && !isLeave);
+    bool isLate =
+        !isLeave &&
+        !isAbsent &&
+        (r.status == 'late' || (r.lateMinutes ?? 0) > 0);
 
     Color statusColor = zenEmerald;
     String statusLabel = context.tr('status_present');

@@ -1684,33 +1684,114 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     };
   }
 
-  Map<String, dynamic> getStatsForMonth(int month, int year) {
-    final monthRecords = _attendanceRecords.where((r) {
+  // ── Statistik dari record absensi ──
+  // Satu sumber kebenaran: dokumen `attendance` (sama dengan Riwayat), BUKAN
+  // campuran attendance + leaves seperti dulu — dua layar itu sempat
+  // menampilkan angka izin yang berbeda. Definisi:
+  //   hadir      = record dengan check-in (present/late)
+  //   izin/sakit = record status 'leave' (auto-row cuti approved)
+  //   telat      = Σ lateMinutes (menit beneran, bukan jumlah record)
+  //   total jam  = Σ totalWorkMinutes; fallback selisih checkIn→checkOut
+  List<AttendanceRecord> _statsRecords = [];
+  bool _isLoadingStats = false;
+  bool get isLoadingStats => _isLoadingStats;
+
+  /// Cache record untuk layar Statistik. Listener utama cuma 70 dokumen —
+  /// cukup utk bulan berjalan, tapi bulan lama kepotong. Di sini ambil 400
+  /// (≈ 1 tahun kerja) sekali, lalu filter per periode di client.
+  Future<void> fetchStatsRecords({bool force = false}) async {
+    if (_currentUser == null) return;
+    if (_statsRecords.isNotEmpty && !force) return;
+    _isLoadingStats = true;
+    notifyListeners();
+    try {
+      final snap = await _db
+          .collection('attendance')
+          .where('userId', isEqualTo: _currentUser!.uid)
+          .orderBy('attendanceDate', descending: true)
+          .limit(400)
+          .get();
+      _statsRecords = snap.docs.map(AttendanceRecord.fromFirestore).toList();
+    } catch (e) {
+      debugPrint('Error fetching stats records: $e');
+    } finally {
+      _isLoadingStats = false;
+      notifyListeners();
+    }
+  }
+
+  /// Record dalam rentang [start]..[end] (inklusif, berbasis tanggal).
+  /// Pakai cache statistik bila sudah ada; kalau belum, pakai listener utama.
+  List<AttendanceRecord> recordsInRange(DateTime start, DateTime end) {
+    final source = _statsRecords.isNotEmpty
+        ? _statsRecords
+        : _attendanceRecords;
+    final s = DateTime(start.year, start.month, start.day);
+    final e = DateTime(end.year, end.month, end.day, 23, 59, 59);
+    return source.where((r) {
       final d = DateTime.tryParse(r.date);
-      return d?.month == month && d?.year == year;
+      return d != null && !d.isBefore(s) && !d.isAfter(e);
     }).toList();
+  }
 
-    final approvedLeaves = _leaveRequests
-        .where(
-          (r) =>
-              r.startDate.month == month &&
-              r.startDate.year == year &&
-              r.status == 'approved',
-        )
-        .toList();
+  int _workedMinutes(AttendanceRecord r) {
+    if ((r.totalWorkMinutes ?? 0) > 0) return r.totalWorkMinutes!;
+    final tIn = r.checkIn?.time;
+    final tOut = r.checkOut?.time;
+    if (tIn == null || tOut == null) return 0;
+    var diff = tOut.difference(tIn).inMinutes;
+    if (diff < 0) diff += 24 * 60; // shift malam lewat tengah malam
+    return diff;
+  }
 
-    int present = monthRecords.length;
-    int leaves = approvedLeaves.fold<int>(0, (acc, r) => acc + r.totalDays);
-    int late = monthRecords.where((r) => r.status == 'late').length;
+  Map<String, dynamic> getStatsForRange(DateTime start, DateTime end) {
+    final records = recordsInRange(start, end);
+    final presentRecords = records.where((r) => r.checkIn != null).toList();
 
-    double punctuality = present > 0 ? ((present - late) / present) : 1.0;
+    final present = presentRecords.length;
+    final leaves = records.where((r) => r.status == 'leave').length;
+    final absent = records.where((r) => r.status == 'absent').length;
+    final lateCount = presentRecords
+        .where((r) => r.status == 'late' || (r.lateMinutes ?? 0) > 0)
+        .length;
+    final lateMinutes = presentRecords.fold<int>(
+      0,
+      (acc, r) => acc + (r.lateMinutes ?? 0),
+    );
+    final workMinutes = presentRecords.fold<int>(
+      0,
+      (acc, r) => acc + _workedMinutes(r),
+    );
+    final overtimeMinutes = presentRecords.fold<int>(
+      0,
+      (acc, r) => acc + (r.overtimeMinutes ?? 0),
+    );
 
     return {
-      'present': present.toString().padLeft(2, '0'),
-      'leaves': leaves.toString().padLeft(2, '0'),
-      'late': late.toString().padLeft(2, '0'),
-      'hours': (present * 8).toString(),
-      'punctuality': punctuality,
+      'records': records,
+      'present': present,
+      'leaves': leaves,
+      'absent': absent,
+      'lateCount': lateCount,
+      'lateMinutes': lateMinutes,
+      'workMinutes': workMinutes,
+      'overtimeMinutes': overtimeMinutes,
+      'punctuality': present > 0 ? (present - lateCount) / present : null,
+    };
+  }
+
+  /// Kompatibel dengan pemakai lama (Profile): kunci & format string sama,
+  /// tapi angkanya kini dihitung dari data absensi asli.
+  Map<String, dynamic> getStatsForMonth(int month, int year) {
+    final start = DateTime(year, month, 1);
+    final end = DateTime(year, month + 1, 0);
+    final s = getStatsForRange(start, end);
+    return {
+      'present': (s['present'] as int).toString().padLeft(2, '0'),
+      'leaves': (s['leaves'] as int).toString().padLeft(2, '0'),
+      'late': (s['lateMinutes'] as int).toString().padLeft(2, '0'),
+      'hours': ((s['workMinutes'] as int) ~/ 60).toString(),
+      'punctuality': (s['punctuality'] as double?) ?? 1.0,
     };
   }
 
@@ -1862,20 +1943,24 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   }
 
   // ── Admin Retrieval for Chat ──
-  Future<UserModel?> getFirstAdmin() async {
+  /// Semua akun admin/superadmin/moderator — dipakai chat untuk header +
+  /// status Online ("online" bila SALAH SATU admin online, bukan cuma satu).
+  Future<List<UserModel>> getAdmins() async {
     try {
       final snap = await _db
           .collection('users')
           .where('role', whereIn: ['admin', 'superadmin', 'moderator'])
-          .limit(1)
           .get();
-      if (snap.docs.isNotEmpty) {
-        return UserModel.fromFirestore(snap.docs.first);
-      }
+      return snap.docs.map(UserModel.fromFirestore).toList();
     } catch (e) {
-      debugPrint('Error finding admin: $e');
+      debugPrint('Error finding admins: $e');
+      return [];
     }
-    return null;
+  }
+
+  Future<UserModel?> getFirstAdmin() async {
+    final admins = await getAdmins();
+    return admins.isEmpty ? null : admins.first;
   }
 
   String _mapMobileStatusToAdmin(String status) {

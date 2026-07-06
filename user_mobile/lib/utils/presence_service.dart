@@ -3,6 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
+/// Ringkasan presence untuk header chat: online sekarang + kapan terakhir
+/// terlihat (dari heartbeat terbaru di antara akun admin).
+class PresenceInfo {
+  final bool online;
+  final DateTime? lastSeen;
+  const PresenceInfo({required this.online, required this.lastSeen});
+}
+
 /// Firestore-based Presence System
 /// - Sends heartbeat every 30 seconds
 /// - Updates user_presence collection in real-time
@@ -94,6 +102,52 @@ class PresenceService {
       }
       // Belum ada lastSeen valid → anggap online apa adanya.
       return true;
+    });
+  }
+
+  /// Online bila SALAH SATU dari [userIds] online (heartbeat masih segar).
+  /// Dipakai chat karyawan: admin bisa lebih dari satu akun.
+  static Stream<bool> subscribeAnyOnline(Set<String> userIds) {
+    return _db
+        .collection('user_presence')
+        .where('isOnline', isEqualTo: true)
+        .snapshots()
+        .map((snap) {
+          for (final d in snap.docs) {
+            if (!userIds.contains(d.id)) continue;
+            final ls = d.data()['lastSeen'];
+            if (ls is! Timestamp ||
+                DateTime.now().difference(ls.toDate()) < staleAfter) {
+              return true;
+            }
+          }
+          return false;
+        });
+  }
+
+  /// Status presence (online + kapan terakhir terlihat) untuk sekumpulan
+  /// admin. Dipakai header chat gaya WhatsApp: "Online" / "Terakhir dilihat …".
+  static Stream<PresenceInfo> subscribePresenceInfo(Set<String> userIds) {
+    if (userIds.isEmpty) {
+      return Stream.value(const PresenceInfo(online: false, lastSeen: null));
+    }
+    return _db.collection('user_presence').snapshots().map((snap) {
+      bool online = false;
+      DateTime? lastSeen;
+      for (final d in snap.docs) {
+        if (!userIds.contains(d.id)) continue;
+        final data = d.data();
+        final ls = data['lastSeen'];
+        final ts = ls is Timestamp ? ls.toDate() : null;
+        if (ts != null && (lastSeen == null || ts.isAfter(lastSeen))) {
+          lastSeen = ts;
+        }
+        if (data['isOnline'] == true &&
+            (ts == null || DateTime.now().difference(ts) < staleAfter)) {
+          online = true;
+        }
+      }
+      return PresenceInfo(online: online, lastSeen: lastSeen);
     });
   }
 
