@@ -1323,10 +1323,18 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           debugPrint('Audit log failed: $e');
         }
 
-        // Mark as synced immediately since we wrote directly
-        await _db.collection('attendance').doc(docId).update({
-          'syncStatus': 'synced',
-        });
+        // Tandai synced (best-effort, NON-BLOCKING). Dokumen absensi SUDAH
+        // tersimpan lewat transaksi di atas. Kalau langkah kosmetik ini gagal
+        // (mis. jaringan sekejap putus), JANGAN lempar error — kalau tidak,
+        // check-in yang sebenarnya sukses dilaporkan "gagal menyimpan", lalu
+        // user retry dan malah kena "sudah absen masuk hari ini".
+        try {
+          await _db.collection('attendance').doc(docId).update({
+            'syncStatus': 'synced',
+          });
+        } catch (e) {
+          debugPrint('Mark synced failed (non-fatal): $e');
+        }
       } else {
         if (!_allowOfflineAttendance) {
           throw Exception(
@@ -1948,9 +1956,17 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
       final office = data['office'];
       if (office is Map<String, dynamic>) {
-        _officeLat = (office['latitude'] ?? _officeLat).toDouble();
-        _officeLng = (office['longitude'] ?? _officeLng).toDouble();
-        _officeRadius = (office['radiusMeters'] ?? _officeRadius).toDouble();
+        // Validasi: tolak nilai tak masuk akal (0 / luar Indonesia / radius
+        // non-positif / bertipe String) supaya typo di panel admin tidak
+        // membuat SEMUA karyawan gagal "di luar radius kantor".
+        final lat = _asDouble(office['latitude']);
+        final lng = _asDouble(office['longitude']);
+        final rad = _asDouble(office['radiusMeters']);
+        if (lat != null && lat != 0 && lat >= -11 && lat <= 6) _officeLat = lat;
+        if (lng != null && lng != 0 && lng >= 95 && lng <= 141) {
+          _officeLng = lng;
+        }
+        if (rad != null && rad > 0) _officeRadius = rad < 20 ? 20 : rad;
         _hubName = (office['name'] as String?) ?? _hubName;
         _stationId = (office['stationId'] as String?) ?? _stationId;
         // Jam masuk/keluar dari admin (kalau tersedia) untuk pengingat absensi.
@@ -1981,6 +1997,13 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         checkOut: officeEndTime,
       );
     });
+  }
+
+  /// Konversi nilai Firestore (num / String) ke double; null jika tak valid.
+  double? _asDouble(dynamic v) {
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v);
+    return null;
   }
 
   /// Parse "HH:mm" → TimeOfDay; null jika format tidak valid.

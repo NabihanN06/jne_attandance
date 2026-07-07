@@ -11,23 +11,36 @@ class GeofenceService extends ChangeNotifier {
   double _distanceFromOffice = 0.0;
   bool _isInRange = false;
   String _errorMessage = '';
+  bool _isLocating = false;
 
   Position? get currentPosition => _currentPosition;
   double get distanceFromOffice => _distanceFromOffice;
   bool get isInRange => _isInRange;
   String get errorMessage => _errorMessage;
   bool get isLocationMocked => _currentPosition?.isMocked ?? false;
+  bool get isLocating => _isLocating;
 
   double get officeLat => _officeLat;
   double get officeLng => _officeLng;
   double get radiusInMeters => _radiusInMeters;
 
+  /// Terapkan konfigurasi kantor dari admin. Tolak nilai tak masuk akal
+  /// (0/luar Indonesia/radius non-positif) supaya typo di panel admin tidak
+  /// membuat SEMUA karyawan "di luar radius kantor".
   void updateOfficeConfig(double lat, double lng, double radius) {
-    _officeLat = lat;
-    _officeLng = lng;
-    _radiusInMeters = radius;
+    if (_isValidLat(lat) && _isValidLng(lng)) {
+      _officeLat = lat;
+      _officeLng = lng;
+    }
+    if (radius.isFinite && radius > 0) {
+      _radiusInMeters = radius < 20 ? 20 : radius;
+    }
     _calculateDistance();
   }
+
+  static bool _isValidLat(double v) => v.isFinite && v != 0 && v >= -11 && v <= 6;
+  static bool _isValidLng(double v) =>
+      v.isFinite && v != 0 && v >= 95 && v <= 141;
 
   GeofenceService() {
     _init();
@@ -60,6 +73,11 @@ class GeofenceService extends ChangeNotifier {
       return;
     }
 
+    // Seed satu fix segera. getPositionStream(distanceFilter) tidak menjamin
+    // emisi awal saat karyawan diam di meja → tanpa ini _currentPosition bisa
+    // null lama ("menunggu GPS") atau memakai fix kasar yang tak pernah
+    // diperbarui. Ambil sekali secara eksplisit (akurasi tinggi).
+    await refresh();
     _startTracking();
   }
 
@@ -73,6 +91,33 @@ class GeofenceService extends ChangeNotifier {
       _currentPosition = position;
       _calculateDistance();
     });
+  }
+
+  /// Ambil satu fix akurasi tinggi secara eksplisit. Dipanggil saat layar
+  /// absen dibuka / tepat sebelum verifikasi geofence supaya keputusan pakai
+  /// lokasi terbaik, bukan fix kasar (network/cell) yang menyangkut karena
+  /// distanceFilter memblok pembaruan selama karyawan diam.
+  Future<Position?> refresh() async {
+    if (_isLocating) return _currentPosition;
+    _isLocating = true;
+    notifyListeners();
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+      _currentPosition = pos;
+      _errorMessage = '';
+      _calculateDistance();
+      return pos;
+    } catch (e) {
+      // Timeout/izin dicabut di tengah jalan — pertahankan posisi terakhir.
+      debugPrint('Geofence refresh failed: $e');
+      return _currentPosition;
+    } finally {
+      _isLocating = false;
+      notifyListeners();
+    }
   }
 
   void _calculateDistance() {

@@ -112,6 +112,15 @@ class _AttendancePageState extends State<AttendancePage>
     final app = Provider.of<AppProvider>(context, listen: false);
     final isRemoteAllowed = app.canBypassGeofence;
 
+    // Ambil fix akurasi tinggi terbaru dulu kalau belum ada posisi atau posisi
+    // saat ini bilang di luar radius — sering kali itu fix kasar (network/cell)
+    // yang menyangkut karena distanceFilter. Refresh mencegah penolakan palsu.
+    if (geo.currentPosition == null || !geo.isInRange) {
+      _showFeedback(context.tr('waiting_gps'), zenNavy);
+      await geo.refresh();
+      if (!mounted) return;
+    }
+
     if (geo.currentPosition == null) {
       _showFeedback(context.tr('waiting_gps'), zenNavy);
       return;
@@ -211,15 +220,17 @@ class _AttendancePageState extends State<AttendancePage>
       }
     } catch (e) {
       _flashError();
-      final raw = e.toString();
-      final msg = raw.contains('sudah melakukan absensi')
+      final clean = e.toString().replaceFirst('Exception: ', '').trim();
+      final lower = clean.toLowerCase();
+      final msg = clean.contains('sudah melakukan absensi')
           ? alreadyCheckedIn
-          : raw.contains('tidak ditemukan')
+          : clean.contains('tidak ditemukan')
           ? noCheckinYet
-          : raw.toLowerCase().contains('network') ||
-                raw.toLowerCase().contains('unavailable')
+          : lower.contains('network') || lower.contains('unavailable')
           ? connIssue
-          : saveFailed;
+          // Alasan lain diteruskan apa adanya (mis. "periksa koneksi internet",
+          // "offline dinonaktifkan admin") — jangan tutupi dgn pesan generik.
+          : (clean.isEmpty ? saveFailed : clean);
       _showFeedback(msg, zenRose);
     } finally {
       if (mounted) setState(() => _isCapturing = false);
