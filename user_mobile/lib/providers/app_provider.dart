@@ -64,6 +64,16 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
   void _setDataError(String source, Object e) {
     debugPrint('$source listener error: $e');
+    // permission-denied dari listener realtime hampir selalu BENIGN: token auth
+    // sekejap null saat refresh / sign-out sebelum listener sempat unsubscribe
+    // (persis alasan wrapper listen() di admin menelannya). Menampilkannya jadi
+    // banner sticky bikin user panik ("Data cuti — permission-denied") padahal
+    // data tetap termuat dari cache & listener pulih sendiri. Telan; error lain
+    // (mis. failed-precondition/index yang butuh aksi) tetap ditampilkan.
+    final low = e.toString().toLowerCase();
+    if (low.contains('permission-denied') || low.contains('permission_denied')) {
+      return;
+    }
     _dataError = '$source — $e';
     _scheduleNotify();
   }
