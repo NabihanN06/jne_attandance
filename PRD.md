@@ -1,4 +1,5 @@
 # Product Requirements Document (PRD)
+
 ## JNE Attendance System
 
 **Versi:** 1.0  
@@ -21,14 +22,14 @@ Sistem ini terdiri dari dua produk yang saling terhubung:
 
 ### 1.2 Masalah yang Diselesaikan
 
-| Masalah Lama | Solusi Sistem Ini |
-|---|---|
-| Absensi manual rawan manipulasi (titip absen) | Face recognition on-device + geofence GPS |
-| HR tidak tahu kondisi karyawan real-time | Dashboard live + heartbeat monitoring |
-| Pengajuan cuti lewat kertas/grup WA | Fitur leave management digital dengan approval workflow |
-| Tidak ada riwayat kehadiran yang terstruktur | Semua record tersimpan Firestore dengan audit trail |
-| Karyawan tidak bisa hubungi admin langsung | Chat 2-way + dispute resolution system |
-| Tidak ada sistem darurat karyawan | SOS alert dengan lokasi real-time ke admin |
+| Masalah Lama                                  | Solusi Sistem Ini                                       |
+| --------------------------------------------- | ------------------------------------------------------- |
+| Absensi manual rawan manipulasi (titip absen) | Face recognition on-device + geofence GPS               |
+| HR tidak tahu kondisi karyawan real-time      | Dashboard live + heartbeat monitoring                   |
+| Pengajuan cuti lewat kertas/grup WA           | Fitur leave management digital dengan approval workflow |
+| Tidak ada riwayat kehadiran yang terstruktur  | Semua record tersimpan Firestore dengan audit trail     |
+| Karyawan tidak bisa hubungi admin langsung    | Chat 2-way + dispute resolution system                  |
+| Tidak ada sistem darurat karyawan             | SOS alert dengan lokasi real-time ke admin              |
 
 ---
 
@@ -37,6 +38,7 @@ Sistem ini terdiri dari dua produk yang saling terhubung:
 ### 2.1 Primary Users
 
 #### A. Karyawan (Mobile App User)
+
 - **Profil:** Karyawan operasional JNE, dari kurir hingga staf gudang dan kantor
 - **Usia:** 20–45 tahun
 - **Device:** Android (Android 8.0+)
@@ -48,6 +50,7 @@ Sistem ini terdiri dari dua produk yang saling terhubung:
   - Komunikasi langsung dengan atasan/HR
 
 #### B. Admin / HR (Admin Panel User)
+
 - **Profil:** Tim HR, supervisor, kepala divisi JNE Mataram
 - **Device:** Laptop/Desktop (Chrome, Firefox)
 - **Literasi Digital:** Menengah–tinggi, familiar dengan spreadsheet dan dashboard
@@ -83,13 +86,13 @@ Sistem ini terdiri dari dua produk yang saling terhubung:
 
 ### 3.3 Success Metrics
 
-| Metrik | Target |
-|---|---|
-| Tingkat kehadiran terdokumentasi | 100% dari total karyawan aktif |
-| Waktu rata-rata absen (tap to done) | < 30 detik |
-| Dispute yang terselesaikan | ≥ 95% dalam 48 jam |
-| Karyawan yang sudah enroll wajah | ≥ 98% dari karyawan aktif |
-| Rating resolusi dispute oleh user | ≥ 4/5 bintang rata-rata |
+| Metrik                              | Target                         |
+| ----------------------------------- | ------------------------------ |
+| Tingkat kehadiran terdokumentasi    | 100% dari total karyawan aktif |
+| Waktu rata-rata absen (tap to done) | < 30 detik                     |
+| Dispute yang terselesaikan          | ≥ 95% dalam 48 jam             |
+| Karyawan yang sudah enroll wajah    | ≥ 98% dari karyawan aktif      |
+| Rating resolusi dispute oleh user   | ≥ 4/5 bintang rata-rata        |
 
 ---
 
@@ -98,6 +101,7 @@ Sistem ini terdiri dari dua produk yang saling terhubung:
 ### 4.1 Mobile App — Karyawan
 
 #### Modul Absensi
+
 - **Check-in / Check-out** dengan:
   - Verifikasi wajah via ML Kit Face Detection (on-device, no server call)
   - Validasi GPS geofence (radius configurable dari admin)
@@ -107,12 +111,14 @@ Sistem ini terdiri dari dua produk yang saling terhubung:
 - **Riwayat kehadiran** — List bulanan dengan durasi kerja, overtime, dan status
 
 #### Modul Cuti & Lembur
+
 - **Pengajuan cuti** — Form dengan tipe cuti (tahunan, sakit, pribadi, darurat, lain-lain), tanggal, dan alasan
 - **Upload dokumen** — Lampiran bukti sakit/surat dari Firebase Storage
 - **Tracking status** — Karyawan bisa lihat status real-time (pending / approved / rejected)
 - **Pengajuan lembur** — Input jam dan alasan, pending approval admin
 
 #### Modul Komunikasi
+
 - **Chat 2-way** — Direct messaging dengan admin/HR (bukan antar sesama karyawan)
 - **Dispute / Komplain** — Thread percakapan multi-turn dengan admin untuk permasalahan absensi
   - Karyawan bisa balas, admin bisa reply, status: pending → in_review → resolved → closed
@@ -120,12 +126,14 @@ Sistem ini terdiri dari dua produk yang saling terhubung:
 - **Notifikasi** — Push notification untuk approval cuti, balasan chat, pengumuman
 
 #### Modul Darurat & Informasi
+
 - **SOS Alert** — Kirim sinyal darurat + lokasi GPS ke admin dalam 1 klik
 - **Broadcast** — Pengumuman resmi dari manajemen (read-only)
 - **Kalender** — Jadwal event, hari libur, meeting perusahaan
 - **FAQ** — Self-service help untuk pertanyaan umum, reduce ticket
 
 #### Modul Profil & Pengaturan
+
 - **Profil karyawan** — Foto, data diri, departemen, posisi, NIK
 - **Ganti password** — Mandatory saat login pertama (first-login flow)
 - **Dark/Light mode** — Tema persisted ke SharedPreferences
@@ -135,6 +143,7 @@ Sistem ini terdiri dari dua produk yang saling terhubung:
 ### 4.2 Admin Panel — HR & Manajemen
 
 #### Dashboard
+
 - **Live attendance board** — Kartu real-time tiap karyawan: hadir / belum absen / terlambat / cuti
 - **Online presence indicator** — Dot hijau/abu berdasarkan heartbeat 30 detik dari mobile
 - **SOS Alert popup** — Muncul otomatis saat ada karyawan kirim darurat
@@ -142,37 +151,44 @@ Sistem ini terdiri dari dua produk yang saling terhubung:
 - **Chart kehadiran** — Grafik tren mingguan/bulanan (recharts)
 
 #### Manajemen Karyawan
+
 - **Tambah karyawan** — Form lengkap + generate akun Firebase Auth otomatis + kirim email onboarding
 - **Edit profil karyawan** — Data, departemen, shift, kontrak
 - **Face enrollment** — Admin bisa trigger ulang enroll wajah
 - **Status aktif/nonaktif** — Soft delete karyawan tanpa hapus data
 
 #### Manajemen Kehadiran
+
 - **Tabel absensi** — Filter by date, departemen, status; lihat foto check-in/out
 - **Edit request approval** — Approve/reject koreksi absensi yang diajukan karyawan
 - **Export laporan** — Download rekap kehadiran ke format yang bisa diproses
 
 #### Manajemen Cuti & Lembur
+
 - **List pengajuan** — Semua cuti/lembur pending dengan detail
 - **Approve / Reject** — Satu klik dengan alasan penolakan
 - **Saldo cuti** — Kelola saldo cuti tahunan per karyawan
 
 #### Manajemen Shift & Jam Kerja
+
 - **Definisi shift** — Nama shift, jam masuk, jam keluar, toleransi terlambat, hari kerja
 - **Jam kerja custom** — Konfigurasi jadwal non-standar per divisi/karyawan
 
 #### Komunikasi Admin
+
 - **Chat dengan karyawan** — Inbox semua percakapan, kirim pesan
 - **Broadcast** — Kirim pengumuman ke semua atau departemen tertentu
 - **Dispute management** — Balas komplain karyawan, tandai resolved
 
 #### Pengaturan Sistem
+
 - **Konfigurasi kantor** — Koordinat GPS dan radius geofence (meter)
 - **Konfigurasi absensi** — Maks percobaan face, threshold similarity
 - **Konfigurasi notifikasi** — Toggle push notification per event
 - **Maintenance** — Tools seed data, reset cache
 
 #### Laporan & Analitik
+
 - **Kalender organisasi** — Kelola event, meeting, hari libur
 - **Audit log** — Riwayat semua aksi admin (siapa ubah apa kapan)
 - **Login issues** — Monitor laporan masalah login karyawan
@@ -338,30 +354,30 @@ Light mode:
 
 ### 7.2 Koleksi Utama (21 Koleksi)
 
-| Koleksi | Fungsi | Doc ID Convention |
-|---|---|---|
-| `users` | Profil karyawan & admin | Firebase Auth UID |
-| `attendance` | Record absensi harian | `{userId}_{YYYY-MM-DD}` |
-| `leaves` | Pengajuan cuti | Auto ID |
-| `overtime` | Pengajuan lembur | Auto ID |
-| `shifts` / `jamKerja` | Definisi jam kerja | Auto ID |
-| `departments` | Definisi departemen | Auto ID |
-| `messages` | Chat flat admin↔karyawan | Auto ID |
-| `disputes` | Komplain karyawan | Auto ID |
-| `disputes/{id}/messages` | Thread balasan dispute | Auto ID |
-| `sos_alerts` | Sinyal darurat + lokasi | Auto ID |
-| `broadcasts` | Pengumuman global | Auto ID |
-| `events` / `calendarEvents` | Event kalender | Auto ID |
-| `edit_requests` | Koreksi absensi | Auto ID |
-| `adminNotifications` | Notif untuk admin dashboard | Auto ID |
-| `userNotifications` | Notif personal karyawan | Auto ID |
-| `settings/system` | Config sistem (single doc) | `system` |
-| `user_heartbeats` | Status online mobile | userId |
-| `fcm_tokens` | Push notification tokens | Token string |
-| `audit_log` | Jejak aksi admin | Auto ID |
-| `login_issues` | Laporan masalah login | Auto ID |
-| `pending_sync` | Antrian offline | Auto ID |
-| `leave_balances` | Saldo cuti per user | userId |
+| Koleksi                     | Fungsi                      | Doc ID Convention       |
+| --------------------------- | --------------------------- | ----------------------- |
+| `users`                     | Profil karyawan & admin     | Firebase Auth UID       |
+| `attendance`                | Record absensi harian       | `{userId}_{YYYY-MM-DD}` |
+| `leaves`                    | Pengajuan cuti              | Auto ID                 |
+| `overtime`                  | Pengajuan lembur            | Auto ID                 |
+| `shifts` / `jamKerja`       | Definisi jam kerja          | Auto ID                 |
+| `departments`               | Definisi departemen         | Auto ID                 |
+| `messages`                  | Chat flat admin↔karyawan    | Auto ID                 |
+| `disputes`                  | Komplain karyawan           | Auto ID                 |
+| `disputes/{id}/messages`    | Thread balasan dispute      | Auto ID                 |
+| `sos_alerts`                | Sinyal darurat + lokasi     | Auto ID                 |
+| `broadcasts`                | Pengumuman global           | Auto ID                 |
+| `events` / `calendarEvents` | Event kalender              | Auto ID                 |
+| `edit_requests`             | Koreksi absensi             | Auto ID                 |
+| `adminNotifications`        | Notif untuk admin dashboard | Auto ID                 |
+| `userNotifications`         | Notif personal karyawan     | Auto ID                 |
+| `settings/system`           | Config sistem (single doc)  | `system`                |
+| `user_heartbeats`           | Status online mobile        | userId                  |
+| `fcm_tokens`                | Push notification tokens    | Token string            |
+| `audit_log`                 | Jejak aksi admin            | Auto ID                 |
+| `login_issues`              | Laporan masalah login       | Auto ID                 |
+| `pending_sync`              | Antrian offline             | Auto ID                 |
+| `leave_balances`            | Saldo cuti per user         | userId                  |
 
 ### 7.3 Relasi Kunci
 
@@ -397,57 +413,57 @@ shifts / jamKerja
 
 ### 8.1 Mobile App
 
-| Layer | Teknologi |
-|---|---|
-| Framework | Flutter SDK ^3.10.4 (Dart) |
-| State Management | Provider pattern (`AppProvider`, `ChatProvider`) |
-| Backend SDK | Firebase Core, Auth, Firestore, Storage, Messaging, Performance |
-| Face Detection | `google_mlkit_face_detection` (on-device) |
-| Geolocation | `geolocator` + `google_maps_flutter` |
-| Offline Storage | `sqflite` (SQLite queue) |
-| Preferences | `shared_preferences` |
-| UI Extras | `google_fonts`, `animate_do`, `percent_indicator`, `cached_network_image` |
-| Utilities | `connectivity_plus`, `permission_handler`, `flutter_local_notifications` |
+| Layer            | Teknologi                                                                 |
+| ---------------- | ------------------------------------------------------------------------- |
+| Framework        | Flutter SDK ^3.10.4 (Dart)                                                |
+| State Management | Provider pattern (`AppProvider`, `ChatProvider`)                          |
+| Backend SDK      | Firebase Core, Auth, Firestore, Storage, Messaging, Performance           |
+| Face Detection   | `google_mlkit_face_detection` (on-device)                                 |
+| Geolocation      | `geolocator` + `google_maps_flutter`                                      |
+| Offline Storage  | `sqflite` (SQLite queue)                                                  |
+| Preferences      | `shared_preferences`                                                      |
+| UI Extras        | `google_fonts`, `animate_do`, `percent_indicator`, `cached_network_image` |
+| Utilities        | `connectivity_plus`, `permission_handler`, `flutter_local_notifications`  |
 
 ### 8.2 Admin Panel
 
-| Layer | Teknologi |
-|---|---|
-| Framework | Next.js 16.1.6 (App Router) |
-| UI Library | React 19.2.3 + TypeScript 5 |
-| Styling | Tailwind CSS v4.2 |
-| Animation | Framer Motion 12, anime.js 4 |
-| Charts | recharts |
-| Icons | lucide-react |
-| Notifications | sonner (toast) |
-| Firebase Client | firebase 12.9 |
-| Firebase Server | firebase-admin 12 (API routes) |
-| Font | Plus Jakarta Sans (Google Fonts) |
+| Layer           | Teknologi                        |
+| --------------- | -------------------------------- |
+| Framework       | Next.js 16.1.6 (App Router)      |
+| UI Library      | React 19.2.3 + TypeScript 5      |
+| Styling         | Tailwind CSS v4.2                |
+| Animation       | Framer Motion 12, anime.js 4     |
+| Charts          | recharts                         |
+| Icons           | lucide-react                     |
+| Notifications   | sonner (toast)                   |
+| Firebase Client | firebase 12.9                    |
+| Firebase Server | firebase-admin 12 (API routes)   |
+| Font            | Plus Jakarta Sans (Google Fonts) |
 
 ### 8.3 Backend
 
-| Layer | Teknologi |
-|---|---|
-| Database | Cloud Firestore (NoSQL) |
-| Auth | Firebase Authentication (email + password) |
-| Storage | Firebase Cloud Storage (foto wajah, dokumen) |
-| Push Notification | Firebase Cloud Messaging (FCM) |
-| Server Functions | Cloud Functions v1 (Node.js / TypeScript) |
-| Server API | Next.js API Routes (admin-only, verified via cookie) |
-| Region | `asia-southeast2` (Jakarta) |
+| Layer             | Teknologi                                            |
+| ----------------- | ---------------------------------------------------- |
+| Database          | Cloud Firestore (NoSQL)                              |
+| Auth              | Firebase Authentication (email + password)           |
+| Storage           | Firebase Cloud Storage (foto wajah, dokumen)         |
+| Push Notification | Firebase Cloud Messaging (FCM)                       |
+| Server Functions  | Cloud Functions v1 (Node.js / TypeScript)            |
+| Server API        | Next.js API Routes (admin-only, verified via cookie) |
+| Region            | `asia-southeast2` (Jakarta)                          |
 
 ### 8.4 Cloud Functions (8 Functions)
 
-| Function | Trigger | Fungsi |
-|---|---|---|
-| `onEmployeeCreated` | Firestore users onCreate | Buat Auth account + notif admin |
-| `sendOnboardingEmail` | Firestore users onCreate | Kirim email kredensial + link APK |
-| `onLeaveStatusUpdate` | Firestore leaves onUpdate | FCM push approval/rejection ke karyawan |
-| `onAttendanceCreated` | Firestore attendance onCreate | Processing & logging |
-| `onUserProfileUpdated` | Firestore users onUpdate | Sync profil |
-| `onFaceEnrolled` | Firestore users onUpdate | Notif admin face enrollment selesai |
-| `onAttendanceFailed` | HTTPS Callable | Notif admin gagal face recognition 3x |
-| `scheduledOvertimeCalc` | PubSub 23:00 WIB daily | Kalkulasi lembur semua karyawan |
+| Function                | Trigger                       | Fungsi                                  |
+| ----------------------- | ----------------------------- | --------------------------------------- |
+| `onEmployeeCreated`     | Firestore users onCreate      | Buat Auth account + notif admin         |
+| `sendOnboardingEmail`   | Firestore users onCreate      | Kirim email kredensial + link APK       |
+| `onLeaveStatusUpdate`   | Firestore leaves onUpdate     | FCM push approval/rejection ke karyawan |
+| `onAttendanceCreated`   | Firestore attendance onCreate | Processing & logging                    |
+| `onUserProfileUpdated`  | Firestore users onUpdate      | Sync profil                             |
+| `onFaceEnrolled`        | Firestore users onUpdate      | Notif admin face enrollment selesai     |
+| `onAttendanceFailed`    | HTTPS Callable                | Notif admin gagal face recognition 3x   |
+| `scheduledOvertimeCalc` | PubSub 23:00 WIB daily        | Kalkulasi lembur semua karyawan         |
 
 ---
 
@@ -504,14 +520,14 @@ shifts / jamKerja
 
 ### 10.4 Performance Targets
 
-| Metric | Target |
-|---|---|
-| Admin dashboard initial load | < 3 detik (cold) |
-| Firestore listener update latency | < 500ms |
+| Metric                                        | Target                  |
+| --------------------------------------------- | ----------------------- |
+| Admin dashboard initial load                  | < 3 detik (cold)        |
+| Firestore listener update latency             | < 500ms                 |
 | Mobile check-in process (GPS + face + upload) | < 15 detik (online, 4G) |
-| Mobile check-in process (offline mode) | < 5 detik |
-| Cloud Function cold start | < 3 detik |
-| FCM delivery latency | < 10 detik |
+| Mobile check-in process (offline mode)        | < 5 detik               |
+| Cloud Function cold start                     | < 3 detik               |
+| FCM delivery latency                          | < 10 detik              |
 
 ---
 
@@ -520,6 +536,7 @@ shifts / jamKerja
 ### 11.1 Dalam Scope (In Scope)
 
 **Mobile:**
+
 - Autentikasi karyawan (email + password, first-login mandatory change)
 - Face enrollment + face recognition absensi
 - GPS geofence validation absensi
@@ -540,6 +557,7 @@ shifts / jamKerja
 - Laporan masalah login (unauthenticated)
 
 **Admin Panel:**
+
 - Login admin + session management
 - Dashboard live kehadiran
 - Presence monitoring real-time
@@ -575,14 +593,14 @@ shifts / jamKerja
 
 ### 11.3 Risiko & Mitigasi
 
-| Risiko | Dampak | Mitigasi |
-|---|---|---|
-| Karyawan tidak punya kamera bagus | Face detection gagal | Konfigurasi threshold yang toleran, admin bisa override manual |
-| Koneksi internet buruk di lapangan | Absensi tidak tersimpan | Offline mode SQLite + auto-sync |
-| Token FCM expired | Notifikasi tidak terkirim | Cloud Function auto-cleanup token invalid |
-| GPS spoofing | Absensi dari luar kantor | Kombinasi dengan face recognition — sulit spoof keduanya |
-| Data Firestore tak sinkron (race condition) | Record dobel/hilang | Firestore transaction + docId deterministic `{userId}_{date}` |
-| Karyawan lupa password pertama | Tidak bisa login | Fitur login_issues tanpa auth + kontak admin |
+| Risiko                                      | Dampak                    | Mitigasi                                                       |
+| ------------------------------------------- | ------------------------- | -------------------------------------------------------------- |
+| Karyawan tidak punya kamera bagus           | Face detection gagal      | Konfigurasi threshold yang toleran, admin bisa override manual |
+| Koneksi internet buruk di lapangan          | Absensi tidak tersimpan   | Offline mode SQLite + auto-sync                                |
+| Token FCM expired                           | Notifikasi tidak terkirim | Cloud Function auto-cleanup token invalid                      |
+| GPS spoofing                                | Absensi dari luar kantor  | Kombinasi dengan face recognition — sulit spoof keduanya       |
+| Data Firestore tak sinkron (race condition) | Record dobel/hilang       | Firestore transaction + docId deterministic `{userId}_{date}`  |
+| Karyawan lupa password pertama              | Tidak bisa login          | Fitur login_issues tanpa auth + kontak admin                   |
 
 ---
 
@@ -590,10 +608,10 @@ shifts / jamKerja
 
 ### 12.1 Environment
 
-| Environment | Deskripsi |
-|---|---|
+| Environment | Deskripsi                                     |
+| ----------- | --------------------------------------------- |
 | Development | `npm run dev` (admin), `flutter run` (mobile) |
-| Production | Firebase Hosting (admin), Play Store (mobile) |
+| Production  | Firebase Hosting (admin), Play Store (mobile) |
 
 ### 12.2 Scripts Utilitas
 
@@ -624,4 +642,7 @@ node admin/scripts/setup_admin.mjs
 
 ---
 
-*Dokumen ini adalah living document — diperbarui seiring development berlanjut.*
+### 13. ini adalah gambar conoth utnuk sistem pembagian dari link donwload dan juga buat login dan password nya
+
+![alt text](image-1.png) -> kamu cek itu di gambar situ itu gw mau nya kek begitu okk dan itu nanti ke kirim nya lewat gmail asli dari Email Pribadi (Gmail) itu yang ada di kolom tambah karyawan okk
+_Dokumen ini adalah living document — diperbarui seiring development berlanjut._
