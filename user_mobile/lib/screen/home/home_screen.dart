@@ -693,19 +693,14 @@ class _HomeScreenState extends State<HomeScreen> {
       final d = DateTime.tryParse(r.date);
       return d != null && d.month == now.month && d.year == now.year;
     }).toList();
-    final hadir = monthRecords
-        .where((r) => ['present', 'late', 'overtime'].contains(r.status))
-        .length;
+    // Sumber tunggal = dokumen attendance (sama dgn layar Statistik & Riwayat),
+    // supaya angka di Home tidak beda dengan layar lain. Hadir = ada check-in.
+    final hadir = monthRecords.where((r) => r.checkIn != null).length;
     final terlambat = monthRecords.where((r) => r.status == 'late').length;
     final absen = monthRecords.where((r) => r.status == 'absent').length;
-    final cuti = p.myLeaveRequests
-        .where(
-          (l) =>
-              l.status == 'approved' &&
-              l.startDate.month == now.month &&
-              l.startDate.year == now.year,
-        )
-        .fold<int>(0, (s, l) => s + l.totalDays);
+    // Cuti = baris 'leave' (satu baris per hari cuti, auto-generate saat cuti
+    // approved) — konsisten dgn definisi di getStatsForRange.
+    final cuti = monthRecords.where((r) => r.status == 'leave').length;
 
     return Row(
       children: [
