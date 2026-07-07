@@ -1304,9 +1304,23 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         await _db.runTransaction((transaction) async {
           final snapshot = await transaction.get(docRef);
           if (snapshot.exists) {
-            throw Exception('Anda sudah melakukan absensi masuk hari ini.');
+            // Blokir HANYA kalau sudah ada check-in NYATA. Dokumen bisa ada
+            // tanpa check-in karena dibuat otomatis: baris 'absent' dari cron
+            // 23:59, baris 'leave' dari cuti approved, atau placeholder admin.
+            // Kasus itu JANGAN diblokir "sudah absen" (bikin karyawan mentok
+            // padahal jam masuk kosong di UI) — timpa dgn check-in nyata.
+            final existing = snapshot.data();
+            final ci = existing?['checkIn'];
+            final hasRealCheckIn =
+                existing?['checkInTime'] != null ||
+                (ci is Map && ci['time'] != null);
+            if (hasRealCheckIn) {
+              throw Exception('Anda sudah melakukan absensi masuk hari ini.');
+            }
+            transaction.set(docRef, data, SetOptions(merge: true));
+          } else {
+            transaction.set(docRef, data);
           }
-          transaction.set(docRef, data);
           if (localImagePath != null) {
             _uploadAttendancePhoto(docId, localImagePath);
           }
