@@ -818,8 +818,6 @@ class _NotificationPageState extends State<NotificationPage> {
       case 'dispute_reopened':
       case 'dispute_reply':
         return Icons.report_problem_rounded;
-      case 'sos_alert':
-        return Icons.sos_rounded;
       case 'broadcast':
         return Icons.campaign_rounded;
       default:
@@ -847,8 +845,6 @@ class _NotificationPageState extends State<NotificationPage> {
       case 'dispute_reopened':
       case 'dispute_reply':
         return const Color(0xFF8B5CF6);
-      case 'sos_alert':
-        return zenRose;
       case 'broadcast':
         return jneBlue;
       default:

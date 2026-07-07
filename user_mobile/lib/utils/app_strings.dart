@@ -100,15 +100,9 @@ class AppStrings {
       'menu_chat': 'Chat HR',
       'menu_requests': 'Pengajuan',
       'menu_location': 'Lokasi',
-      'menu_sos': 'SOS',
       // banners
       'offline_banner': 'Mode Offline • data akan tersinkron otomatis',
       'data_error_banner': 'Sebagian data gagal dimuat • ketuk untuk detail',
-      // sos
-      'sos_title': 'Kirim Sinyal SOS?',
-      'sos_desc':
-          'Lokasi dan sinyal darurat Anda akan langsung dipantau oleh admin hub. Gunakan hanya saat darurat.',
-      'sos_sent': 'Sinyal SOS terkirim!',
       'out_of_radius':
           'Anda berada di luar radius kantor. Mendekatlah ke lokasi kantor.',
       // profile
@@ -524,13 +518,8 @@ class AppStrings {
       'menu_chat': 'Chat HR',
       'menu_requests': 'Requests',
       'menu_location': 'Location',
-      'menu_sos': 'SOS',
       'offline_banner': 'Offline Mode • data will sync automatically',
       'data_error_banner': 'Some data failed to load • tap for details',
-      'sos_title': 'Send SOS Signal?',
-      'sos_desc':
-          'Your location and emergency signal will be monitored by the hub admin immediately. Use only in emergencies.',
-      'sos_sent': 'SOS signal sent!',
       'out_of_radius':
           'You are outside the office radius. Please move closer to the office.',
       'profile_title': 'My Profile',

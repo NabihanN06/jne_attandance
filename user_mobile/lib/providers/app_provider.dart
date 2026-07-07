@@ -1375,9 +1375,27 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       }
     } catch (e) {
       debugPrint('Attendance error: $e');
-      throw Exception(
-        'Gagal mengirim absensi. Data akan disimpan secara otomatis jika offline.',
-      );
+      // Jangan tutupi alasan spesifik (mis. "sudah absen masuk hari ini",
+      // "offline dinonaktifkan") dengan pesan generik — itu bikin user salah
+      // kira ini masalah koneksi. Pesan bisnis diteruskan apa adanya; hanya
+      // error teknis (jaringan/Firestore) yang dibungkus jadi pesan ramah.
+      final raw = e.toString().replaceFirst('Exception: ', '').trim();
+      final lower = raw.toLowerCase();
+      final isTechnical =
+          lower.contains('socket') ||
+          lower.contains('timeout') ||
+          lower.contains('unavailable') ||
+          lower.contains('network') ||
+          lower.contains('permission-denied') ||
+          lower.contains('cloud_firestore') ||
+          lower.contains('unable to establish connection');
+      if (isTechnical) {
+        throw Exception(
+          'Gagal mengirim absensi — periksa koneksi internet lalu coba lagi.',
+        );
+      }
+      // Alasan yang sudah jelas (sudah absen, offline dinonaktifkan, dll).
+      throw Exception(raw.isEmpty ? 'Gagal mengirim absensi.' : raw);
     } finally {
       _isProcessing = false;
       notifyListeners();
@@ -1793,56 +1811,6 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       'hours': ((s['workMinutes'] as int) ~/ 60).toString(),
       'punctuality': (s['punctuality'] as double?) ?? 1.0,
     };
-  }
-
-  // ── SOS Feature ──
-  Future<void> sendSOS(double lat, double lng, String locationName) async {
-    if (_currentUser == null) return;
-    _isProcessing = true;
-    _fortressStatus = 'Mengirim sinyal SOS...';
-    notifyListeners();
-
-    try {
-      await FortressUtils.wrapWithRetry(
-        () async {
-          final now = FieldValue.serverTimestamp();
-
-          // 1. Send to dedicated SOS telemetry for real-time dashboard
-          await _db.collection('sos_alerts').add({
-            'userId': _currentUser!.uid,
-            'employeeName': _currentUser!.name,
-            'employeeId': _currentUser!.employeeId,
-            'latitude': lat,
-            'longitude': lng,
-            'locationName': locationName,
-            'status': 'active',
-            'createdAt': now,
-          });
-
-          // 2. Send to global notification registry for history
-          await _db.collection('adminNotifications').add({
-            'title': '🚨 SOS: ${_currentUser!.name}',
-            'message': 'Bantuan Darurat di $locationName ($lat, $lng)',
-            'type': 'sos_alert',
-            'employeeId': _currentUser!.uid,
-            'employeeName': _currentUser!.name,
-            'isRead': false,
-            'createdAt': now,
-          });
-        },
-        taskName: 'SOS Alert',
-        onStatusUpdate: (msg) {
-          _fortressStatus = msg;
-          notifyListeners();
-        },
-      );
-    } catch (e) {
-      throw Exception('Gagal mengirim SOS. Coba hubungi Admin manual.');
-    } finally {
-      _isProcessing = false;
-      _fortressStatus = '';
-      notifyListeners();
-    }
   }
 
   // ── Leave & Overtime Methods ──
