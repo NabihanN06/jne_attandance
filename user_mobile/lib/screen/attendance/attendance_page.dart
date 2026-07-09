@@ -24,7 +24,8 @@ class _AttendancePageState extends State<AttendancePage>
   static const Color zenNavy = Color(0xFF121826);
   static const Color zenIndigo = Color(0xFF4F46E5);
   static const Color zenCyan = Color(0xFF22D3EE);
-  static const Color zenRose = Color(0xFFF43F5E);
+  // Status negatif (gagal scan, luar area, GPS palsu) WAJIB merah brand JNE.
+  static const Color zenRed = Color(0xFFE31E24);
 
   CameraController? _cameraController;
   bool _isCameraReady = false;
@@ -128,7 +129,7 @@ class _AttendancePageState extends State<AttendancePage>
 
     if (geo.isLocationMocked) {
       _flashError();
-      _showFeedback(context.tr('mock_location_rejected'), zenRose);
+      _showFeedback(context.tr('mock_location_rejected'), zenRed);
       return;
     }
 
@@ -137,7 +138,7 @@ class _AttendancePageState extends State<AttendancePage>
       _flashError();
       _showFeedback(
         '${context.tr('out_of_radius_office')} (${(geo.distanceFromOffice / 1000).toStringAsFixed(1)} km)',
-        zenRose,
+        zenRed,
       );
       return;
     }
@@ -170,13 +171,13 @@ class _AttendancePageState extends State<AttendancePage>
         _faceAttempts++;
         _flashError();
         if (_faceAttempts >= app.maxFaceAttempts) {
-          _showFeedback('$faceFailPre $_faceAttempts $timesTryLater', zenRose);
+          _showFeedback('$faceFailPre $_faceAttempts $timesTryLater', zenRed);
           await Future.delayed(const Duration(milliseconds: 1300));
           if (mounted) Navigator.pop(context);
           return;
         }
         final sisa = app.maxFaceAttempts - _faceAttempts;
-        _showFeedback('$faceNotDetectedPre $sisa $attemptsWord', zenRose);
+        _showFeedback('$faceNotDetectedPre $sisa $attemptsWord', zenRed);
       } else {
         _faceAttempts = 0; // reset saat berhasil
         if (!mounted) return;
@@ -231,7 +232,7 @@ class _AttendancePageState extends State<AttendancePage>
           // Alasan lain diteruskan apa adanya (mis. "periksa koneksi internet",
           // "offline dinonaktifkan admin") — jangan tutupi dgn pesan generik.
           : (clean.isEmpty ? saveFailed : clean);
-      _showFeedback(msg, zenRose);
+      _showFeedback(msg, zenRed);
     } finally {
       if (mounted) setState(() => _isCapturing = false);
     }
@@ -337,7 +338,7 @@ class _AttendancePageState extends State<AttendancePage>
         (_scanError ||
             geo.isLocationMocked ||
             (!geoOk && geo.currentPosition != null))
-        ? zenRose
+        ? zenRed
         : zenIndigo;
     return Stack(
       children: [
@@ -553,7 +554,7 @@ class _AttendancePageState extends State<AttendancePage>
 
     String statusText = '';
     IconData icon = Icons.gps_fixed_rounded;
-    Color color = isAllowed ? zenCyan : zenRose;
+    Color color = isAllowed ? zenCyan : zenRed;
 
     if (isRemoteAllowed) {
       statusText = context.tr('remote_attendance_active');

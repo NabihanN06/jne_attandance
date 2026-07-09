@@ -198,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
         surfaceTintColor: pal.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Detail Error Data',
+          context.tr('data_error_detail'),
           style: GoogleFonts.plusJakartaSans(
             fontWeight: FontWeight.w800,
             fontSize: 16,
@@ -222,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.pop(ctx);
             },
             child: Text(
-              'Tutup',
+              context.tr('close'),
               style: GoogleFonts.plusJakartaSans(
                 fontWeight: FontWeight.w700,
                 color: AppColors.brandRed,
@@ -845,7 +845,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 TextSpan(
-                  text: ' hari',
+                  text: ' ${context.tr('days')}',
                   style: GoogleFonts.plusJakartaSans(
                     color: pal.textSub,
                     fontSize: 11,

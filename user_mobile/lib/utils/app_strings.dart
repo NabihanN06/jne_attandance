@@ -103,6 +103,7 @@ class AppStrings {
       // banners
       'offline_banner': 'Mode Offline • data akan tersinkron otomatis',
       'data_error_banner': 'Sebagian data gagal dimuat • ketuk untuk detail',
+      'data_error_detail': 'Detail Error Data',
       'out_of_radius':
           'Anda berada di luar radius kantor. Mendekatlah ke lokasi kantor.',
       // profile
@@ -520,6 +521,7 @@ class AppStrings {
       'menu_location': 'Location',
       'offline_banner': 'Offline Mode • data will sync automatically',
       'data_error_banner': 'Some data failed to load • tap for details',
+      'data_error_detail': 'Data Error Details',
       'out_of_radius':
           'You are outside the office radius. Please move closer to the office.',
       'profile_title': 'My Profile',
