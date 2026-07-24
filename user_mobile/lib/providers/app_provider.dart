@@ -310,9 +310,11 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     return null;
   }
 
-  /// Jam pulang EFEKTIF saat ada lembur disetujui hari ini = jam pulang shift
-  /// (officeEndTime) + durasi lembur. Absen pulang baru boleh setelah waktu ini
-  /// — sebelum itu tombol absen keluar ditahan. null = tidak ada lembur.
+  /// Perkiraan jam pulang saat ada lembur disetujui hari ini = jam pulang
+  /// shift (officeEndTime) + jam lembur yang disetujui. Dipakai HANYA untuk
+  /// ditampilkan di kartu Home sebagai ganti '--:--'; absen pulang TIDAK
+  /// ditahan sampai jam ini (jam approve admin = batas maksimal, bukan
+  /// durasi wajib). null = tidak ada lembur disetujui hari ini.
   DateTime? get overtimeCheckoutTime {
     final ot = todaysApprovedOvertime;
     if (ot == null) return null;
@@ -1598,12 +1600,20 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         final isHolidayDate =
             recDate.weekday == DateTime.sunday ||
             IndonesianHolidays.isHoliday(recDate);
+        // Pilih SPL untuk tanggal ini — WAJIB utamakan yang APPROVED.
+        // `_overtimeRequests` urut createdAt DESC, jadi kalau karyawan
+        // mengajukan dua kali untuk tanggal yang sama, pengajuan TERBARU
+        // (masih pending) akan terambil lebih dulu dan lembur yang sudah
+        // disetujui hangus jadi 0 menit. Pending hanya dipakai sebagai
+        // cadangan supaya splStatus tetap tercatat 'PENDING'.
         OvertimeRequest? spl;
         for (final o in _overtimeRequests) {
-          if (o.date == record.date && o.status != 'rejected') {
+          if (o.date != record.date || o.status == 'rejected') continue;
+          if (o.status == 'approved') {
             spl = o;
             break;
           }
+          spl ??= o;
         }
         final splStatus = spl == null
             ? 'NONE'
@@ -1652,9 +1662,13 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         // halaman Lembur (admin & mobile) menampilkan jam AKTUAL, bukan estimasi.
         if (spl != null && spl.status == 'approved') {
           try {
+            // CATATAN: `overtimeHours` SENGAJA tidak ditimpa. Field itu =
+            // batas jam yang DISETUJUI admin; kalau ditimpa dgn realisasi,
+            // catatan persetujuan admin hilang (mis. approve 3 jam, karyawan
+            // lembur 10 mnt → berubah jadi 1 jam) dan cap tidak bisa diaudit.
+            // Realisasi sudah tersimpan di overtimeMinutes + actualMinutes.
             await _db.collection('overtime').doc(spl.id).update({
               'overtimeMinutes': overtimeMin,
-              'overtimeHours': (overtimeMin / 60).ceil(),
               'actualMinutes': overtimeMin,
               'updatedAt': FieldValue.serverTimestamp(),
             });

@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/app_provider.dart';
-import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/app_strings.dart';
 import '../../widgets/ui_kit.dart';
@@ -139,8 +138,9 @@ class _StatisticPageState extends State<StatisticPage> {
             const SizedBox(height: 20),
             _buildPerformance(
               punctuality: stats['punctuality'] as double?,
-              locationCompliance: _locationCompliance(records, provider),
-              hourEffectiveness: _hourEffectiveness(records),
+              attendanceRate: (present + absent) > 0
+                  ? present / (present + absent)
+                  : null,
             ),
           ],
         ],
@@ -374,10 +374,19 @@ class _StatisticPageState extends State<StatisticPage> {
   }
 
   // ── Analisis performa ──
+  /// Ringkasan performa — sengaja HANYA memuat dua angka yang benar-benar
+  /// berarti bagi karyawan dan bisa mereka pengaruhi sendiri.
+  ///
+  /// Dua metrik lama dihapus karena menyesatkan:
+  /// • "Kepatuhan Lokasi" — absen di luar radius memang sudah DITOLAK sistem,
+  ///   jadi angkanya selalu 100% dan tidak memberi informasi apa pun. Lebih
+  ///   buruk lagi, kurir yang memang diizinkan absen dari luar kantor justru
+  ///   tampak "tidak patuh" padahal sedang bekerja sesuai aturan.
+  /// • "Efektivitas Jam" — sebenarnya cuma menghitung absen yang ada jam
+  ///   pulangnya, yakni "ingat absen pulang", sama sekali bukan efektivitas.
   Widget _buildPerformance({
     required double? punctuality,
-    required double? locationCompliance,
-    required double? hourEffectiveness,
+    required double? attendanceRate,
   }) {
     return Container(
       width: double.infinity,
@@ -417,15 +426,9 @@ class _StatisticPageState extends State<StatisticPage> {
           ),
           const SizedBox(height: 20),
           _analysisRow(
-            context.tr('location_compliance'),
-            locationCompliance,
+            context.tr('attendance_rate_label'),
+            attendanceRate,
             AppColors.sky,
-          ),
-          const SizedBox(height: 20),
-          _analysisRow(
-            context.tr('hour_effectiveness'),
-            hourEffectiveness,
-            AppColors.amber,
           ),
         ],
       ),
@@ -497,32 +500,5 @@ class _StatisticPageState extends State<StatisticPage> {
         title: context.tr('no_stats_period'),
       ),
     );
-  }
-
-  // ── Metrik turunan ──
-  /// % record yang check-in dalam radius kantor.
-  double? _locationCompliance(List records, AppProvider p) {
-    final withCheckIn = records
-        .whereType<AttendanceRecord>()
-        .where((r) => r.checkIn != null)
-        .toList();
-    if (withCheckIn.isEmpty) return null;
-    final radius = p.officeRadius;
-    final inside = withCheckIn.where((r) {
-      final dist = r.checkIn?.distance;
-      return dist != null && dist <= radius;
-    }).length;
-    return inside / withCheckIn.length;
-  }
-
-  /// % record dengan check-in DAN check-out (jam kerja komplit).
-  double? _hourEffectiveness(List records) {
-    final withCheckIn = records
-        .whereType<AttendanceRecord>()
-        .where((r) => r.checkIn != null)
-        .toList();
-    if (withCheckIn.isEmpty) return null;
-    final complete = withCheckIn.where((r) => r.checkOut != null).length;
-    return complete / withCheckIn.length;
   }
 }
