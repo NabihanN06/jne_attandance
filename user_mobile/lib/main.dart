@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -43,6 +45,9 @@ import 'screen/history/my_requests_page.dart';
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
+// WAJIB: tanpa pragma ini handler bisa ter-tree-shake di build release,
+// sehingga notifikasi latar belakang diam-diam tidak jalan di APK produksi.
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   debugPrint("Handling background message: ${message.messageId}");
@@ -53,8 +58,13 @@ Future<void> _setupFCM() async {
 
   await messaging.requestPermission(alert: true, badge: true, sound: true);
 
-  // Get and save FCM token (will be saved again after login)
-  String? token = await messaging.getToken();
+  // Ambil token FCM. Ini panggilan JARINGAN dan tidak punya timeout bawaan —
+  // di sinyal jelek bisa menggantung lama, jadi dibatasi. Token bukan syarat
+  // aplikasi jalan (disimpan ulang setelah login), cukup dilewati bila gagal.
+  String? token = await messaging.getToken().timeout(
+    const Duration(seconds: 10),
+    onTimeout: () => null,
+  );
   debugPrint('FCM Token: $token');
 
   // Listen for token refresh
@@ -128,14 +138,30 @@ void main() async {
   tzdata.initializeTimeZones();
   tz.setLocalLocation(tz.getLocation('Asia/Makassar'));
 
-  // Setup FCM
-  await _setupFCM();
-
-  // Channel + permission untuk pengingat absensi lokal.
-  await AttendanceReminderScheduler.init();
-
-  // Background message handler
+  // Background message handler — murni registrasi lokal, aman & instan.
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // FCM + channel notifikasi SENGAJA tidak di-await sebelum runApp().
+  // Keduanya menyentuh jaringan / dialog izin sistem; kalau ditunggu di sini,
+  // layar HP tetap kosong sampai selesai — dan bila salah satunya melempar
+  // error, runApp() tidak pernah terpanggil sehingga aplikasi mati total
+  // (gejala: dibuka lalu blank/hang). Jalankan di latar, catat error saja.
+  unawaited(
+    (() async {
+      try {
+        await _setupFCM();
+      } catch (e, s) {
+        debugPrint('Setup FCM gagal (dilewati): $e');
+        FirebaseCrashlytics.instance.recordError(e, s, fatal: false);
+      }
+      try {
+        await AttendanceReminderScheduler.init();
+      } catch (e, s) {
+        debugPrint('Init pengingat absensi gagal (dilewati): $e');
+        FirebaseCrashlytics.instance.recordError(e, s, fatal: false);
+      }
+    })(),
+  );
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

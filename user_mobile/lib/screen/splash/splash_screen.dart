@@ -44,13 +44,28 @@ class _SplashScreenState extends State<SplashScreen>
     _checkInit();
   }
 
+  /// Lama minimum splash tampil (biar animasi logo tidak berkedip).
+  static const Duration _minSplash = Duration(milliseconds: 1500);
+
+  /// Batas maksimum menunggu AppProvider siap. Kalau lewat ini, tetap
+  /// lanjut jalan — JANGAN menunggu selamanya. Dulu loop di bawah tidak
+  /// punya batas, jadi kalau init provider tersendat (sinyal jelek), aplikasi
+  /// mentok di layar "Menyiapkan aplikasi..." dan terlihat hang.
+  static const Duration _maxWait = Duration(seconds: 12);
+
   Future<void> _checkInit() async {
     final provider = Provider.of<AppProvider>(context, listen: false);
-    await Future.delayed(const Duration(milliseconds: 2500));
-    while (!provider.isInitialized) {
+    await Future.delayed(_minSplash);
+
+    final deadline = DateTime.now().add(_maxWait);
+    while (!provider.isInitialized && DateTime.now().isBefore(deadline)) {
       await Future.delayed(const Duration(milliseconds: 100));
     }
+
     if (!mounted) return;
+    // Kalau waktu habis sebelum provider siap, pakai sesi Firebase Auth yang
+    // tersimpan lokal sebagai penentu — layar Home sudah tahan render dengan
+    // data cache/kosong, jadi lebih baik masuk daripada tertahan di splash.
     if (provider.isLoggedIn) {
       Navigator.pushReplacementNamed(context, '/home');
     } else {

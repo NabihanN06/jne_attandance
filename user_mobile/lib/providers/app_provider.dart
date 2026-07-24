@@ -71,7 +71,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     // data tetap termuat dari cache & listener pulih sendiri. Telan; error lain
     // (mis. failed-precondition/index yang butuh aksi) tetap ditampilkan.
     final low = e.toString().toLowerCase();
-    if (low.contains('permission-denied') || low.contains('permission_denied')) {
+    if (low.contains('permission-denied') ||
+        low.contains('permission_denied')) {
       return;
     }
     _dataError = '$source — $e';
@@ -712,9 +713,25 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     });
   }
 
+  /// Batas tunggu profil user. `.get()` Firestore TIDAK punya timeout bawaan —
+  /// kalau sinyal setengah-hidup (HP dapat bar tapi data tidak jalan), Future
+  /// ini menggantung tanpa pernah selesai. Karena `_isInitialized` baru
+  /// di-set setelahnya, splash screen menunggu selamanya → aplikasi terlihat
+  /// "nge-freeze" di layar "Menyiapkan aplikasi...".
+  static const Duration _userFetchTimeout = Duration(seconds: 8);
+
   Future<void> _fetchCurrentUser(String uid) async {
+    final ref = _db.collection('users').doc(uid);
     try {
-      final doc = await _db.collection('users').doc(uid).get();
+      DocumentSnapshot<Map<String, dynamic>> doc;
+      try {
+        doc = await ref.get().timeout(_userFetchTimeout);
+      } on TimeoutException {
+        // Server tidak merespons → pakai cache lokal Firestore supaya
+        // karyawan tetap bisa masuk & melihat data terakhir (mode offline).
+        debugPrint('Fetch user timeout, fallback ke cache lokal.');
+        doc = await ref.get(const GetOptions(source: Source.cache));
+      }
       if (doc.exists) {
         _currentUser = UserModel.fromFirestore(doc);
         _listenToMyData();
