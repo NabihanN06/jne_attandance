@@ -89,6 +89,26 @@ Future<void> _setupFCM() async {
 
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
+  // Buat channel 'high_importance_channel' dengan Importance.max LEBIH AWAL.
+  // Penting: notifikasi FCM saat aplikasi di latar/tertutup ditampilkan
+  // langsung oleh sistem memakai channel ini. Kalau channel belum dibuat,
+  // Android menaruhnya di channel default berprioritas rendah → tidak muncul
+  // menonjol (heads-up) di lockscreen. Dibuat di sini supaya push pengumuman
+  // & persetujuan langsung tampil menonjol sejak pertama kali dipasang.
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >()
+      ?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'high_importance_channel',
+          'Notifikasi Penting',
+          description:
+              'Pengumuman, persetujuan cuti/lembur, dan pesan penting lainnya',
+          importance: Importance.max,
+        ),
+      );
+
   // Foreground message handler
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
     debugPrint('Got foreground message: ${message.notification?.title}');

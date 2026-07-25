@@ -50,6 +50,13 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/notification_color"/>
+        <!-- Channel default utk notifikasi FCM di background/tertutup. Menunjuk
+             ke channel Importance.max yg dibuat di main.dart supaya push (mis.
+             pengumuman) muncul menonjol di lockscreen, bukan channel prioritas
+             rendah. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="high_importance_channel"/>
 
         <!-- Google Maps API Key (dedicated key: Maps SDK for Android only,
              restricted to package id.co.jne.mtp.absensi + release & debug SHA-1) -->
