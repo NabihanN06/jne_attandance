@@ -1503,6 +1503,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         // sync delay-nya panjang atau melewati pergantian hari UTC.
         final dateStr = record['attendanceDate'] as String;
         final docId = '${_currentUser!.uid}_$dateStr';
+        // Dibaca SEBELUM transaksi: body transaksi bisa dijalankan ulang oleh
+        // SDK, dan foto diunggah setelah transaksi selesai.
+        final localPath = (record['checkIn'] as Map?)?['photoUrl'] as String?;
 
         await _db.runTransaction((transaction) async {
           final docRef = _db.collection('attendance').doc(docId);
@@ -1510,12 +1513,21 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           if (snapshot.exists) {
             return; // Already exists
           }
+          // Map.from() itu salinan DANGKAL: `firestoreData['checkIn']` akan
+          // menunjuk map yang sama dengan `record['checkIn']`. Sub-map itu
+          // harus disalin sendiri, kalau tidak setiap perubahan di bawah ikut
+          // merusak `record` — yang masih dipakai untuk mengunggah foto setelah
+          // transaksi, dan disimpan ulang ke antrean kalau sinkronisasi gagal.
           final firestoreData = Map<String, dynamic>.from(record);
+          final checkInMap = Map<String, dynamic>.from(
+            (record['checkIn'] as Map?) ?? const {},
+          );
+          firestoreData['checkIn'] = checkInMap;
           final now = FieldValue.serverTimestamp();
 
           // Override with server timestamp for all time fields
           firestoreData['attendanceDate'] = dateStr;
-          firestoreData['checkIn']['time'] = now;
+          checkInMap['time'] = now;
           firestoreData['checkInTime'] = now;
           firestoreData['createdAt'] = now;
           firestoreData['updatedAt'] = now;
@@ -1524,8 +1536,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           // JANGAN tulis path lokal / teks "uploading..." ke photoUrl — admin
           // merendernya sebagai <img src> dan hasilnya gambar rusak. Field URL
           // dibiarkan kosong sampai unggahan Storage benar-benar berhasil.
-          final localPath = record['checkIn']?['photoUrl'];
-          (firestoreData['checkIn'] as Map).remove('photoUrl');
+          checkInMap.remove('photoUrl');
           firestoreData.remove('checkInPhotoUrl');
           firestoreData['checkInPhotoPending'] = localPath != null;
           if (localPath != null) {
@@ -1535,7 +1546,6 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           transaction.set(docRef, firestoreData);
         });
 
-        final localPath = record['checkIn']?['photoUrl'];
         if (localPath != null && File(localPath).existsSync()) {
           await _uploadAttendancePhoto(docId, localPath);
         }
