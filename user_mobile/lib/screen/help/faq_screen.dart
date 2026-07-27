@@ -70,12 +70,12 @@ class _FaqScreenState extends State<FaqScreen> {
     _FaqItem(
       category: 'leave',
       q: 'Berapa jatah cuti tahunan saya?',
-      a: 'Buka tab Profile → bagian Leave Balance. Default 12 hari/tahun, tapi admin bisa menyesuaikan per karyawan. Sisa kuota terlihat real-time setelah pengajuan disetujui.',
+      a: 'Buka tab Profile → bagian Saldo Cuti. Jatah cuti ditetapkan admin per karyawan — kalau masih 0, berarti admin belum menetapkannya, silakan tanyakan ke HR. Sisa kuota terlihat real-time setelah pengajuan disetujui.',
     ),
     _FaqItem(
       category: 'leave',
       q: 'Apa beda "Cuti Tahunan", "Sakit", dan "Izin Mendadak"?',
-      a: '• Cuti Tahunan (annual): dipotong dari kuota 12 hari.\n• Sakit (sick): tidak potong kuota tahunan, butuh surat dokter untuk >2 hari.\n• Izin Mendadak (permission): keperluan singkat <1 hari, biasanya tidak dipotong kuota.',
+      a: '• Cuti Tahunan (annual): dipotong dari kuota yang ditetapkan admin.\n• Sakit (sick): tidak potong kuota tahunan, butuh surat dokter untuk >2 hari.\n• Izin Mendadak (permission): keperluan singkat <1 hari, biasanya tidak dipotong kuota.',
     ),
     _FaqItem(
       category: 'leave',

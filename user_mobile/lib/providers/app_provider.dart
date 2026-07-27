@@ -335,7 +335,13 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   // Admin-set leave balance from Firestore (null = not yet loaded)
   LeaveBalance? _firestoreLeaveBalance;
 
-  /// Returns admin-set quota if available, otherwise computes from leave history.
+  /// Saldo cuti karyawan.
+  ///
+  /// Kuota HANYA berasal dari admin (`leave_balances/{uid}.annualQuota`).
+  /// Kalau admin belum menetapkan, kuotanya 0 — bukan 12. Dulu 12 hari
+  /// dipasang sebagai default di sini, jadi karyawan yang baru dibuat langsung
+  /// "punya" jatah cuti setahun penuh yang tidak pernah diputuskan siapa pun.
+  /// Penentuan jatah cuti adalah wewenang admin, bukan nilai bawaan aplikasi.
   LeaveBalance get leaveBalance {
     if (_firestoreLeaveBalance != null) {
       final now = DateTime.now();
@@ -354,7 +360,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         updatedAt: _firestoreLeaveBalance!.updatedAt,
       );
     }
-    const quota = 12;
+    // Belum ada dokumen saldo dari admin → kuota 0 sampai admin menetapkannya.
+    const quota = 0;
     final now = DateTime.now();
     final thisYear = now.year;
     final yearLeaves = _leaveRequests.where((l) {
@@ -964,13 +971,17 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     _syncRetryTimer = Timer.periodic(const Duration(seconds: 60), (
       timer,
     ) async {
-      if (_hasPendingAttendance && isLoggedIn) {
+      if (!isLoggedIn) return;
+      if (_hasPendingAttendance) {
         // Only sync if we have connectivity
         bool isOnline = await _checkConnectivity();
         if (isOnline) {
           syncPendingRecords();
         }
       }
+      // Foto absensi yang gagal diunggah (sinyal jelek saat absen) dicoba
+      // ulang di sini — kalau tidak, Galeri Foto Absensi admin kosong permanen.
+      unawaited(retryPendingAttendancePhotos());
     });
   }
 
@@ -1280,6 +1291,15 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         // Konsisten dengan offline path yang sudah pakai DateTime.now() (local).
         final serverNow = (await FortressUtils.getServerTime()).toLocal();
         final dateStr = DateFormat('yyyy-MM-dd').format(serverNow);
+        final docId = '${_currentUser!.uid}_$dateStr';
+
+        // Unggah foto DULU supaya `photoUrl` yang tersimpan selalu URL https
+        // yang bisa dibuka admin. Kalau gagal, absensi TETAP jalan — foto
+        // ditandai pending dan dicoba ulang di latar belakang.
+        final photoUrl = localImagePath == null
+            ? null
+            : await _uploadAttendancePhotoFile(docId, localImagePath);
+        final photoPending = localImagePath != null && photoUrl == null;
 
         final data = {
           'userId': _currentUser!.uid,
@@ -1300,7 +1320,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
               _officeLat,
               _officeLng,
             ).round(),
-            'photoUrl': localImagePath,
+            'photoUrl': ?photoUrl,
           },
           'checkInTime': FieldValue.serverTimestamp(),
           'checkInLatitude': lat,
@@ -1311,13 +1331,14 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
             _officeLat,
             _officeLng,
           ).round(),
-          'checkInPhotoUrl': localImagePath,
+          'checkInPhotoUrl': ?photoUrl,
+          'checkInPhotoPending': photoPending,
+          if (photoPending) 'checkInPhotoLocalPath': localImagePath,
           'syncStatus': 'pending',
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         };
 
-        final docId = '${_currentUser!.uid}_$dateStr';
         final docRef = _db.collection('attendance').doc(docId);
 
         await _db.runTransaction((transaction) async {
@@ -1340,10 +1361,13 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           } else {
             transaction.set(docRef, data);
           }
-          if (localImagePath != null) {
-            _uploadAttendancePhoto(docId, localImagePath);
-          }
         });
+
+        // Sekali lagi di latar belakang kalau unggahan tadi gagal — jangan
+        // ditunggu, absensinya sudah tersimpan.
+        if (photoPending) {
+          unawaited(_uploadAttendancePhoto(docId, localImagePath));
+        }
 
         // Audit log (non-blocking)
         try {
@@ -1497,13 +1521,21 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           firestoreData['updatedAt'] = now;
           firestoreData['syncStatus'] = 'syncing';
 
-          firestoreData['checkIn']['photoUrl'] = 'uploading...';
-          firestoreData['checkInPhotoUrl'] = 'uploading...';
+          // JANGAN tulis path lokal / teks "uploading..." ke photoUrl — admin
+          // merendernya sebagai <img src> dan hasilnya gambar rusak. Field URL
+          // dibiarkan kosong sampai unggahan Storage benar-benar berhasil.
+          final localPath = record['checkIn']?['photoUrl'];
+          (firestoreData['checkIn'] as Map).remove('photoUrl');
+          firestoreData.remove('checkInPhotoUrl');
+          firestoreData['checkInPhotoPending'] = localPath != null;
+          if (localPath != null) {
+            firestoreData['checkInPhotoLocalPath'] = localPath;
+          }
 
           transaction.set(docRef, firestoreData);
         });
 
-        final localPath = record['checkIn']['photoUrl'];
+        final localPath = record['checkIn']?['photoUrl'];
         if (localPath != null && File(localPath).existsSync()) {
           await _uploadAttendancePhoto(docId, localPath);
         }
@@ -1555,7 +1587,6 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           _officeLat,
           _officeLng,
         ).round(),
-        'photoUrl': localImagePath,
       };
 
       final flatCheckOutData = {
@@ -1568,12 +1599,26 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           _officeLat,
           _officeLng,
         ).round(),
-        'checkOutPhotoUrl': localImagePath,
       };
 
       bool isOnline = await _checkConnectivity();
 
       if (isOnline) {
+        // Unggah dulu (lihat catatan di addAttendanceCheckIn) supaya field
+        // photoUrl selalu berisi URL https yang bisa dibuka admin.
+        final photoUrl = localImagePath == null
+            ? null
+            : await _uploadAttendancePhotoFile(
+                record.id,
+                localImagePath,
+                isCheckOut: true,
+              );
+        final photoPending = localImagePath != null && photoUrl == null;
+        if (photoUrl != null) {
+          checkOutData['photoUrl'] = photoUrl;
+          flatCheckOutData['checkOutPhotoUrl'] = photoUrl;
+        }
+
         final checkOutMap = Map<String, dynamic>.from(checkOutData);
         final flatMap = Map<String, dynamic>.from(flatCheckOutData);
         final now = FieldValue.serverTimestamp();
@@ -1653,6 +1698,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           // supaya catatan telat tidak hilang walau dapat lembur.
           if (overtimeMin > 0 && record.status == 'present')
             'status': 'overtime',
+          'checkOutPhotoPending': photoPending,
+          if (photoPending) 'checkOutPhotoLocalPath': localImagePath,
           'updatedAt': now,
         };
 
@@ -1676,11 +1723,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
             debugPrint('Sync SPL actual minutes failed: $e');
           }
         }
-        if (localImagePath != null) {
-          await _uploadAttendancePhoto(
-            record.id,
-            localImagePath,
-            isCheckOut: true,
+        if (photoPending) {
+          unawaited(
+            _uploadAttendancePhoto(record.id, localImagePath, isCheckOut: true),
           );
         }
 
@@ -1713,32 +1758,127 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
-  Future<void> _uploadAttendancePhoto(
+  /// Unggah foto absensi ke Storage dan kembalikan download URL-nya.
+  ///
+  /// PENTING: nilai yang boleh ditulis ke `checkIn.photoUrl` / `checkOut.photoUrl`
+  /// HANYA URL https hasil Storage. Dulu path file lokal HP ("/data/user/0/...")
+  /// sempat ditulis langsung ke field itu sebagai "sementara" — admin panel lalu
+  /// merender `<img src="/data/user/0/...">` yang mustahil dimuat browser, jadi
+  /// Galeri Foto Absensi menampilkan ikon gambar rusak. Sekarang field URL tetap
+  /// kosong sampai unggahan benar-benar berhasil.
+  ///
+  /// Return null kalau gagal (jaringan/izin) — pemanggil menandai foto sebagai
+  /// "pending" supaya bisa dicoba ulang, TANPA menggagalkan absensinya.
+  Future<String?> _uploadAttendancePhotoFile(
     String docId,
     String localPath, {
     bool isCheckOut = false,
   }) async {
     try {
+      final file = File(localPath);
+      if (!file.existsSync()) {
+        debugPrint('Photo upload skipped: file tidak ada ($localPath)');
+        return null;
+      }
       final prefix = isCheckOut ? 'checkout' : 'checkin';
       final ref = FirebaseStorage.instance.ref().child(
         'attendance_photos/${prefix}_$docId.jpg',
       );
-      await ref.putFile(
-        File(localPath),
-        SettableMetadata(contentType: 'image/jpeg'),
-      );
-      final url = await ref.getDownloadURL();
+      await ref
+          .putFile(file, SettableMetadata(contentType: 'image/jpeg'))
+          .timeout(const Duration(seconds: 30));
+      return await ref.getDownloadURL().timeout(const Duration(seconds: 15));
+    } catch (e) {
+      debugPrint('Photo upload failed: $e');
+      return null;
+    }
+  }
 
-      final field = isCheckOut ? 'checkOut.photoUrl' : 'checkIn.photoUrl';
-      final legacyField = isCheckOut ? 'checkOutPhotoUrl' : 'checkInPhotoUrl';
+  /// Unggah foto lalu tulis URL-nya ke dokumen absensi. Dipakai untuk jalur
+  /// "coba ulang di latar belakang" (setelah absen atau saat aplikasi dibuka).
+  Future<bool> _uploadAttendancePhoto(
+    String docId,
+    String localPath, {
+    bool isCheckOut = false,
+  }) async {
+    final url = await _uploadAttendancePhotoFile(
+      docId,
+      localPath,
+      isCheckOut: isCheckOut,
+    );
+    if (url == null) return false;
 
+    final field = isCheckOut ? 'checkOut.photoUrl' : 'checkIn.photoUrl';
+    final legacyField = isCheckOut ? 'checkOutPhotoUrl' : 'checkInPhotoUrl';
+    final pendingField = isCheckOut
+        ? 'checkOutPhotoPending'
+        : 'checkInPhotoPending';
+    final localField = isCheckOut
+        ? 'checkOutPhotoLocalPath'
+        : 'checkInPhotoLocalPath';
+
+    try {
       await _db.collection('attendance').doc(docId).update({
         field: url,
         legacyField: url,
+        pendingField: false,
+        localField: FieldValue.delete(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
+      return true;
     } catch (e) {
-      debugPrint('Photo upload failed: $e');
+      debugPrint('Photo url write failed: $e');
+      return false;
+    }
+  }
+
+  /// Coba ulang unggahan foto absensi yang sebelumnya gagal (mis. absen saat
+  /// sinyal jelek). Dipanggil saat aplikasi kembali online / dibuka lagi.
+  /// Aman dipanggil berkali-kali: file lokal yang sudah hilang otomatis
+  /// dibersihkan flag-nya supaya tidak dicoba selamanya.
+  Future<void> retryPendingAttendancePhotos() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+    if (!await _checkConnectivity()) return;
+
+    for (final entry in {
+      'checkInPhotoPending': false,
+      'checkOutPhotoPending': true,
+    }.entries) {
+      try {
+        final snap = await _db
+            .collection('attendance')
+            .where('userId', isEqualTo: uid)
+            .where(entry.key, isEqualTo: true)
+            .limit(10)
+            .get()
+            .timeout(const Duration(seconds: 20));
+        for (final doc in snap.docs) {
+          final localField = entry.value
+              ? 'checkOutPhotoLocalPath'
+              : 'checkInPhotoLocalPath';
+          final localPath = doc.data()[localField];
+          if (localPath is! String || localPath.isEmpty) {
+            await doc.reference.update({entry.key: false});
+            continue;
+          }
+          if (!File(localPath).existsSync()) {
+            // Cache foto sudah dibersihkan OS — jangan gantung selamanya.
+            await doc.reference.update({
+              entry.key: false,
+              localField: FieldValue.delete(),
+            });
+            continue;
+          }
+          await _uploadAttendancePhoto(
+            doc.id,
+            localPath,
+            isCheckOut: entry.value,
+          );
+        }
+      } catch (e) {
+        debugPrint('Retry pending photos (${entry.key}) failed: $e');
+      }
     }
   }
 
