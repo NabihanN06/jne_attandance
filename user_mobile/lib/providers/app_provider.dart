@@ -845,19 +845,24 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           _updateNotifications(snap, isBroadcast: true);
         }, onError: (e) => _setDataError('Broadcast', e));
 
+    // JANGAN saring `startDate` di server. Admin menyimpan startDate sebagai
+    // STRING ISO, sementara filter di sini dulu mengirim DateTime (Timestamp).
+    // Firestore tidak pernah mencocokkan range antar-tipe, jadi query itu
+    // selalu balik kosong — itulah sebabnya kalender di APK tak pernah
+    // menampilkan acara yang dibuat admin. Ambil apa adanya (dibatasi) lalu
+    // saring di klien, supaya string maupun Timestamp sama-sama terbaca.
     _eventSub = _db
         .collection('calendarEvents')
-        .where(
-          'startDate',
-          isGreaterThanOrEqualTo: DateTime.now().subtract(
-            const Duration(days: 30),
-          ),
-        )
+        .limit(200)
         .snapshots()
         .listen((snap) {
-          _events = snap.docs
-              .map((doc) => CalendarEvent.fromFirestore(doc))
-              .toList();
+          final cutoff = DateTime.now().subtract(const Duration(days: 30));
+          _events =
+              snap.docs
+                  .map((doc) => CalendarEvent.fromFirestore(doc))
+                  .where((e) => !e.startDate.isBefore(cutoff))
+                  .toList()
+                ..sort((a, b) => a.startDate.compareTo(b.startDate));
           _scheduleNotify();
         }, onError: (e) => _setDataError('Kalender', e));
   }
@@ -1308,7 +1313,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           'department': _currentUser!.department,
           'date': dateStr,
           'attendanceDate': dateStr,
-          'status': _mapMobileStatusToAdmin(status),
+          'status': _checkInStatus(status, _calcLateMinutes(serverNow)),
           'lateMinutes': _calcLateMinutes(serverNow),
           'checkIn': {
             'time': FieldValue.serverTimestamp(),
@@ -1416,7 +1421,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           'department': _currentUser!.department,
           'date': dateStr,
           'attendanceDate': dateStr,
-          'status': _mapMobileStatusToAdmin(status),
+          'status': _checkInStatus(status, _calcLateMinutes(DateTime.now())),
           'lateMinutes': _calcLateMinutes(DateTime.now()),
           'checkIn': {
             'time': DateTime.now().toIso8601String(),
@@ -2144,11 +2149,24 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     return admins.isEmpty ? null : admins.first;
   }
 
+  /// Label UI → status yang disimpan admin. Perbandingan WAJIB lowercase:
+  /// pemanggil mengirim 'Terlambat', dan `contains('Lambat')` (huruf besar L)
+  /// tidak pernah cocok sehingga semua absen telat dulu tersimpan 'present'
+  /// dan hilang dari dashboard.
   String _mapMobileStatusToAdmin(String status) {
-    if (status.contains('Tepat')) return 'present';
-    if (status.contains('Lambat')) return 'late';
-    if (status.contains('Izin')) return 'leave';
+    final s = status.toLowerCase();
+    if (s.contains('izin')) return 'leave';
+    if (s.contains('lambat') || s.contains('telat')) return 'late';
     return 'present';
+  }
+
+  /// Status akhir check-in. `lateMinutes` adalah sumber kebenaran — kalau
+  /// menit telat > 0, status pasti 'late' apa pun label yang dikirim UI,
+  /// supaya dokumen tidak pernah bilang 'present' padahal telat.
+  String _checkInStatus(String uiStatus, int lateMinutes) {
+    final mapped = _mapMobileStatusToAdmin(uiStatus);
+    if (mapped == 'leave') return mapped;
+    return lateMinutes > 0 ? 'late' : mapped;
   }
 
   void _listenToSettings() {

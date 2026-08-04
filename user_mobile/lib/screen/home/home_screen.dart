@@ -909,14 +909,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(width: 12),
         _menuTile(
-          Icons.timer_rounded,
-          context.tr('overtime_word'),
-          AppColors.violet,
-          pal,
-          () => _go('/overtime'),
-        ),
-        const SizedBox(width: 12),
-        _menuTile(
           Icons.map_rounded,
           context.tr('menu_location'),
           AppColors.jneOrange,

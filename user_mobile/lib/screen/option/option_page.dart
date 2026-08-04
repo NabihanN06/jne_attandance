@@ -74,16 +74,6 @@ class OptionPage extends StatelessWidget {
             const SizedBox(height: 16),
             _buildFeatureCard(
               context,
-              'Pengajuan Lembur',
-              'Permohonan jam kerja tambahan (Overtime).',
-              Icons.more_time_rounded,
-              jneBlue,
-              () => Navigator.pushNamed(context, '/overtime'),
-              imageAsset: 'assets/images/iconapk/iconpengajuan.png',
-            ),
-            const SizedBox(height: 16),
-            _buildFeatureCard(
-              context,
               'Smart Calendar',
               'Jadwal meeting dan acara departemen.',
               Icons.calendar_month_rounded,

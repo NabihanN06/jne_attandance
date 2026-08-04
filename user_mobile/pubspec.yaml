@@ -1,7 +1,7 @@
 name: jneattendance_mobile
 description: "JNE Attendance Mobile App"
 publish_to: "none"
-version: 1.0.9+33
+version: 1.0.10+34
 
 environment:
   sdk: ^3.10.4
@@ -46,7 +46,7 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/app_icon.png"
+  image_path: "assets/images/app_icon_launcher.png"
   min_sdk_android: 21
 
 flutter:
