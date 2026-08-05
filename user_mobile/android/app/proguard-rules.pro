@@ -23,6 +23,14 @@
 # JNE Models preservation
 -keep class com.example.jneattendance_mobile.models.** { *; }
 
+# TensorFlow Lite (cocok-wajah on-device, lihat lib/utils/face_embedder.dart).
+# WAJIB di-keep: R8 membuang kelas TFLite yang cuma dipanggil lewat JNI, dan
+# akibatnya baru kelihatan di APK rilis (debug aman) berupa crash saat model
+# dimuat. Delegate GPU/NNAPI cukup di-dontwarn — kita hanya pakai CPU.
+-keep class org.tensorflow.lite.** { *; }
+-keep interface org.tensorflow.lite.** { *; }
+-dontwarn org.tensorflow.lite.**
+
 # Google Play Core (Required for Flutter Play Store Split / Deferred Components)
 -keep class com.google.android.play.core.** { *; }
 -keep class io.flutter.embedding.engine.deferredcomponents.** { *; }

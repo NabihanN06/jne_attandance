@@ -22,6 +22,9 @@ import '../utils/fortress_utils.dart';
 import '../utils/presence_service.dart';
 import '../utils/notification_scheduler.dart';
 import '../utils/holidays.dart';
+import '../utils/face_verifier.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart'
+    show Face;
 
 class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -2153,6 +2156,51 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   /// pemanggil mengirim 'Terlambat', dan `contains('Lambat')` (huruf besar L)
   /// tidak pernah cocok sehingga semua absen telat dulu tersimpan 'present'
   /// dan hilang dari dashboard.
+  // ── Cocok-wajah (MODE PANTAU) ──────────────────────────────────────────
+  // Absensi TIDAK PERNAH ditolak karena wajah tak cocok. Skornya dicatat ke
+  // dokumen absensi supaya admin bisa meninjau, dan ambangnya disetel dari
+  // panel admin setelah pola data nyata kelihatan.
+  double _faceMatchThreshold = FaceVerifier.defaultThreshold;
+  double get faceMatchThreshold => _faceMatchThreshold;
+
+  /// Nilai kemiripan wajah lalu tempelkan hasilnya ke dokumen absensi hari ini.
+  ///
+  /// Dipanggil SESUDAH absensi tersimpan dan sengaja tidak di-await oleh UI:
+  /// pemuatan model + unduh wajah rujukan bisa makan beberapa detik, dan itu
+  /// tidak boleh menahan karyawan di layar kamera. Semua galat ditelan — fitur
+  /// pengawasan tidak boleh sampai menggagalkan absensi.
+  Future<void> recordFaceMatch({
+    required String photoPath,
+    required Face liveFace,
+  }) async {
+    final user = _currentUser;
+    if (user == null) return;
+    final refUrl = user.facePhotoUrl;
+    if (refUrl == null || refUrl.isEmpty) return;
+
+    try {
+      final result = await FaceVerifier.instance.evaluate(
+        livePhotoPath: photoPath,
+        liveFace: liveFace,
+        facePhotoUrl: refUrl,
+        threshold: _faceMatchThreshold,
+      );
+      if (result == null) return;
+
+      // update(), BUKAN set(merge:true): kalau dokumen absensinya entah kenapa
+      // tidak ada, set() akan MEMBUAT dokumen absensi berisi skor saja —
+      // baris hantu di riwayat karyawan. update() gagal dengan bersih dan
+      // ditelan catch di bawah.
+      final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      await _db
+          .collection('attendance')
+          .doc('${user.uid}_$dateStr')
+          .update(result.toMap());
+    } catch (e) {
+      debugPrint('recordFaceMatch: $e');
+    }
+  }
+
   String _mapMobileStatusToAdmin(String status) {
     final s = status.toLowerCase();
     if (s.contains('izin')) return 'leave';
@@ -2210,6 +2258,10 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
             (att['maxFaceAttempts'] as num?)?.toInt() ?? _maxFaceAttempts;
         _courierBypassGeofence =
             (att['courierBypassGeofence'] as bool?) ?? _courierBypassGeofence;
+        // Ambang cocok-wajah bisa disetel admin tanpa rilis APK baru — penting
+        // karena angka yang pas cuma ketahuan setelah data lapangan terkumpul.
+        final thr = _asDouble(att['faceMatchThreshold']);
+        if (thr != null && thr > 0 && thr < 1) _faceMatchThreshold = thr;
       }
 
       notifyListeners();

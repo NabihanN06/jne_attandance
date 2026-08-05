@@ -1,7 +1,7 @@
 name: jneattendance_mobile
 description: "JNE Attendance Mobile App"
 publish_to: "none"
-version: 1.0.10+34
+version: 1.0.11+35
 
 environment:
   sdk: ^3.10.4
@@ -36,6 +36,9 @@ dependencies:
   image_picker: ^1.1.2
   http: ^1.2.2
   cached_network_image: ^3.4.0
+  # Verifikasi wajah on-device (lihat utils/face_embedder.dart)
+  tflite_flutter: ^0.11.0
+  image: ^4.2.0
 
 dev_dependencies:
   flutter_test:
@@ -55,3 +58,4 @@ flutter:
     - assets/images/
     - assets/images/gambarHp/
     - assets/images/iconapk/
+    - assets/models/

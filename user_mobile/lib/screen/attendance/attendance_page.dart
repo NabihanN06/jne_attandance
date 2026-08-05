@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
@@ -199,6 +201,23 @@ class _AttendancePageState extends State<AttendancePage>
             lng: geo.currentPosition?.longitude ?? 0,
           );
         }
+
+        // Cocokkan wajah SESUDAH absensi tersimpan, dan sengaja tanpa await:
+        // absensi karyawan tidak boleh menunggu (atau gagal karena) pemuatan
+        // model dan unduhan wajah rujukan. Hasilnya ditempelkan ke dokumen
+        // absensi belakangan untuk ditinjau admin — tidak pernah memblokir.
+        unawaited(
+          app.recordFaceMatch(
+            photoPath: photo.path,
+            liveFace: faces.reduce(
+              (a, b) =>
+                  a.boundingBox.width * a.boundingBox.height >=
+                      b.boundingBox.width * b.boundingBox.height
+                  ? a
+                  : b,
+            ),
+          ),
+        );
 
         if (mounted) {
           final now = DateTime.now();
