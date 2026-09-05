@@ -16,6 +16,8 @@ import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_models.dart';
+import '../utils/app_version.dart';
+import '../utils/business_time.dart';
 import '../utils/offline_service.dart';
 import '../utils/connectivity_service.dart';
 import '../utils/fortress_utils.dart';
@@ -96,8 +98,23 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   double get officeRadius => _officeRadius;
   String get hubName => _hubName;
   String get stationId => _stationId;
-  TimeOfDay officeStartTime = const TimeOfDay(hour: 8, minute: 0);
-  TimeOfDay officeEndTime = const TimeOfDay(hour: 17, minute: 0);
+  // ── Jam masuk/pulang: dua sumber, satu yang menang ──
+  // Sebelumnya kedua sumber menulis ke SATU field yang sama. `settings/system`
+  // adalah listener realtime yang emit dari cache LALU dari server, jadi jam
+  // shift per-karyawan (dibaca sekali via .get()) selalu ketimpa lagi oleh jam
+  // kantor global beberapa saat kemudian — karyawan shift pagi dihitung telat
+  // dengan jam kantor umum, dan pengingatnya salah jam.
+  TimeOfDay _globalStartTime = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay _globalEndTime = const TimeOfDay(hour: 17, minute: 0);
+  TimeOfDay? _shiftStartTime;
+  TimeOfDay? _shiftEndTime;
+
+  /// Jam masuk yang berlaku untuk karyawan ini: shift pribadi kalau ada,
+  /// kalau tidak jam kantor global.
+  TimeOfDay get officeStartTime => _shiftStartTime ?? _globalStartTime;
+
+  /// Jam pulang yang berlaku untuk karyawan ini.
+  TimeOfDay get officeEndTime => _shiftEndTime ?? _globalEndTime;
 
   // ── Attendance settings (dari admin settings/system → attendance) ──
   // Default dipilih agar behavior lama tetap aman walau admin belum set.
@@ -150,35 +167,72 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   static const String _appLatestUrl =
       'https://storage.googleapis.com/admin-absensi-jne-mtp.firebasestorage.app/public/app-latest.json';
   String _appVersionLabel = '';
+  String _currentVersionName = '';
   int _currentBuild = 0;
   int _latestBuild = 0;
   String _latestVersionName = '';
   String _updateApkUrl = '';
   bool _forceUpdate = false;
+  DateTime? _lastUpdateCheck;
   String get appVersionLabel => _appVersionLabel;
+
+  /// Ada rilis yang BENAR-BENAR lebih baru dari yang terpasang?
+  ///
+  /// Perbandingannya ada di `utils/app_version.dart` dan bertumpu pada
+  /// `versionName`, bukan `buildNumber`. `app-latest.json` ditulis tangan dan
+  /// pernah menyimpan `buildNumber: 2035` padahal `versionCode` APK-nya 35 —
+  /// dengan perbandingan `2035 > 35` banner "Update tersedia" tidak pernah
+  /// hilang dari HP karyawan meski versinya sudah paling baru.
   bool get updateAvailable =>
-      _latestBuild > _currentBuild && _updateApkUrl.isNotEmpty;
+      _updateApkUrl.isNotEmpty &&
+      isReleaseNewer(
+        latestVersionName: _latestVersionName,
+        latestBuild: _latestBuild,
+        currentVersionName: _currentVersionName,
+        currentBuild: _currentBuild,
+      );
   bool get forceUpdate => updateAvailable && _forceUpdate;
   String get updateApkUrl => _updateApkUrl;
   String get latestVersionName => _latestVersionName;
 
+  /// Jeda minimum antar pengecekan update, supaya membuka-tutup aplikasi
+  /// tidak memicu permintaan jaringan beruntun.
+  static const Duration _updateCheckInterval = Duration(hours: 6);
+
   /// Bandingkan versi terpasang dengan metadata di Storage. Aman gagal
   /// (offline → tidak menampilkan apa-apa).
-  Future<void> _checkAppUpdate() async {
+  ///
+  /// [force] melewati jeda [_updateCheckInterval]; dipakai saat startup.
+  Future<void> _checkAppUpdate({bool force = false}) async {
+    final last = _lastUpdateCheck;
+    if (!force &&
+        last != null &&
+        DateTime.now().difference(last) < _updateCheckInterval) {
+      return;
+    }
     try {
       final info = await PackageInfo.fromPlatform();
+      _currentVersionName = info.version;
       _currentBuild = int.tryParse(info.buildNumber) ?? 0;
       _appVersionLabel = '${info.version}+${info.buildNumber}';
       notifyListeners();
-      final res = await http
-          .get(Uri.parse(_appLatestUrl))
-          .timeout(const Duration(seconds: 8));
+      // Cache-buster: objek Storage dilayani lewat CDN, jadi tanpa parameter
+      // unik HP bisa memegang manifest lama berjam-jam setelah rilis baru
+      // diunggah — update jadi tidak "langsung otomatis" sampai ke karyawan.
+      final url = Uri.parse(
+        '$_appLatestUrl?t=${DateTime.now().millisecondsSinceEpoch}',
+      );
+      final res = await http.get(url).timeout(const Duration(seconds: 8));
       if (res.statusCode != 200) return;
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       _latestBuild = (data['buildNumber'] as num?)?.toInt() ?? 0;
       _latestVersionName = (data['versionName'] as String?) ?? '';
       _updateApkUrl = (data['apkUrl'] as String?) ?? '';
       _forceUpdate = (data['forceUpdate'] as bool?) ?? false;
+      // Jeda baru dihitung dari pengecekan yang BERHASIL. Kalau ditandai di
+      // awal, satu kegagalan (mis. sedang offline saat startup) menutup
+      // pengecekan berikutnya selama 6 jam penuh.
+      _lastUpdateCheck = DateTime.now();
       notifyListeners();
     } catch (e) {
       debugPrint('App update check error: $e');
@@ -204,7 +258,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         checkOut: officeEndTime,
       );
       // Cek update APK di latar belakang (tidak memblokir startup).
-      _checkAppUpdate();
+      _checkAppUpdate(force: true);
     } catch (e) {
       debugPrint('Load preferences error: $e');
     }
@@ -306,7 +360,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
   /// Pengajuan lembur yang SUDAH disetujui untuk hari ini (kalau ada).
   OvertimeRequest? get todaysApprovedOvertime {
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final today = BusinessTime.todayKey();
     for (final o in _overtimeRequests) {
       if (o.date == today && o.status == 'approved') return o;
     }
@@ -413,17 +467,11 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   /// paling atas.
   List<SmartTip> get smartTips {
     final tips = <SmartTip>[];
-    final now = DateTime.now();
-    final today = DateFormat('yyyy-MM-dd').format(now);
+    final now = BusinessTime.now();
+    final today = BusinessTime.todayKey();
 
     // Tip 1: Belum absen masuk hari ini & sudah lewat jam masuk
-    final officeStart = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      officeStartTime.hour,
-      officeStartTime.minute,
-    );
+    final officeStart = BusinessTime.atTime(DateTime.now(), officeStartTime);
     final hasCheckInToday = _attendanceRecords.any(
       (r) => r.date == today && r.checkIn != null,
     );
@@ -447,27 +495,28 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       );
     }
 
-    // Tip 2: Sudah check-in tapi belum check-out & sudah sore
-    final openSession = _attendanceRecords.firstWhere(
-      (r) => r.date == today && r.checkIn != null && r.checkOut == null,
-      orElse: () => AttendanceRecord(
-        id: '',
-        userId: '',
-        employeeName: '',
-        employeeId: '',
-        department: '',
-        date: '',
-        status: '',
-      ),
-    );
-    if (openSession.id.isNotEmpty && now.hour >= 17) {
+    // Tip 2: Sudah check-in tapi belum check-out & sudah lewat jam pulang.
+    // Syaratnya `checkIn.time` (bukan cuma `checkIn`) supaya jamnya bisa
+    // ditampilkan tanpa force-unwrap: dokumen bisa punya map `checkIn` tanpa
+    // `time` yang bisa dibaca (mis. format waktu tak dikenal) — `time!` di
+    // sini dulu berarti seluruh Home ikut gagal render.
+    final openSession = _attendanceRecords
+        .where(
+          (r) =>
+              r.date == today && r.checkIn?.time != null && r.checkOut == null,
+        )
+        .firstOrNull;
+    final shiftEnd = BusinessTime.atTime(DateTime.now(), officeEndTime);
+    if (openSession != null && now.isAfter(shiftEnd)) {
       tips.add(
         SmartTip(
           id: 'clock_out_reminder',
           title: 'Belum absen keluar',
           message:
-              'Anda sudah masuk pukul ${DateFormat('HH:mm').format(openSession.checkIn!.time!)}. Jangan lupa absen keluar.',
-          severity: now.hour >= 19 ? 'urgent' : 'info',
+              'Anda sudah masuk pukul ${BusinessTime.formatHm(openSession.checkIn!.time!)}. Jangan lupa absen keluar.',
+          severity: now.isAfter(shiftEnd.add(const Duration(hours: 2)))
+              ? 'urgent'
+              : 'info',
           action: 'attendance',
           icon: 'logout',
         ),
@@ -674,7 +723,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   Timer? _heartbeatTimer;
   Timer? _syncRetryTimer;
   Timer? _dayRolloverTimer;
-  int _watchedDay = DateTime.now().day;
+  int _watchedDay = BusinessTime.now().day;
 
   AppProvider(ConnectivityService connectivityService) {
     _loadPreferences();
@@ -693,6 +742,13 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Karyawan jarang menutup aplikasi sampai benar-benar mati, jadi cek
+      // sekali saat startup saja membuat rilis baru bisa telat berhari-hari
+      // sampai ke HP. Dicek ulang tiap kali aplikasi dibuka (dibatasi jeda di
+      // dalam _checkAppUpdate agar tidak boros kuota).
+      _checkAppUpdate();
+    }
     if (isLoggedIn) {
       if (state == AppLifecycleState.resumed) {
         _updatePresence(true);
@@ -711,7 +767,6 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         _listenToSettings();
         _startHeartbeat();
         _saveFCMToken();
-        _listenToLeaves();
         _schedulePeriodicSync();
         syncPendingRecords();
       } else {
@@ -854,20 +909,18 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     // selalu balik kosong — itulah sebabnya kalender di APK tak pernah
     // menampilkan acara yang dibuat admin. Ambil apa adanya (dibatasi) lalu
     // saring di klien, supaya string maupun Timestamp sama-sama terbaca.
-    _eventSub = _db
-        .collection('calendarEvents')
-        .limit(200)
-        .snapshots()
-        .listen((snap) {
-          final cutoff = DateTime.now().subtract(const Duration(days: 30));
-          _events =
-              snap.docs
-                  .map((doc) => CalendarEvent.fromFirestore(doc))
-                  .where((e) => !e.startDate.isBefore(cutoff))
-                  .toList()
-                ..sort((a, b) => a.startDate.compareTo(b.startDate));
-          _scheduleNotify();
-        }, onError: (e) => _setDataError('Kalender', e));
+    _eventSub = _db.collection('calendarEvents').limit(200).snapshots().listen((
+      snap,
+    ) {
+      final cutoff = DateTime.now().subtract(const Duration(days: 30));
+      _events =
+          snap.docs
+              .map((doc) => CalendarEvent.fromFirestore(doc))
+              .where((e) => !e.startDate.isBefore(cutoff))
+              .toList()
+            ..sort((a, b) => a.startDate.compareTo(b.startDate));
+      _scheduleNotify();
+    }, onError: (e) => _setDataError('Kalender', e));
   }
 
   void _updateNotifications(QuerySnapshot snap, {required bool isBroadcast}) {
@@ -940,13 +993,16 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   // tanggal ikut ganti — walau karyawan lupa checkout kemarin.
   void _startDayRolloverWatcher() {
     _dayRolloverTimer?.cancel();
-    _watchedDay = DateTime.now().day;
+    _watchedDay = BusinessTime.now().day;
     _dayRolloverTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      final today = DateTime.now().day;
+      final today = BusinessTime.now().day;
       if (today != _watchedDay) {
         _watchedDay = today;
+        // `_reminderEnabled`, BUKAN `_notificationsEnabled`: keduanya toggle
+        // terpisah di Pengaturan. Dengan flag yang salah, pengingat absensi
+        // yang sudah dimatikan karyawan menyala lagi sendiri tiap ganti hari.
         AttendanceReminderScheduler.sync(
-          enabled: _notificationsEnabled,
+          enabled: _reminderEnabled,
           checkIn: officeStartTime,
           checkOut: officeEndTime,
         );
@@ -1007,21 +1063,6 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     } catch (e) {
       debugPrint('FCM token save error: $e');
     }
-  }
-
-  void _listenToLeaves() {
-    if (_currentUser == null) return;
-    _leaveSub = _db
-        .collection('leaves')
-        .where('userId', isEqualTo: _currentUser!.uid)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .listen((snap) {
-          _leaveRequests = snap.docs
-              .map((doc) => LeaveRequest.fromFirestore(doc))
-              .toList();
-          notifyListeners();
-        }, onError: (e) => _setDataError('Data cuti', e));
   }
 
   // ── Auth Methods ──
@@ -1193,6 +1234,10 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     );
     await _auth.signOut();
     _currentUser = null;
+    // Shift itu milik karyawan, bukan perangkat — jangan terbawa ke akun
+    // berikutnya yang login di HP yang sama.
+    _shiftStartTime = null;
+    _shiftEndTime = null;
     _attendanceRecords.clear();
     _monthlyRecords.clear();
     _leaveRequests.clear();
@@ -1258,7 +1303,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   /// Sudah absen masuk DAN keluar hari ini → siklus absensi harian selesai,
   /// tidak boleh absen lagi sampai ganti hari (tombol di Home dinonaktifkan).
   bool get hasCompletedToday {
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final today = BusinessTime.todayKey();
     return _attendanceRecords.any(
       (r) => r.date == today && r.checkIn != null && r.checkOut != null,
     );
@@ -1268,15 +1313,15 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   /// karyawan (`officeStartTime`, sudah per-jamKerjaId). 0 kalau tidak telat.
   /// Disimpan ke doc supaya laporan/dashboard/rekap akurat tanpa hitung-ulang
   /// pakai aturan departemen generik.
+  ///
+  /// Dibandingkan dalam jam dinding WITA ([BusinessTime]), BUKAN zona waktu
+  /// perangkat: HP yang di-set WIB dulu membaca absen 08:30 WITA sebagai 07:30
+  /// dan tersimpan "tepat waktu", padahal panel admin merender 08:30 = telat.
   int _calcLateMinutes(DateTime checkInTime) {
-    final start = DateTime(
-      checkInTime.year,
-      checkInTime.month,
-      checkInTime.day,
-      officeStartTime.hour,
-      officeStartTime.minute,
-    );
-    final diff = checkInTime.difference(start).inMinutes;
+    final start = BusinessTime.atTime(checkInTime, officeStartTime);
+    final diff = BusinessTime.wallClock(
+      checkInTime,
+    ).difference(start).inMinutes;
     return diff > 0 ? diff : 0;
   }
 
@@ -1294,11 +1339,13 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       bool isOnline = await _checkConnectivity();
 
       if (isOnline) {
-        // serverNow dari HttpDate.parse() adalah UTC. Konversi ke local time
-        // agar dateStr mengikuti hari kalender karyawan (Jakarta WIB), bukan UTC.
-        // Konsisten dengan offline path yang sudah pakai DateTime.now() (local).
-        final serverNow = (await FortressUtils.getServerTime()).toLocal();
-        final dateStr = DateFormat('yyyy-MM-dd').format(serverNow);
+        // serverNow dari HttpDate.parse() adalah UTC. Hari kalender & jam
+        // dinding-nya dibaca dalam WITA — zona operasional kantor — bukan
+        // `.toLocal()`. `.toLocal()` memakai zona waktu PERANGKAT, sehingga HP
+        // yang di-set WIB/WIT menghasilkan tanggal dan status telat berbeda
+        // dari yang dilihat admin (lihat BusinessTime).
+        final serverNow = await FortressUtils.getServerTime();
+        final dateStr = BusinessTime.dateKey(serverNow);
         final docId = '${_currentUser!.uid}_$dateStr';
 
         // Unggah foto DULU supaya `photoUrl` yang tersimpan selalu URL https
@@ -1357,12 +1404,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
             // 23:59, baris 'leave' dari cuti approved, atau placeholder admin.
             // Kasus itu JANGAN diblokir "sudah absen" (bikin karyawan mentok
             // padahal jam masuk kosong di UI) — timpa dgn check-in nyata.
-            final existing = snapshot.data();
-            final ci = existing?['checkIn'];
-            final hasRealCheckIn =
-                existing?['checkInTime'] != null ||
-                (ci is Map && ci['time'] != null);
-            if (hasRealCheckIn) {
+            if (_hasRealCheckIn(snapshot.data())) {
               throw Exception('Anda sudah melakukan absensi masuk hari ini.');
             }
             transaction.set(docRef, data, SetOptions(merge: true));
@@ -1416,7 +1458,11 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
             'Absensi offline dinonaktifkan admin. Sambungkan internet untuk absen masuk.',
           );
         }
-        final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+        final capturedAt = DateTime.now();
+        final dateStr = BusinessTime.dateKey(capturedAt);
+        // ISO dengan penanda zona (…Z) supaya waktu tangkapnya tidak ambigu
+        // saat dibaca ulang di perangkat/browser dengan zona berbeda.
+        final capturedIso = capturedAt.toUtc().toIso8601String();
         final data = {
           'userId': _currentUser!.uid,
           'employeeName': _currentUser!.name,
@@ -1424,10 +1470,10 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           'department': _currentUser!.department,
           'date': dateStr,
           'attendanceDate': dateStr,
-          'status': _checkInStatus(status, _calcLateMinutes(DateTime.now())),
-          'lateMinutes': _calcLateMinutes(DateTime.now()),
+          'status': _checkInStatus(status, _calcLateMinutes(capturedAt)),
+          'lateMinutes': _calcLateMinutes(capturedAt),
           'checkIn': {
-            'time': DateTime.now().toIso8601String(),
+            'time': capturedIso,
             'latitude': lat,
             'longitude': lng,
             'distance': Geolocator.distanceBetween(
@@ -1438,7 +1484,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
             ).round(),
             'photoUrl': localImagePath,
           },
-          'checkInTime': DateTime.now().toIso8601String(),
+          'checkInTime': capturedIso,
           'checkInLatitude': lat,
           'checkInLongitude': lng,
           'checkInDistance': Geolocator.distanceBetween(
@@ -1449,8 +1495,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           ).round(),
           'checkInPhotoUrl': localImagePath,
           'syncStatus': 'pending',
-          'createdAt': DateTime.now().toIso8601String(),
-          'updatedAt': DateTime.now().toIso8601String(),
+          'createdAt': capturedIso,
+          'updatedAt': capturedIso,
         };
 
         await OfflineService.savePendingAttendance(data);
@@ -1496,10 +1542,41 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
+  /// Dokumen absensi sudah berisi check-in NYATA?
+  ///
+  /// Dokumen `{uid}_{tanggal}` bisa ada TANPA check-in karena dibuat otomatis:
+  /// baris 'absent' dari cron 23:59, baris 'leave' dari cuti yang disetujui,
+  /// atau placeholder admin. Baris seperti itu bukan bukti karyawan sudah
+  /// absen dan tidak boleh menghalangi check-in yang sebenarnya.
+  static bool _hasRealCheckIn(Map<String, dynamic>? data) {
+    if (data == null) return false;
+    final checkIn = data['checkIn'];
+    return data['checkInTime'] != null ||
+        (checkIn is Map && checkIn['time'] != null);
+  }
+
+  /// Cegah dua sinkronisasi berjalan bersamaan. `syncPendingRecords()`
+  /// dipicu dari tiga tempat (listener konektivitas, timer 60 detik, dan
+  /// startup) tanpa saling menunggu — dua putaran paralel bisa saling menimpa
+  /// antrean offline dan menghilangkan absensi yang belum terkirim.
+  bool _isSyncingPending = false;
+
   Future<void> syncPendingRecords() async {
+    if (_isSyncingPending) return;
+    if (_currentUser == null) return;
+    _isSyncingPending = true;
+    try {
+      await _syncPendingRecords();
+    } finally {
+      _isSyncingPending = false;
+    }
+  }
+
+  Future<void> _syncPendingRecords() async {
     final pending = await OfflineService.getPendingAttendance();
     if (pending.isEmpty) return;
 
+    final uid = _currentUser!.uid;
     int successes = 0;
     int failures = 0;
     List<Map<String, dynamic>> stillPending = [];
@@ -1510,16 +1587,27 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         // Recomputing pakai server time bisa shift ke hari berbeda jika
         // sync delay-nya panjang atau melewati pergantian hari UTC.
         final dateStr = record['attendanceDate'] as String;
-        final docId = '${_currentUser!.uid}_$dateStr';
+        final docId = '${uid}_$dateStr';
         // Dibaca SEBELUM transaksi: body transaksi bisa dijalankan ulang oleh
         // SDK, dan foto diunggah setelah transaksi selesai.
         final localPath = (record['checkIn'] as Map?)?['photoUrl'] as String?;
+        // Waktu absen yang ditangkap di lapangan, sebagai Timestamp — TIPE
+        // yang sama dengan check-in online. Menyimpannya sebagai String ISO
+        // akan mengubah tipe field yang selama ini Timestamp, dan Firestore
+        // mengurutkan antar-tipe secara terpisah sehingga dokumen itu bisa
+        // terlewat di query orderBy/range panel admin.
+        final capturedAt = parseFirestoreTime(record['checkInTime']);
 
         await _db.runTransaction((transaction) async {
           final docRef = _db.collection('attendance').doc(docId);
           final snapshot = await transaction.get(docRef);
-          if (snapshot.exists) {
-            return; // Already exists
+          // Dulu: `if (snapshot.exists) return;` — absensi offline DIBUANG
+          // diam-diam (dan tetap dihitung sukses) setiap kali dokumen harinya
+          // sudah dibuat otomatis, mis. baris 'absent' dari cron 23:59 atau
+          // baris 'leave'. Karyawan yang benar-benar hadir tetap tercatat
+          // alfa. Yang boleh memblokir hanyalah check-in NYATA.
+          if (snapshot.exists && _hasRealCheckIn(snapshot.data())) {
+            return;
           }
           // Map.from() itu salinan DANGKAL: `firestoreData['checkIn']` akan
           // menunjuk map yang sama dengan `record['checkIn']`. Sub-map itu
@@ -1533,11 +1621,21 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           firestoreData['checkIn'] = checkInMap;
           final now = FieldValue.serverTimestamp();
 
-          // Override with server timestamp for all time fields
+          // Waktu absen yang DITANGKAP di lapangan dipertahankan apa adanya.
+          // Sebelumnya semua field waktu ditimpa serverTimestamp, jadi kurir
+          // yang absen 07:55 di area tanpa sinyal tercatat masuk pada jam
+          // sinkronisasi (mis. 12:00) — bertentangan dengan `lateMinutes` di
+          // dokumen yang sama dan merugikan karyawan. Jejak sinkronisasi
+          // disimpan terpisah supaya admin tetap bisa mengaudit.
           firestoreData['attendanceDate'] = dateStr;
-          checkInMap['time'] = now;
-          firestoreData['checkInTime'] = now;
+          final checkInTime = capturedAt != null
+              ? Timestamp.fromDate(capturedAt)
+              : now;
+          checkInMap['time'] = checkInTime;
+          firestoreData['checkInTime'] = checkInTime;
+          firestoreData['capturedOffline'] = capturedAt != null;
           firestoreData['createdAt'] = now;
+          firestoreData['syncedAt'] = now;
           firestoreData['updatedAt'] = now;
           firestoreData['syncStatus'] = 'syncing';
 
@@ -1551,7 +1649,10 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
             firestoreData['checkInPhotoLocalPath'] = localPath;
           }
 
-          transaction.set(docRef, firestoreData);
+          // merge:true — dokumennya bisa sudah ada (baris otomatis 'absent'/
+          // 'leave'), dan field lain di sana (mis. catatan admin) tidak boleh
+          // ikut terhapus oleh set() biasa.
+          transaction.set(docRef, firestoreData, SetOptions(merge: true));
         });
 
         if (localPath != null && File(localPath).existsSync()) {
@@ -1568,10 +1669,10 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       }
     }
 
-    await OfflineService.clearPendingAttendance();
-    for (var record in stillPending) {
-      await OfflineService.savePendingAttendance(record);
-    }
+    // Satu tulisan atomik. Pola lama (clear lalu simpan ulang satu per satu)
+    // punya jendela di mana antrean KOSONG: aplikasi yang mati di tengahnya —
+    // atau absensi offline baru yang tersimpan tepat saat itu — hilang.
+    await OfflineService.replacePendingAttendance(stillPending);
 
     _hasPendingAttendance = stillPending.isNotEmpty;
     notifyListeners();
@@ -1658,7 +1759,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         // berstatus APPROVED untuk tanggal itu; durasi = checkout aktual −
         // jam pulang shift, dibatasi jam yang disetujui admin & maks 240 mnt
         // (4 jam). Pulang telat TANPA SPL = tercatat, tapi lembur 0.
-        final checkoutNow = DateTime.now();
+        // Jam dinding WITA — sama seperti check-in, supaya durasi lembur tidak
+        // ikut berubah kalau zona waktu HP karyawan berbeda.
+        final checkoutNow = BusinessTime.now();
         final recDate = DateTime.tryParse(record.date) ?? checkoutNow;
         final isHolidayDate =
             recDate.weekday == DateTime.sunday ||
@@ -1686,7 +1789,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
           overtimeMin = workMin > 360 ? workMin - 60 : workMin;
           if (overtimeMin < 0) overtimeMin = 0;
         } else if (spl != null && spl.status == 'approved') {
-          final shiftEnd = DateTime(
+          final shiftEnd = DateTime.utc(
             recDate.year,
             recDate.month,
             recDate.day,
@@ -1850,14 +1953,30 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     }
   }
 
+  /// Jeda antar percobaan ulang unggah foto. Timer sinkronisasi berdetak tiap
+  /// 60 detik; menjalankan dua query Firestore + satu lookup DNS di SETIAP
+  /// detak berarti ±2.900 pembacaan per karyawan per hari hanya untuk
+  /// memastikan tidak ada yang tertinggal. Foto tertunda tidak mendesak.
+  static const Duration _photoRetryInterval = Duration(minutes: 15);
+  DateTime? _lastPhotoRetry;
+
   /// Coba ulang unggahan foto absensi yang sebelumnya gagal (mis. absen saat
   /// sinyal jelek). Dipanggil saat aplikasi kembali online / dibuka lagi.
   /// Aman dipanggil berkali-kali: file lokal yang sudah hilang otomatis
   /// dibersihkan flag-nya supaya tidak dicoba selamanya.
-  Future<void> retryPendingAttendancePhotos() async {
+  ///
+  /// [force] melewati jeda [_photoRetryInterval].
+  Future<void> retryPendingAttendancePhotos({bool force = false}) async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;
+    final last = _lastPhotoRetry;
+    if (!force &&
+        last != null &&
+        DateTime.now().difference(last) < _photoRetryInterval) {
+      return;
+    }
     if (!await _checkConnectivity()) return;
+    _lastPhotoRetry = DateTime.now();
 
     for (final entry in {
       'checkInPhotoPending': false,
@@ -1903,14 +2022,10 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
   // ── Stats Logic ──
   bool get isLateForClockIn {
     final now = DateTime.now();
-    final start = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      officeStartTime.hour,
-      officeStartTime.minute,
-    );
-    return now.isAfter(start.add(const Duration(minutes: 1)));
+    final start = BusinessTime.atTime(now, officeStartTime);
+    return BusinessTime.wallClock(
+      now,
+    ).isAfter(start.add(const Duration(minutes: 1)));
   }
 
   Map<String, dynamic> calculateOvertime() {
@@ -2191,7 +2306,9 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       // tidak ada, set() akan MEMBUAT dokumen absensi berisi skor saja —
       // baris hantu di riwayat karyawan. update() gagal dengan bersih dan
       // ditelan catch di bawah.
-      final dateStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      // dateKey WITA — HARUS memakai kalender yang sama dengan check-in,
+      // kalau tidak skornya ditulis ke ID dokumen yang tidak ada.
+      final dateStr = BusinessTime.todayKey();
       await _db
           .collection('attendance')
           .doc('${user.uid}_$dateStr')
@@ -2240,13 +2357,14 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         if (rad != null && rad > 0) _officeRadius = rad < 20 ? 20 : rad;
         _hubName = (office['name'] as String?) ?? _hubName;
         _stationId = (office['stationId'] as String?) ?? _stationId;
-        // Jam masuk/keluar dari admin (kalau tersedia) untuk pengingat absensi.
-        officeStartTime =
+        // Jam kantor global dari admin. TIDAK menimpa shift pribadi karyawan
+        // (lihat getter officeStartTime/officeEndTime).
+        _globalStartTime =
             _parseTimeOfDay(office['startTime'] ?? office['checkInTime']) ??
-            officeStartTime;
-        officeEndTime =
+            _globalStartTime;
+        _globalEndTime =
             _parseTimeOfDay(office['endTime'] ?? office['checkOutTime']) ??
-            officeEndTime;
+            _globalEndTime;
       }
 
       // Setting tab Absensi — sekarang benar-benar dipatuhi APK.
@@ -2305,8 +2423,8 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       if (data == null) return;
       final ci = _parseTimeOfDay(data['checkInTime'] ?? data['startTime']);
       final co = _parseTimeOfDay(data['checkOutTime'] ?? data['endTime']);
-      if (ci != null) officeStartTime = ci;
-      if (co != null) officeEndTime = co;
+      if (ci != null) _shiftStartTime = ci;
+      if (co != null) _shiftEndTime = co;
       if (ci != null || co != null) {
         notifyListeners();
         await AttendanceReminderScheduler.sync(

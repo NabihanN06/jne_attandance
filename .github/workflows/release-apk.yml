@@ -1,0 +1,160 @@
+name: Release APK
+
+# Membangun APK rilis lalu menerbitkannya ke Firebase Storage, tempat aplikasi
+# di HP karyawan membaca manifest `public/app-latest.json` (lihat
+# AppProvider._checkAppUpdate). Setelah manifest terbit, HP yang sudah ter-
+# install memunculkan banner "Update tersedia" sendiri pada pengecekan
+# berikutnya — tanpa perlu menyentuh HP karyawan satu per satu.
+#
+# SENGAJA TIDAK berjalan di setiap push ke main: setiap terbitan langsung
+# terlihat oleh seluruh karyawan, jadi pemicunya harus disengaja — tag `v*`
+# atau tombol Run workflow.
+#
+# Job ini gracefully skip bila secret belum di-set, supaya tidak spam gagal.
+# Secret yang dibutuhkan:
+#   ANDROID_KEYSTORE_BASE64  keystore rilis (base64), WAJIB kunci yang sama
+#                            dengan APK yang sudah terpasang di HP karyawan —
+#                            tanda tangan berbeda = update ditolak Android.
+#   ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+#   GCP_SERVICE_ACCOUNT_JSON service account dengan akses tulis ke bucket.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      force_update:
+        description: 'Paksa karyawan memperbarui sebelum bisa memakai aplikasi'
+        type: boolean
+        default: false
+
+env:
+  BUCKET: admin-absensi-jne-mtp.firebasestorage.app
+  APK_OBJECT: public/app-jne-absensi.apk
+  MANIFEST_OBJECT: public/app-latest.json
+
+jobs:
+  release:
+    name: Build & publish APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: user_mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cek ketersediaan secret
+        id: secrets
+        run: |
+          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ] \
+             && [ -n "${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Secret belum di-set
+        if: steps.secrets.outputs.present != 'true'
+        run: |
+          echo "::warning::ANDROID_KEYSTORE_BASE64 / GCP_SERVICE_ACCOUNT_JSON \
+          belum di-set — penerbitan APK dilewati. APK yang ditandatangani kunci \
+          berbeda tidak bisa menimpa aplikasi yang sudah terpasang di HP karyawan."
+
+      # Versi diturunkan dari pubspec.yaml — SATU sumber kebenaran. Manifest
+      # yang ditulis tangan pernah menyimpan buildNumber 2035 sementara APK-nya
+      # 35, sehingga banner "Update tersedia" tidak pernah hilang dari HP
+      # karyawan meski versinya sudah paling baru.
+      - name: Baca versi dari pubspec.yaml
+        if: steps.secrets.outputs.present == 'true'
+        id: version
+        run: |
+          set -euo pipefail
+          raw="$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}')"
+          name="${raw%%+*}"
+          build="${raw##*+}"
+          if [ "$name" = "$raw" ] || ! [[ "$build" =~ ^[0-9]+$ ]]; then
+            echo "::error::pubspec.yaml 'version:' harus berbentuk x.y.z+N (dibaca: $raw)"
+            exit 1
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+          echo "Versi rilis: $name+$build"
+
+      - uses: subosito/flutter-action@v2
+        if: steps.secrets.outputs.present == 'true'
+        with:
+          flutter-version: 3.41.8
+          channel: stable
+          cache: true
+
+      - name: Siapkan keystore rilis
+        if: steps.secrets.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/release.jks
+          cat > android/key.properties <<EOF
+          storeFile=release.jks
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+
+      - name: Build APK rilis
+        if: steps.secrets.outputs.present == 'true'
+        run: |
+          flutter pub get
+          flutter build apk --release
+
+      - name: Hapus kredensial keystore dari runner
+        if: always() && steps.secrets.outputs.present == 'true'
+        run: rm -f android/release.jks android/key.properties
+
+      - uses: google-github-actions/auth@v2
+        if: steps.secrets.outputs.present == 'true'
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+        if: steps.secrets.outputs.present == 'true'
+
+      # APK diunggah LEBIH DULU. Manifest adalah penanda "rilis sudah siap":
+      # kalau urutannya dibalik, HP karyawan bisa melihat versi baru lalu
+      # mengunduh APK lama (atau 404) selama beberapa detik.
+      - name: Unggah APK
+        if: steps.secrets.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          gcloud storage cp build/app/outputs/flutter-apk/app-release.apk \
+            "gs://${BUCKET}/${APK_OBJECT}" \
+            --cache-control="no-cache, max-age=0" \
+            --content-type="application/vnd.android.package-archive"
+
+      - name: Terbitkan manifest versi
+        if: steps.secrets.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          cat > app-latest.json <<EOF
+          {
+            "buildNumber": ${{ steps.version.outputs.build }},
+            "versionName": "${{ steps.version.outputs.name }}",
+            "apkUrl": "https://storage.googleapis.com/${BUCKET}/${APK_OBJECT}",
+            "forceUpdate": ${{ inputs.force_update == true }},
+            "releaseNotes": ${{ toJSON(github.event.head_commit.message || github.ref_name) }}
+          }
+          EOF
+          cat app-latest.json
+          gcloud storage cp app-latest.json "gs://${BUCKET}/${MANIFEST_OBJECT}" \
+            --cache-control="no-cache, max-age=0" \
+            --content-type="application/json"
+
+      - name: Ringkasan
+        if: steps.secrets.outputs.present == 'true'
+        run: |
+          {
+            echo "### APK terbit"
+            echo ""
+            echo "- Versi: \`${{ steps.version.outputs.name }}+${{ steps.version.outputs.build }}\`"
+            echo "- HP karyawan yang sudah ter-install akan melihat banner update"
+            echo "  pada pengecekan berikutnya (saat aplikasi dibuka)."
+          } >> "$GITHUB_STEP_SUMMARY"

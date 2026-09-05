@@ -12,6 +12,7 @@ import '../succeed/succeed_page.dart';
 import '../../widgets/package_loading.dart';
 import '../../widgets/live_location_map.dart';
 import '../../utils/app_strings.dart';
+import '../../utils/business_time.dart';
 
 class AttendancePage extends StatefulWidget {
   const AttendancePage({super.key});
@@ -220,14 +221,13 @@ class _AttendancePageState extends State<AttendancePage>
         );
 
         if (mounted) {
-          final now = DateTime.now();
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
               builder: (_) => SucceedPage(
                 jenis: isCheckOut ? checkOutLabel : checkInLabel,
                 waktu:
-                    '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} WITA',
+                    '${BusinessTime.formatHm(DateTime.now())} ${BusinessTime.label}',
                 status: isCheckOut
                     ? doneCheck
                     : (app.isLateForClockIn ? lateCheck : ontimeCheck),

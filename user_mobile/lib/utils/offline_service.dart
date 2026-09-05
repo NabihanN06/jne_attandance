@@ -69,9 +69,24 @@ class OfflineService {
     return pending.map((e) => jsonDecode(e) as Map<String, dynamic>).toList();
   }
 
-  static Future<void> clearPendingAttendance() async {
+  /// Ganti seluruh isi antrean dengan [records] dalam SATU tulisan.
+  ///
+  /// Dipakai setelah sinkronisasi untuk menyisakan record yang masih gagal.
+  /// Pola `clear()` lalu `save()` berulang punya jendela di mana antrean
+  /// kosong — kalau aplikasi mati di situ (atau ada absensi offline baru yang
+  /// masuk bersamaan), absensi karyawan hilang tanpa jejak.
+  static Future<void> replacePendingAttendance(
+    List<Map<String, dynamic>> records,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_pendingKey);
+    if (records.isEmpty) {
+      await prefs.remove(_pendingKey);
+      return;
+    }
+    await prefs.setStringList(
+      _pendingKey,
+      records.map(jsonEncode).toList(growable: false),
+    );
   }
 
   /// NEW: Save to pending_sync collection for reliable offline-first

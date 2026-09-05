@@ -199,5 +199,4 @@ class OptionPage extends StatelessWidget {
       ),
     );
   }
-
 }

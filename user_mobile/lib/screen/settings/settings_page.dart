@@ -11,6 +11,7 @@ import '../../providers/app_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
 import '../../utils/app_strings.dart';
+import '../../utils/business_time.dart';
 import '../auth/change_password_screen.dart';
 import '../help/faq_screen.dart';
 
@@ -153,7 +154,7 @@ class _SettingsPageState extends State<SettingsPage> {
               iconColor: zenAmber,
               title: context.tr('start_time_label'),
               value:
-                  '${provider.officeStartTime.hour.toString().padLeft(2, '0')}:${provider.officeStartTime.minute.toString().padLeft(2, '0')} WIB',
+                  '${provider.officeStartTime.hour.toString().padLeft(2, '0')}:${provider.officeStartTime.minute.toString().padLeft(2, '0')} ${BusinessTime.label}',
             ),
           ]),
           const SizedBox(height: 24),

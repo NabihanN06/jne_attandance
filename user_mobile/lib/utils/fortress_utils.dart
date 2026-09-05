@@ -66,12 +66,14 @@ class FortressUtils {
     }
   }
 
-  /// Get approximate server time via HTTP HEAD request.
-  /// Falls back to local time if request fails.
+  /// Waktu server (UTC) dari header `Date` sebuah permintaan HTTP.
+  ///
+  /// Dipakai supaya jam absensi tidak bisa digeser dengan mengubah jam HP.
+  /// Kembali ke jam perangkat kalau permintaannya gagal (offline).
   static Future<DateTime> getServerTime() async {
+    HttpClient? client;
     try {
-      final client = HttpClient()
-        ..connectionTimeout = const Duration(seconds: 3);
+      client = HttpClient()..connectionTimeout = const Duration(seconds: 3);
       final request = await client.getUrl(Uri.parse('https://www.google.com'));
       final response = await request.close();
       final dateHeader = response.headers.value('date');
@@ -80,6 +82,10 @@ class FortressUtils {
       }
     } catch (e) {
       debugPrint('Server time fetch failed: $e');
+    } finally {
+      // force: true — body-nya memang tidak dibaca, jadi koneksinya harus
+      // benar-benar ditutup, bukan dikembalikan ke pool sambil menggantung.
+      client?.close(force: true);
     }
     return DateTime.now();
   }

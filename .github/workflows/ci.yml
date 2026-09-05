@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   mobile:
-    name: Mobile · analyze + format
+    name: Mobile · analyze + format + test
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -29,6 +29,8 @@ jobs:
         run: dart format --output=none --set-exit-if-changed lib test
       - name: Flutter analyze
         run: flutter analyze
+      - name: Flutter test
+        run: flutter test
 
   public-site:
     name: Public Site · prettier check
