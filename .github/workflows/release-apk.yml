@@ -121,12 +121,17 @@ jobs:
       # APK diunggah LEBIH DULU. Manifest adalah penanda "rilis sudah siap":
       # kalau urutannya dibalik, HP karyawan bisa melihat versi baru lalu
       # mengunduh APK lama (atau 404) selama beberapa detik.
+      # --predefined-acl=publicRead WAJIB. Akses publik di bucket ini dipasang
+      # per-OBJEK, dan objek baru TIDAK mewarisi izin objek yang ditimpanya.
+      # Tanpa flag ini, HP karyawan dapat 403 saat membaca manifest/mengunduh
+      # APK — persis yang terjadi saat manifest diunggah manual lewat console.
       - name: Unggah APK
         if: steps.secrets.outputs.present == 'true'
         run: |
           set -euo pipefail
           gcloud storage cp build/app/outputs/flutter-apk/app-release.apk \
             "gs://${BUCKET}/${APK_OBJECT}" \
+            --predefined-acl=publicRead \
             --cache-control="no-cache, max-age=0" \
             --content-type="application/vnd.android.package-archive"
 
@@ -145,8 +150,29 @@ jobs:
           EOF
           cat app-latest.json
           gcloud storage cp app-latest.json "gs://${BUCKET}/${MANIFEST_OBJECT}" \
+            --predefined-acl=publicRead \
             --cache-control="no-cache, max-age=0" \
             --content-type="application/json"
+
+      # Gagalkan job kalau hasilnya ternyata tidak bisa dibaca publik. Rilis
+      # yang "sukses" tapi 403 di HP karyawan lebih berbahaya daripada gagal
+      # terang-terangan di CI.
+      - name: Pastikan benar-benar terbaca publik
+        if: steps.secrets.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          base="https://storage.googleapis.com/${BUCKET}"
+          manifest="$(curl -fsS "${base}/${MANIFEST_OBJECT}?t=$(date +%s)")"
+          echo "$manifest"
+          echo "$manifest" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          assert data['buildNumber'] == ${{ steps.version.outputs.build }}, data
+          assert data['versionName'] == '${{ steps.version.outputs.name }}', data
+          print('manifest OK')
+          "
+          curl -fsS -o /dev/null -r 0-1024 "${base}/${APK_OBJECT}"
+          echo "APK bisa diunduh publik"
 
       - name: Ringkasan
         if: steps.secrets.outputs.present == 'true'
