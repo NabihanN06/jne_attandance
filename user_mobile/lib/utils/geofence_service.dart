@@ -38,7 +38,8 @@ class GeofenceService extends ChangeNotifier {
     _calculateDistance();
   }
 
-  static bool _isValidLat(double v) => v.isFinite && v != 0 && v >= -11 && v <= 6;
+  static bool _isValidLat(double v) =>
+      v.isFinite && v != 0 && v >= -11 && v <= 6;
   static bool _isValidLng(double v) =>
       v.isFinite && v != 0 && v >= 95 && v <= 141;
 

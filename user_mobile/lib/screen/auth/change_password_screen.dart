@@ -196,7 +196,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
               ),
               child: Icon(
-                n == 1 ? Icons.verified_user_outlined : Icons.lock_reset_rounded,
+                n == 1
+                    ? Icons.verified_user_outlined
+                    : Icons.lock_reset_rounded,
                 color: active ? Colors.white : slate,
                 size: 17,
               ),

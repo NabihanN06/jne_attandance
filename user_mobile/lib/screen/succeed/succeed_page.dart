@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 import '../../utils/app_strings.dart';
+import '../../utils/business_time.dart';
 import '../home/home_screen.dart';
 import '../history/history_page.dart';
 
@@ -70,8 +71,9 @@ class _SucceedPageState extends State<SucceedPage>
 
   String get _waktu {
     if (widget.waktu.isNotEmpty) return widget.waktu;
-    final now = DateTime.now();
-    return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} WITA';
+    // Jam WITA, bukan jam perangkat: labelnya bilang WITA, jadi angkanya harus
+    // WITA juga walau zona waktu HP karyawan di-set berbeda.
+    return '${BusinessTime.formatHm(DateTime.now())} ${BusinessTime.label}';
   }
 
   @override
