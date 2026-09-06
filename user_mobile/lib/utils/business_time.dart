@@ -50,6 +50,22 @@ class BusinessTime {
     return DateTime.utc(w.year, w.month, w.day, time.hour, time.minute);
   }
 
+  /// Umur tanggal kerja [workDate] (`yyyy-MM-dd`) dalam HARI KALENDER WITA,
+  /// relatif terhadap [now] (default: sekarang). Negatif bila tanggalnya di
+  /// masa depan; `null` bila formatnya tidak dikenali.
+  ///
+  /// Sengaja membaca field tanggalnya langsung, TIDAK lewat [wallClock]:
+  /// `workDate` adalah tanggal kalender polos, bukan sebuah instant. Mengubah
+  /// zonanya justru menggesernya sehari di perangkat berzona ekstrem.
+  static int? calendarAgeInDays(String workDate, {DateTime? now}) {
+    final recorded = DateTime.tryParse(workDate);
+    if (recorded == null) return null;
+    final today = wallClock(now ?? DateTime.now());
+    return DateTime.utc(today.year, today.month, today.day)
+        .difference(DateTime.utc(recorded.year, recorded.month, recorded.day))
+        .inDays;
+  }
+
   /// `HH:mm` WITA untuk [instant].
   static String formatHm(DateTime instant) {
     final w = wallClock(instant);

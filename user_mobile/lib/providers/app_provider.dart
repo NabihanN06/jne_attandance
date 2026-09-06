@@ -257,6 +257,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         checkIn: officeStartTime,
         checkOut: officeEndTime,
       );
+      await _refreshExpiredOfflineDates();
       // Cek update APK di latar belakang (tidak memblokir startup).
       _checkAppUpdate(force: true);
     } catch (e) {
@@ -523,7 +524,28 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       );
     }
 
-    // Tip 3: Sisa cuti tahunan menipis
+    // Tip 3: Absensi offline yang tidak terkirim otomatis (lewat 2 hari).
+    // Wajib terlihat karyawan — ini kehadiran yang sudah direkam di HP tapi
+    // sengaja TIDAK ditulis ke server, jadi hanya admin yang bisa
+    // menuntaskannya. Hilang sendiri setelah admin memasukkannya.
+    final expiredDates = expiredOfflineAttendanceDates;
+    if (expiredDates.isNotEmpty) {
+      tips.add(
+        SmartTip(
+          id: 'offline_attendance_expired',
+          title: '${expiredDates.length} absensi lama belum tercatat',
+          message:
+              'Absen tanggal ${expiredDates.join(', ')} tersimpan di HP tapi '
+              'sudah lewat batas kirim otomatis. Laporkan ke admin lewat '
+              'menu Komplain agar dimasukkan manual.',
+          severity: 'urgent',
+          action: 'dispute',
+          icon: 'cloud_off',
+        ),
+      );
+    }
+
+    // Tip 4: Sisa cuti tahunan menipis
     final balance = leaveBalance;
     if (balance.remainingAnnual <= 3 && balance.annualQuota > 0) {
       tips.add(
@@ -539,7 +561,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       );
     }
 
-    // Tip 4: Komplain perlu konfirmasi user (admin sudah resolve, user belum acknowledge)
+    // Tip 5: Komplain perlu konfirmasi user (admin sudah resolve, user belum acknowledge)
     final pendingConfirm = _disputeRequests
         .where((d) => d.needsUserConfirmation)
         .length;
@@ -557,7 +579,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       );
     }
 
-    // Tip 5: Performance bulan ini — telat berkali-kali
+    // Tip 6: Performance bulan ini — telat berkali-kali
     final thisMonth = _attendanceRecords.where((r) {
       final d = DateTime.tryParse(r.date);
       return d != null && d.month == now.month && d.year == now.year;
@@ -577,7 +599,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
       );
     }
 
-    // Tip 6: Streak hadir tepat waktu (positive reinforcement)
+    // Tip 7: Streak hadir tepat waktu (positive reinforcement)
     if (thisMonth.length >= 5 && lateCount == 0) {
       tips.add(
         SmartTip(
@@ -1555,6 +1577,49 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         (checkIn is Map && checkIn['time'] != null);
   }
 
+  /// Absensi offline yang lebih tua dari ini TIDAK ditulis otomatis ke
+  /// Firestore.
+  ///
+  /// Kurir yang baru dapat sinyal sehari-dua hari kemudian masih wajar
+  /// dikirim sendiri. Lebih tua dari itu menyentuh periode yang laporannya
+  /// kemungkinan sudah ditutup dan direkap — menulis ulang baris lama secara
+  /// diam-diam bukan keputusan yang boleh diambil aplikasi. Record-nya tidak
+  /// dibuang: diparkir lokal dan dimunculkan sebagai peringatan supaya
+  /// karyawan melaporkannya ke admin untuk dimasukkan manual.
+  static const Duration _offlineSyncMaxAge = Duration(days: 2);
+
+  /// Tanggal absensi offline yang berhenti di jendela [_offlineSyncMaxAge].
+  List<String> _expiredOfflineDates = const [];
+
+  /// Tanggal absensi offline yang tidak terkirim otomatis DAN di server-nya
+  /// memang belum ada check-in. Hilang sendiri begitu admin memasukkannya
+  /// secara manual, jadi peringatannya tidak menggantung selamanya.
+  List<String> get expiredOfflineAttendanceDates {
+    if (_expiredOfflineDates.isEmpty) return const [];
+    final sudahTercatat = _attendanceRecords
+        .where((r) => r.checkIn?.time != null)
+        .map((r) => r.date)
+        .toSet();
+    return _expiredOfflineDates
+        .where((d) => !sudahTercatat.contains(d))
+        .toList();
+  }
+
+  /// Sudah lewat jendela sinkronisasi otomatis? Tanggal berformat aneh
+  /// dibiarkan lewat jalur normal — bukan tugas penjaga ini menebak.
+  static bool _isBeyondSyncWindow(String attendanceDate) {
+    final age = BusinessTime.calendarAgeInDays(attendanceDate);
+    return age != null && age > _offlineSyncMaxAge.inDays;
+  }
+
+  Future<void> _refreshExpiredOfflineDates() async {
+    try {
+      _expiredOfflineDates = await OfflineService.getExpiredAttendanceDates();
+    } catch (e) {
+      debugPrint('Baca absensi kedaluwarsa gagal: $e');
+    }
+  }
+
   /// Cegah dua sinkronisasi berjalan bersamaan. `syncPendingRecords()`
   /// dipicu dari tiga tempat (listener konektivitas, timer 60 detik, dan
   /// startup) tanpa saling menunggu — dua putaran paralel bisa saling menimpa
@@ -1580,6 +1645,7 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     int successes = 0;
     int failures = 0;
     List<Map<String, dynamic>> stillPending = [];
+    List<Map<String, dynamic>> expired = [];
 
     for (var record in pending) {
       try {
@@ -1587,6 +1653,11 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
         // Recomputing pakai server time bisa shift ke hari berbeda jika
         // sync delay-nya panjang atau melewati pergantian hari UTC.
         final dateStr = record['attendanceDate'] as String;
+        if (_isBeyondSyncWindow(dateStr)) {
+          debugPrint('Absensi offline $dateStr terlalu lama — tidak ditulis.');
+          expired.add(record);
+          continue;
+        }
         final docId = '${uid}_$dateStr';
         // Dibaca SEBELUM transaksi: body transaksi bisa dijalankan ulang oleh
         // SDK, dan foto diunggah setelah transaksi selesai.
@@ -1673,10 +1744,17 @@ class AppProvider with ChangeNotifier, WidgetsBindingObserver {
     // punya jendela di mana antrean KOSONG: aplikasi yang mati di tengahnya —
     // atau absensi offline baru yang tersimpan tepat saat itu — hilang.
     await OfflineService.replacePendingAttendance(stillPending);
+    if (expired.isNotEmpty) {
+      await OfflineService.addExpiredAttendance(expired);
+      await _refreshExpiredOfflineDates();
+    }
 
     _hasPendingAttendance = stillPending.isNotEmpty;
     notifyListeners();
-    debugPrint('Sync complete: $successes success, $failures failed');
+    debugPrint(
+      'Sync complete: $successes success, $failures failed, '
+      '${expired.length} kedaluwarsa',
+    );
   }
 
   Future<void> addAttendanceCheckOut({

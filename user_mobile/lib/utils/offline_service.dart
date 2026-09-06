@@ -69,6 +69,44 @@ class OfflineService {
     return pending.map((e) => jsonDecode(e) as Map<String, dynamic>).toList();
   }
 
+  /// Absensi offline yang TIDAK jadi dikirim otomatis karena tanggalnya sudah
+  /// lewat jendela sinkronisasi. Disimpan terpisah — bukan dibuang — supaya
+  /// karyawan masih bisa melihatnya dan melaporkannya ke admin.
+  static const String _expiredKey = 'expired_attendance';
+
+  /// Tambahkan [records] ke daftar absensi kedaluwarsa (tanpa duplikat
+  /// tanggal, karena satu hari hanya punya satu absen masuk).
+  static Future<void> addExpiredAttendance(
+    List<Map<String, dynamic>> records,
+  ) async {
+    if (records.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getStringList(_expiredKey) ?? <String>[];
+    final seen = existing
+        .map((e) => (jsonDecode(e) as Map<String, dynamic>)['attendanceDate'])
+        .toSet();
+    for (final record in records) {
+      if (seen.add(record['attendanceDate'])) existing.add(jsonEncode(record));
+    }
+    await prefs.setStringList(_expiredKey, existing);
+  }
+
+  /// Tanggal-tanggal absensi kedaluwarsa, urut menaik.
+  static Future<List<String>> getExpiredAttendanceDates() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getStringList(_expiredKey) ?? const <String>[];
+    final dates = raw
+        .map(
+          (e) =>
+              (jsonDecode(e) as Map<String, dynamic>)['attendanceDate']
+                  as String?,
+        )
+        .whereType<String>()
+        .toList();
+    dates.sort();
+    return dates;
+  }
+
   /// Ganti seluruh isi antrean dengan [records] dalam SATU tulisan.
   ///
   /// Dipakai setelah sinkronisasi untuk menyisakan record yang masih gagal.
