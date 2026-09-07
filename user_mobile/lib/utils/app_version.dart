@@ -29,10 +29,13 @@ int compareVersionNames(String a, String b) {
 /// `versionName` adalah SUMBER KEBENARAN. Itu identitas rilis yang dilihat
 /// karyawan di banner ("v1.0.12") dan satu-satunya field yang tidak pernah
 /// dipakai ulang. `buildNumber` hanya dipakai sebagai cadangan ketika salah
-/// satu `versionName` kosong (metadata lama), karena angka itu ditulis tangan
-/// ke `app-latest.json` dan pernah melenceng jauh dari `versionCode` APK
-/// (2035 vs 35) — akibatnya banner "Update tersedia" muncul SELAMANYA di HP
-/// yang sebenarnya sudah memakai versi paling baru.
+/// satu `versionName` kosong (metadata lama), karena angka itu gampang
+/// melenceng dari `versionCode` APK: `--split-per-abi` diam-diam menambah
+/// offset ABI (arm64 = 2000+N), jadi rilis 1.0.11+35 terpasang sebagai
+/// versionCode 2035 di HP karyawan. Manifest yang menyebut 35 untuk APK yang
+/// sama membuat banner "Update tersedia" menempel SELAMANYA di HP yang
+/// sebenarnya sudah paling baru. Sejak 1.0.12 offset itu ditulis eksplisit di
+/// `pubspec.yaml` dan rilis dibangun tanpa `--split-per-abi`.
 ///
 /// - [latestVersionName]/[latestBuild]: dari `app-latest.json` di Storage.
 /// - [currentVersionName]/[currentBuild]: dari `PackageInfo.fromPlatform()`.
