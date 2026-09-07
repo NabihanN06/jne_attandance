@@ -61,10 +61,10 @@ jobs:
           belum di-set — penerbitan APK dilewati. APK yang ditandatangani kunci \
           berbeda tidak bisa menimpa aplikasi yang sudah terpasang di HP karyawan."
 
-      # Versi diturunkan dari pubspec.yaml — SATU sumber kebenaran. Manifest
-      # yang ditulis tangan pernah menyimpan buildNumber 2035 sementara APK-nya
-      # 35, sehingga banner "Update tersedia" tidak pernah hilang dari HP
-      # karyawan meski versinya sudah paling baru.
+      # Versi diturunkan dari pubspec.yaml — SATU sumber kebenaran, supaya
+      # manifest tidak pernah lagi ditulis tangan dan melenceng dari APK-nya
+      # (banner "Update tersedia" yang tidak pernah hilang dari HP karyawan
+      # dulu berasal dari situ).
       - name: Baca versi dari pubspec.yaml
         if: steps.secrets.outputs.present == 'true'
         id: version
@@ -79,6 +79,16 @@ jobs:
           fi
           echo "name=$name" >> "$GITHUB_OUTPUT"
           echo "build=$build" >> "$GITHUB_OUTPUT"
+          # Penjaga downgrade. APK 1.0.11 di HP karyawan dibangun dengan
+          # `--split-per-abi`, yang menambah offset ABI ke versionCode (arm64 =
+          # 2000+N) sehingga versionCode-nya 2035. Rilis dengan angka di bawah
+          # itu ditolak Android sebagai downgrade — APK terunduh tapi tidak bisa
+          # dipasang ("App not installed", hanya tombol Tutup), dan karyawan
+          # tersangkut di versi lama tanpa gejala yang jelas dari sisi kita.
+          if [ "$build" -le 2035 ]; then
+            echo "::error::pubspec build number ($build) harus > 2035; lihat catatan versi di pubspec.yaml"
+            exit 1
+          fi
           echo "Versi rilis: $name+$build"
 
       - uses: subosito/flutter-action@v2
@@ -104,7 +114,14 @@ jobs:
         if: steps.secrets.outputs.present == 'true'
         run: |
           flutter pub get
-          flutter build apk --release
+          # `--target-platform android-arm64`, BUKAN `--split-per-abi`. Hasilnya
+          # sama-sama arm64 saja (~50 MB, bukan 93 MB universal) tapi lewat jalur
+          # paket biasa: versionCode APK = angka pubspec apa adanya, tanpa offset
+          # tersembunyi yang harus diingat orang. `--split-per-abi` juga gagal di
+          # tahap :app:packageRelease pada AGP yang dipakai sekarang
+          # ("Cannot query the value of this property because it has no value").
+          # Semua HP karyawan sudah memakai varian arm64 sejak 1.0.11.
+          flutter build apk --release --target-platform android-arm64
 
       - name: Hapus kredensial keystore dari runner
         if: always() && steps.secrets.outputs.present == 'true'

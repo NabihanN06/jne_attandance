@@ -43,6 +43,18 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+
+        // Rilis hanya untuk arm64 — semua HP karyawan sudah memakai varian itu
+        // sejak 1.0.11. Tanpa filter ini plugin tetap menyertakan pustaka
+        // armeabi-v7a dan x86_64 yang tak terpakai, dan APK membengkak dari
+        // ~50 MB ke 76 MB (`flutter build --target-platform android-arm64`
+        // hanya membatasi engine Flutter, bukan .so bawaan plugin).
+        // Sengaja BUKAN `--split-per-abi`: mekanisme itu menambah offset ABI ke
+        // versionCode (arm64 = 2000+N) yang pernah nyaris mengunci semua
+        // karyawan, dan gagal di :app:packageRelease pada AGP yang dipakai kini.
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
     }
 
     signingConfigs {

@@ -1,7 +1,14 @@
 name: jneattendance_mobile
 description: "JNE Attendance Mobile App"
 publish_to: "none"
-version: 1.0.12+36
+# Nomor build WAJIB naik terus dan tidak boleh turun di bawah 2035. APK 1.0.11
+# yang terpasang di HP karyawan dibangun dengan `--split-per-abi`, yang diam-diam
+# menambah offset ABI ke versionCode (arm64 = 2000+N) sehingga versionCode-nya
+# 2035. Angka di bawah itu dianggap downgrade oleh Android dan APK-nya menolak
+# dipasang ("App not installed", hanya tombol Tutup). Sejak 1.0.12 offset itu
+# ditulis langsung di sini dan rilis dibangun tanpa --split-per-abi, jadi
+# versionCode APK = angka ini apa adanya.
+version: 1.0.12+2036
 
 environment:
   sdk: ^3.10.4
